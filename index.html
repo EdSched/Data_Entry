@@ -503,6 +503,39 @@
     </div>
 
     <script>
+        // ========== API配置 ==========
+        const API_URL = 'https://script.google.com/macros/s/AKfycbzLBNy96O4xVoAXU0UQgNJhTP21FLW9HQ3t0O5HpF55wFXd_-vMmbMuNfMZK7WBQdk/exec';
+        
+        // API调用封装函数
+        async function callAPI(action, params = {}) {
+            try {
+                console.log('调用API:', action, params);
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        action: action,
+                        params: params
+                    })
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                console.log('API响应:', result);
+                return result;
+                
+            } catch (error) {
+                console.error('API调用失败:', error);
+                throw error;
+            }
+        }
+        
         // 全局变量
         let currentUser = null;
         let allStudents = [];
@@ -526,19 +559,32 @@
                     switchTab(this.dataset.tab);
                 });
             });
+            
+            // 测试API连接
+            testAPIConnection();
+        }
+        
+        // 测试API连接
+        async function testAPIConnection() {
+            try {
+                const result = await callAPI('testConnection');
+                console.log('API连接测试结果:', result);
+            } catch (error) {
+                console.error('API连接测试失败:', error);
+            }
         }
         
         // ========== 登录/注册界面切换 ==========
         
         function showRegisterForm() {
-            console.log('切换到注册表单'); // 调试用
+            console.log('切换到注册表单');
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'block';
             clearMessages();
         }
         
         function showLoginForm() {
-            console.log('切换到登录表单'); // 调试用
+            console.log('切换到登录表单');
             document.getElementById('registerForm').style.display = 'none';
             document.getElementById('loginForm').style.display = 'block';
             clearMessages();
@@ -551,8 +597,8 @@
         
         // ========== 注册相关 ==========
         
-        function register() {
-            console.log('开始注册'); // 调试用
+        async function register() {
+            console.log('开始注册');
             
             const userData = {
                 userId: document.getElementById('registerUserId').value.trim(),
@@ -564,7 +610,7 @@
                 confirmPassword: document.getElementById('registerConfirmPassword').value
             };
             
-            console.log('注册数据:', userData); // 调试用
+            console.log('注册数据:', userData);
             
             const errorDiv = document.getElementById('registerError');
             
@@ -580,42 +626,23 @@
                 return;
             }
             
-            if (userData.password.length < 3) {  // 临时改为3位，方便测试
+            if (userData.password.length < 3) {
                 errorDiv.textContent = '密码长度至少3位';
                 return;
             }
             
             errorDiv.textContent = '正在注册...';
             
-            // 临时测试：先测试基本的Apps Script调用
-            if (typeof google !== 'undefined' && google.script && google.script.run) {
-                // 先尝试调用一个简单的测试函数
-                google.script.run
-                    .withSuccessHandler(function(result) {
-                        errorDiv.style.color = 'green';
-                        errorDiv.textContent = '后端连接成功！正在实现注册功能...';
-                        
-                        // 然后调用真正的注册函数
-                        setTimeout(() => {
-                            google.script.run
-                                .withSuccessHandler(handleRegisterSuccess)
-                                .withFailureHandler(handleRegisterFailure)
-                                .registerUser(userData);
-                        }, 1000);
-                    })
-                    .withFailureHandler(function(error) {
-                        errorDiv.style.color = 'red';
-                        errorDiv.textContent = '后端连接失败：' + error.message;
-                    })
-                    .testConnection(); // 调用测试连接函数
-            } else {
-                errorDiv.style.color = 'red';
-                errorDiv.textContent = 'Apps Script环境未找到，请检查部署';
+            try {
+                const result = await callAPI('registerUser', userData);
+                handleRegisterSuccess(result);
+            } catch (error) {
+                handleRegisterFailure(error);
             }
         }
         
         function handleRegisterSuccess(result) {
-            console.log('注册结果:', result); // 调试用
+            console.log('注册结果:', result);
             const errorDiv = document.getElementById('registerError');
             
             if (result && result.success) {
@@ -646,13 +673,15 @@
         }
         
         function handleRegisterFailure(error) {
-            console.error('注册失败:', error); // 调试用
+            console.error('注册失败:', error);
             const errorDiv = document.getElementById('registerError');
             errorDiv.style.color = 'red';
             errorDiv.textContent = '注册出错：' + (error.message || error);
         }
         
-        function login() {
+        // ========== 登录相关 ==========
+        
+        async function login() {
             const userId = document.getElementById('loginUserId').value.trim();
             const password = document.getElementById('loginPassword').value.trim();
             const errorDiv = document.getElementById('loginError');
@@ -664,11 +693,12 @@
             
             errorDiv.textContent = '正在登录...';
             
-            // 调用后端验证
-            google.script.run
-                .withSuccessHandler(handleLoginSuccess)
-                .withFailureHandler(handleLoginFailure)
-                .authenticateUser(userId, password);
+            try {
+                const result = await callAPI('authenticateUser', { userId, password });
+                handleLoginSuccess(result);
+            } catch (error) {
+                handleLoginFailure(error);
+            }
         }
         
         function handleLoginSuccess(result) {
@@ -786,26 +816,24 @@
             loadCalendarEvents();
         }
         
-        function loadCalendarEvents() {
+        async function loadCalendarEvents() {
             if (!currentUser) return;
             
-            // 调用后端获取用户的课程事件
-            google.script.run
-                .withSuccessHandler(function(events) {
-                    mainCalendar.removeAllEvents();
-                    miniCalendar.removeAllEvents();
-                    
-                    events.forEach(event => {
-                        mainCalendar.addEvent(event);
-                        miniCalendar.addEvent(event);
-                    });
-                    
-                    updateTodayStats();
-                })
-                .withFailureHandler(function(error) {
-                    console.error('加载日历事件失败:', error);
-                })
-                .getStudentCourseEvents(currentUser.userId);
+            try {
+                const events = await callAPI('getStudentCourseEvents', { userId: currentUser.userId });
+                
+                mainCalendar.removeAllEvents();
+                miniCalendar.removeAllEvents();
+                
+                events.forEach(event => {
+                    mainCalendar.addEvent(event);
+                    miniCalendar.addEvent(event);
+                });
+                
+                updateTodayStats();
+            } catch (error) {
+                console.error('加载日历事件失败:', error);
+            }
         }
         
         // ========== 数据加载 ==========
@@ -835,50 +863,46 @@
             });
         }
         
-        function loadUserProfile() {
+        async function loadUserProfile() {
             document.getElementById('profileLoading').style.display = 'block';
             document.getElementById('profileContent').style.display = 'none';
             
-            google.script.run
-                .withSuccessHandler(function(userInfo) {
-                    displayUserProfile(userInfo);
-                    document.getElementById('profileLoading').style.display = 'none';
-                    document.getElementById('profileContent').style.display = 'block';
-                })
-                .withFailureHandler(function(error) {
-                    console.error('加载用户信息失败:', error);
-                    document.getElementById('profileLoading').style.display = 'none';
-                })
-                .getCurrentUserInfo(currentUser.userId);
+            try {
+                const userInfo = await callAPI('getCurrentUserInfo', { userId: currentUser.userId });
+                displayUserProfile(userInfo);
+                document.getElementById('profileLoading').style.display = 'none';
+                document.getElementById('profileContent').style.display = 'block';
+            } catch (error) {
+                console.error('加载用户信息失败:', error);
+                document.getElementById('profileLoading').style.display = 'none';
+            }
         }
         
         // ========== 学生选择相关 ==========
         
-        function loadDepartmentStudents() {
+        async function loadDepartmentStudents() {
             const department = document.getElementById('departmentSelect').value;
             if (!department) return;
             
-            google.script.run
-                .withSuccessHandler(function(students) {
-                    allStudents = students;
-                    displayStudentList(students);
-                    document.getElementById('studentListArea').style.display = 'block';
-                    
-                    // 更新专业列表
-                    const majors = [...new Set(students.map(s => s.major))];
-                    const majorSelect = document.getElementById('majorSelect');
-                    majorSelect.innerHTML = '<option value="">所有专业</option>';
-                    majors.forEach(major => {
-                        const option = document.createElement('option');
-                        option.value = major;
-                        option.textContent = major;
-                        majorSelect.appendChild(option);
-                    });
-                })
-                .withFailureHandler(function(error) {
-                    console.error('加载学生失败:', error);
-                })
-                .getStudentsByClass(department);
+            try {
+                const students = await callAPI('getStudentsByClass', { department });
+                allStudents = students;
+                displayStudentList(students);
+                document.getElementById('studentListArea').style.display = 'block';
+                
+                // 更新专业列表
+                const majors = [...new Set(students.map(s => s.major))];
+                const majorSelect = document.getElementById('majorSelect');
+                majorSelect.innerHTML = '<option value="">所有专业</option>';
+                majors.forEach(major => {
+                    const option = document.createElement('option');
+                    option.value = major;
+                    option.textContent = major;
+                    majorSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error('加载学生失败:', error);
+            }
         }
         
         function loadMajorStudents() {
@@ -962,7 +986,7 @@
         
         // ========== 数据分析相关 ==========
         
-        function generateReport() {
+        async function generateReport() {
             if (selectedStudents.length === 0) {
                 alert('请先选择学生');
                 return;
@@ -983,19 +1007,23 @@
             
             const studentIds = selectedStudents.map(s => s.id);
             
-            google.script.run
-                .withSuccessHandler(function(reportData) {
-                    displayReportResults(reportData);
-                    document.getElementById('loadingIndicator').style.display = 'none';
-                    document.getElementById('resultsData').style.display = 'block';
-                    document.getElementById('exportBtn').style.display = 'inline-block';
-                })
-                .withFailureHandler(function(error) {
-                    console.error('生成报告失败:', error);
-                    alert('生成报告失败：' + error.message);
-                    document.getElementById('loadingIndicator').style.display = 'none';
-                })
-                .generateStudentReport(studentIds, startMonth, endMonth, dataTypes);
+            try {
+                const reportData = await callAPI('generateStudentReport', {
+                    studentIds,
+                    startMonth,
+                    endMonth,
+                    dataTypes
+                });
+                
+                displayReportResults(reportData);
+                document.getElementById('loadingIndicator').style.display = 'none';
+                document.getElementById('resultsData').style.display = 'block';
+                document.getElementById('exportBtn').style.display = 'inline-block';
+            } catch (error) {
+                console.error('生成报告失败:', error);
+                alert('生成报告失败：' + error.message);
+                document.getElementById('loadingIndicator').style.display = 'none';
+            }
         }
         
         function displayReportResults(data) {
@@ -1133,55 +1161,51 @@
             }
         }
         
-        function loadStudentAttendance(userId) {
-            google.script.run
-                .withSuccessHandler(function(attendanceData) {
-                    if (attendanceData) {
-                        document.getElementById('attendanceInfo').style.display = 'block';
-                        document.getElementById('attendanceDetails').innerHTML = `
-                            <div class="profile-item">
-                                <label>总出勤率:</label>
-                                <span>${attendanceData.totalAttendance}</span>
-                            </div>
-                            <div class="profile-item">
-                                <label>作业完成率:</label>
-                                <span>${attendanceData.totalHomework}</span>
-                            </div>
-                        `;
-                    }
-                })
-                .withFailureHandler(function(error) {
-                    console.error('加载出勤信息失败:', error);
-                })
-                .getStudentAttendanceStats(userId);
+        async function loadStudentAttendance(userId) {
+            try {
+                const attendanceData = await callAPI('getStudentAttendanceStats', { userId });
+                if (attendanceData) {
+                    document.getElementById('attendanceInfo').style.display = 'block';
+                    document.getElementById('attendanceDetails').innerHTML = `
+                        <div class="profile-item">
+                            <label>总出勤率:</label>
+                            <span>${attendanceData.totalAttendance}</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>作业完成率:</label>
+                            <span>${attendanceData.totalHomework}</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('加载出勤信息失败:', error);
+            }
         }
         
-        function loadStudentConsultations(userId) {
-            google.script.run
-                .withSuccessHandler(function(consultations) {
-                    if (consultations && consultations.length > 0) {
-                        document.getElementById('consultationInfo').style.display = 'block';
-                        const latest = consultations[0];
-                        document.getElementById('consultationDetails').innerHTML = `
-                            <div class="profile-item">
-                                <label>最近面谈:</label>
-                                <span>${latest.month}</span>
-                            </div>
-                            <div class="profile-item">
-                                <label>面谈次数:</label>
-                                <span>${latest.consultationCount}次</span>
-                            </div>
-                            <div class="profile-item">
-                                <label>当前问题:</label>
-                                <span>${latest.currentIssues || '无'}</span>
-                            </div>
-                        `;
-                    }
-                })
-                .withFailureHandler(function(error) {
-                    console.error('加载面谈记录失败:', error);
-                })
-                .getConsultationRecords(userId);
+        async function loadStudentConsultations(userId) {
+            try {
+                const consultations = await callAPI('getConsultationRecords', { userId });
+                if (consultations && consultations.length > 0) {
+                    document.getElementById('consultationInfo').style.display = 'block';
+                    const latest = consultations[0];
+                    document.getElementById('consultationDetails').innerHTML = `
+                        <div class="profile-item">
+                            <label>最近面谈:</label>
+                            <span>${latest.month}</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>面谈次数:</label>
+                            <span>${latest.consultationCount}次</span>
+                        </div>
+                        <div class="profile-item">
+                            <label>当前问题:</label>
+                            <span>${latest.currentIssues || '无'}</span>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('加载面谈记录失败:', error);
+            }
         }
         
         // ========== 通用功能 ==========
@@ -1248,6 +1272,4 @@
         }
     </script>
 </body>
-</html>钮 -->
-                        <div class="sidebar-section">
-                            <div
+</html>

@@ -516,45 +516,16 @@
 
         // ========== API调用函数 ==========
         async function callAPI(action, params = {}) {
-            try {
-                console.log('调用API:', action, params);
-                
-                const formData = new URLSearchParams();
-                formData.append('action', action);
-                formData.append('params', JSON.stringify(params));
-                
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                    },
-                    body: formData,
-                    mode: 'cors'
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const text = await response.text();
-                console.log('API响应文本:', text);
-                
-                let result;
-                try {
-                    result = JSON.parse(text);
-                } catch (parseError) {
-                    console.error('JSON解析失败:', parseError);
-                    throw new Error('服务器响应格式错误');
-                }
-                
-                console.log('API响应:', result);
-                return result;
-                
-            } catch (error) {
-                console.error('API调用失败:', error);
-                throw error;
-            }
-        }
+  const response = await fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action, params }),
+    mode: 'cors'
+  });
+  const text = await response.text();
+  return JSON.parse(text);
+}
+
 
         // ========== 界面切换函数 ==========
         function showRegisterForm() {

@@ -507,34 +507,53 @@
         const API_URL = 'https://script.google.com/macros/s/AKfycbzLBNy96O4xVoAXU0UQgNJhTP21FLW9HQ3t0O5HpF55wFXd_-vMmbMuNfMZK7WBQdk/exec';
         
         // API调用封装函数
-        async function callAPI(action, params = {}) {
-            try {
-                console.log('调用API:', action, params);
-                
-                const response = await fetch(API_URL, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        action: action,
-                        params: params
-                    })
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const result = await response.json();
-                console.log('API响应:', result);
-                return result;
-                
-            } catch (error) {
-                console.error('API调用失败:', error);
-                throw error;
-            }
+        // API调用封装函数 - 修复版本
+async function callAPI(action, params = {}) {
+    try {
+        console.log('调用API:', action, params);
+        
+        // 创建FormData对象，而不是JSON
+        const formData = new FormData();
+        formData.append('action', action);
+        formData.append('params', JSON.stringify(params));
+        
+        const response = await fetch(API_URL, {
+            method: 'POST',
+            body: formData,
+            mode: 'cors'
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
         }
+        
+        const text = await response.text();
+        console.log('API响应文本:', text);
+        
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch (parseError) {
+            console.error('JSON解析失败:', parseError, '原始响应:', text);
+            throw new Error('服务器响应格式错误');
+        }
+        
+        console.log('API响应:', result);
+        return result;
+        
+    } catch (error) {
+        console.error('API调用失败:', error);
+        
+        // 提供更友好的错误信息
+        if (error.name === 'TypeError' && error.message.includes('fetch')) {
+            throw new Error('网络连接失败，请检查网络或稍后重试');
+        } else if (error.message.includes('CORS')) {
+            throw new Error('跨域访问被拒绝，请检查服务器配置');
+        } else {
+            throw error;
+        }
+    }
+}
         
         // 全局变量
         let currentUser = null;
@@ -565,15 +584,36 @@
         }
         
         // 测试API连接
-        async function testAPIConnection() {
-            try {
-                const result = await callAPI('testConnection');
-                console.log('API连接测试结果:', result);
-            } catch (error) {
-                console.error('API连接测试失败:', error);
-            }
-        }
+      // 测试API连接 - 简化版本
+async function testAPIConnection() {
+    try {
+        console.log('开始测试API连接...');
         
+        // 直接测试GET请求
+        const response = await fetch(API_URL + '?test=1', {
+            method: 'GET',
+            mode: 'cors'
+        });
+        
+        console.log('GET请求响应状态:', response.status);
+        const text = await response.text();
+        console.log('GET请求响应内容:', text);
+        
+        // 然后测试POST请求
+        const result = await callAPI('testConnection');
+        console.log('API连接测试成功:', result);
+        
+    } catch (error) {
+        console.error('API连接测试失败:', error);
+        
+        // 显示用户友好的错误信息
+        const errorDiv = document.getElementById('loginError');
+        if (errorDiv) {
+            errorDiv.textContent = '服务器连接失败，请稍后重试';
+            errorDiv.style.color = 'red';
+        }
+    }
+}
         // ========== 登录/注册界面切换 ==========
         
         function showRegisterForm() {

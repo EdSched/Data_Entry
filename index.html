@@ -47,6 +47,14 @@
         }
         .login-box button:hover { background: #333; }
         .error-message { color: red; margin-top: 10px; font-size: 12px; }
+        .link-text { 
+            color: #007bff; 
+            cursor: pointer; 
+            text-decoration: underline;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+        .link-text:hover { color: #0056b3; }
         
         /* 主界面 */
         .main-app { display: none; }
@@ -237,10 +245,8 @@
             <div id="loginForm">
                 <input type="text" id="loginUserId" placeholder="用户ID" />
                 <input type="password" id="loginPassword" placeholder="密码" />
-                <button onclick="login()">登录</button>
-                <div style="margin-top: 15px; font-size: 12px;">
-                    还没有账号？<span onclick="showRegisterForm()" style="color: #007bff; cursor: pointer; text-decoration: underline;">立即注册</span>
-                </div>
+                <button type="button" id="loginBtn">登录</button>
+                <div class="link-text" id="showRegisterBtn">还没有账号？立即注册</div>
                 <div id="loginError" class="error-message"></div>
             </div>
             
@@ -273,11 +279,9 @@
                 <input type="password" id="registerPassword" placeholder="密码" />
                 <input type="password" id="registerConfirmPassword" placeholder="确认密码" />
                 
-                <button onclick="register()">注册</button>
+                <button type="button" id="registerBtn">注册</button>
                 
-                <div style="margin-top: 15px; font-size: 12px;">
-                    已有账号？<a href="#" onclick="showLoginForm()" style="color: #007bff;">返回登录</a>
-                </div>
+                <div class="link-text" id="showLoginBtn">已有账号？返回登录</div>
                 <div id="registerError" class="error-message"></div>
             </div>
         </div>
@@ -291,7 +295,7 @@
             <div class="user-info">
                 <span id="userGreeting">欢迎，</span>
                 <span id="userRole"></span>
-                <button class="logout-btn" onclick="logout()">退出</button>
+                <button class="logout-btn" id="logoutBtn">退出</button>
             </div>
         </div>
         
@@ -340,10 +344,10 @@
                         <!-- 功能按钮 -->
                         <div class="sidebar-section">
                             <div class="function-buttons">
-                                <button class="function-btn" onclick="refreshData()">刷新数据</button>
-                                <button class="function-btn" onclick="switchTab('analysis')" id="analysisBtn">数据分析</button>
-                                <button class="function-btn" onclick="switchTab('profile')">个人信息</button>
-                                <button class="function-btn" onclick="showHelp()">使用帮助</button>
+                                <button class="function-btn" id="refreshDataBtn">刷新数据</button>
+                                <button class="function-btn" id="analysisBtn">数据分析</button>
+                                <button class="function-btn" id="profileBtn">个人信息</button>
+                                <button class="function-btn" id="helpBtn">使用帮助</button>
                             </div>
                         </div>
                     </div>
@@ -363,13 +367,13 @@
                         <div class="filter-grid">
                             <div class="filter-item">
                                 <label for="departmentSelect">选择所属</label>
-                                <select id="departmentSelect" onchange="loadDepartmentStudents()">
+                                <select id="departmentSelect">
                                     <option value="">请选择所属部门</option>
                                 </select>
                             </div>
                             <div class="filter-item">
                                 <label for="majorSelect">选择专业</label>
-                                <select id="majorSelect" onchange="loadMajorStudents()">
+                                <select id="majorSelect">
                                     <option value="">请选择专业</option>
                                 </select>
                             </div>
@@ -380,8 +384,8 @@
                             <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
                                 <span style="font-size: 12px;">已选: <span id="selectedCount">0</span></span>
                                 <div>
-                                    <button class="btn" style="padding: 3px 6px; font-size: 10px;" onclick="selectAllStudents()">全选</button>
-                                    <button class="btn" style="padding: 3px 6px; font-size: 10px;" onclick="clearAllStudents()">清空</button>
+                                    <button class="btn" style="padding: 3px 6px; font-size: 10px;" id="selectAllBtn">全选</button>
+                                    <button class="btn" style="padding: 3px 6px; font-size: 10px;" id="clearAllBtn">清空</button>
                                 </div>
                             </div>
                             
@@ -428,9 +432,9 @@
                     </div>
                     
                     <div class="action-buttons">
-                        <button class="btn" onclick="resetFilters()">重置</button>
-                        <button class="btn btn-primary" onclick="generateReport()">生成报告</button>
-                        <button class="btn" onclick="exportReport()" style="display: none;" id="exportBtn">复制报告</button>
+                        <button class="btn" id="resetFiltersBtn">重置</button>
+                        <button class="btn btn-primary" id="generateReportBtn">生成报告</button>
+                        <button class="btn" style="display: none;" id="exportBtn">复制报告</button>
                     </div>
                 </div>
                 
@@ -503,252 +507,65 @@
     </div>
 
     <script>
-        // ========== API配置 ==========
-        const API_URL = 'https://script.google.com/macros/s/AKfycbyK-_5bScZ4A040FHKl5krYDZIx6F_YpIqjno19LlD74PjG_KU6lMq1MknXXRqAWp0/exec';
-
-      // API调用封装函数 - 兼容版本
-async function callAPI(action, params = {}) {
-    try {
-        console.log('调用API:', action, params);
-        
-        // 方法1: 尝试使用 URLSearchParams (更兼容)
-        const formData = new URLSearchParams();
-        formData.append('action', action);
-        formData.append('params', JSON.stringify(params));
-        
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: formData,
-            mode: 'cors'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const text = await response.text();
-        console.log('API响应文本:', text);
-        
-        let result;
-        try {
-            result = JSON.parse(text);
-        } catch (parseError) {
-            console.error('JSON解析失败:', parseError, '原始响应:', text);
-            // 如果解析失败，尝试查找JSON部分
-            const jsonMatch = text.match(/\{.*\}/s);
-            if (jsonMatch) {
-                try {
-                    result = JSON.parse(jsonMatch[0]);
-                } catch (secondParseError) {
-                    throw new Error('服务器响应格式错误');
-                }
-            } else {
-                throw new Error('服务器响应格式错误');
-            }
-        }
-        
-        console.log('API响应:', result);
-        return result;
-        
-    } catch (error) {
-        console.error('API调用失败:', error);
-        
-        // 如果第一种方法失败，尝试第二种方法
-        if (error.message.includes('HTTP error') || error.message.includes('fetch')) {
-            console.log('尝试备用API调用方法...');
-            return await callAPIBackup(action, params);
-        }
-        
-        // 提供更友好的错误信息
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('网络连接失败，请检查网络或稍后重试');
-        } else if (error.message.includes('CORS')) {
-            throw new Error('跨域访问被拒绝，请检查服务器配置');
-        } else {
-            throw error;
-        }
-    }
-}
-
-// 备用API调用方法
-async function callAPIBackup(action, params = {}) {
-    try {
-        console.log('使用备用方法调用API:', action, params);
-        
-        // 方法2: 使用 FormData
-        const formData = new FormData();
-        formData.append('action', action);
-        formData.append('params', JSON.stringify(params));
-        
-        const response = await fetch(API_URL, {
-            method: 'POST',
-            body: formData,
-            mode: 'cors'
-        });
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const text = await response.text();
-        console.log('备用方法API响应文本:', text);
-        
-        let result;
-        try {
-            result = JSON.parse(text);
-        } catch (parseError) {
-            console.error('备用方法JSON解析失败:', parseError);
-            throw new Error('服务器响应格式错误');
-        }
-        
-        console.log('备用方法API响应:', result);
-        return result;
-        
-    } catch (error) {
-        console.error('备用API调用也失败:', error);
-        throw error;
-    }
-}
-
-// 简化的测试API连接
-async function testAPIConnection() {
-    try {
-        console.log('开始测试API连接...');
-        
-        // 首先测试GET请求
-        console.log('测试GET请求...');
-        const getResponse = await fetch(API_URL + '?test=1', {
-            method: 'GET',
-            mode: 'cors'
-        });
-        
-        console.log('GET请求响应状态:', getResponse.status);
-        const getText = await getResponse.text();
-        console.log('GET请求响应内容:', getText);
-        
-        // 然后测试POST请求
-        console.log('测试POST请求...');
-        const result = await callAPI('testConnection');
-        console.log('API连接测试成功:', result);
-        
-        // 更新页面显示
-        const errorDiv = document.getElementById('loginError');
-        if (errorDiv) {
-            errorDiv.style.color = 'green';
-            errorDiv.textContent = 'API连接成功';
-        }
-        
-    } catch (error) {
-        console.error('API连接测试失败:', error);
-        
-        // 显示用户友好的错误信息
-        const errorDiv = document.getElementById('loginError');
-        if (errorDiv) {
-            errorDiv.textContent = `连接失败: ${error.message}`;
-            errorDiv.style.color = 'red';
-        }
-    }
-}
-
-// 测试函数 - 手动调用进行调试
-async function manualAPITest() {
-    console.log('开始手动API测试...');
-    
-    try {
-        // 测试连接
-        const testResult = await callAPI('testConnection');
-        console.log('连接测试结果:', testResult);
-        
-        alert('API测试成功！查看控制台了解详情。');
-    } catch (error) {
-        console.error('API测试失败:', error);
-        alert('API测试失败: ' + error.message);
-    }
-}
-        // 提供更友好的错误信息
-        if (error.name === 'TypeError' && error.message.includes('fetch')) {
-            throw new Error('网络连接失败，请检查网络或稍后重试');
-        } else if (error.message.includes('CORS')) {
-            throw new Error('跨域访问被拒绝，请检查服务器配置');
-        } else {
-            throw error;
-        }
-    }
-}
-        
-        // 全局变量
+        // ========== 全局变量 ==========
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwbJxeWvmpVAiASZeA4ytSlcf7lBn2nK4n-bWXUd84NtUmZ3t8wJI_FaK84ZOMTSw/exec';
         let currentUser = null;
         let allStudents = [];
         let selectedStudents = [];
         let mainCalendar, miniCalendar;
-        
-        // 页面初始化
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-        });
-        
-        function initializeApp() {
-            // 设置默认时间
-            const now = new Date();
-            document.getElementById('startMonth').value = now.toISOString().slice(0, 7);
-            document.getElementById('endMonth').value = now.toISOString().slice(0, 7);
-            
-            // 绑定导航事件
-            document.querySelectorAll('.nav-tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    switchTab(this.dataset.tab);
+
+        // ========== API调用函数 ==========
+        async function callAPI(action, params = {}) {
+            try {
+                console.log('调用API:', action, params);
+                
+                const formData = new URLSearchParams();
+                formData.append('action', action);
+                formData.append('params', JSON.stringify(params));
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData,
+                    mode: 'cors'
                 });
-            });
-            
-            // 测试API连接
-            testAPIConnection();
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const text = await response.text();
+                console.log('API响应文本:', text);
+                
+                let result;
+                try {
+                    result = JSON.parse(text);
+                } catch (parseError) {
+                    console.error('JSON解析失败:', parseError);
+                    throw new Error('服务器响应格式错误');
+                }
+                
+                console.log('API响应:', result);
+                return result;
+                
+            } catch (error) {
+                console.error('API调用失败:', error);
+                throw error;
+            }
         }
-        
-        // 测试API连接
-      // 测试API连接 - 简化版本
-async function testAPIConnection() {
-    try {
-        console.log('开始测试API连接...');
-        
-        // 直接测试GET请求
-        const response = await fetch(API_URL + '?test=1', {
-            method: 'GET',
-            mode: 'cors'
-        });
-        
-        console.log('GET请求响应状态:', response.status);
-        const text = await response.text();
-        console.log('GET请求响应内容:', text);
-        
-        // 然后测试POST请求
-        const result = await callAPI('testConnection');
-        console.log('API连接测试成功:', result);
-        
-    } catch (error) {
-        console.error('API连接测试失败:', error);
-        
-        // 显示用户友好的错误信息
-        const errorDiv = document.getElementById('loginError');
-        if (errorDiv) {
-            errorDiv.textContent = '服务器连接失败，请稍后重试';
-            errorDiv.style.color = 'red';
-        }
-    }
-}
-        // ========== 登录/注册界面切换 ==========
-        
+
+        // ========== 界面切换函数 ==========
         function showRegisterForm() {
-            console.log('切换到注册表单');
+            console.log('显示注册表单');
             document.getElementById('loginForm').style.display = 'none';
             document.getElementById('registerForm').style.display = 'block';
             clearMessages();
         }
         
         function showLoginForm() {
-            console.log('切换到登录表单');
+            console.log('显示登录表单');
             document.getElementById('registerForm').style.display = 'none';
             document.getElementById('loginForm').style.display = 'block';
             clearMessages();
@@ -758,11 +575,55 @@ async function testAPIConnection() {
             document.getElementById('loginError').textContent = '';
             document.getElementById('registerError').textContent = '';
         }
-        
-        // ========== 注册相关 ==========
-        
+
+        // ========== 登录函数 ==========
+        async function login() {
+            console.log('登录函数被调用');
+            try {
+                const userId = document.getElementById('loginUserId').value.trim();
+                const password = document.getElementById('loginPassword').value.trim();
+                const errorDiv = document.getElementById('loginError');
+                
+                console.log('用户输入:', userId, password ? '***' : '空密码');
+                
+                if (!userId || !password) {
+                    errorDiv.textContent = '请输入用户ID和密码';
+                    return;
+                }
+                
+                errorDiv.textContent = '正在登录...';
+                
+                const result = await callAPI('authenticateUser', { userId, password });
+                
+                if (result.success) {
+                    currentUser = result;
+                    
+                    // 隐藏登录界面，显示主应用
+                    document.getElementById('loginContainer').style.display = 'none';
+                    document.getElementById('mainApp').style.display = 'block';
+                    
+                    // 更新用户信息显示
+                    updateUserInterface();
+                    
+                    // 初始化日历
+                    initializeCalendars();
+                    
+                    // 加载用户数据
+                    loadUserData();
+                    
+                    console.log('登录成功');
+                } else {
+                    errorDiv.textContent = result.message || '登录失败';
+                }
+            } catch (error) {
+                console.error('登录失败:', error);
+                document.getElementById('loginError').textContent = '登录出错：' + error.message;
+            }
+        }
+
+        // ========== 注册函数 ==========
         async function register() {
-            console.log('开始注册');
+            console.log('注册函数被调用');
             
             const userData = {
                 userId: document.getElementById('registerUserId').value.trim(),
@@ -773,8 +634,6 @@ async function testAPIConnection() {
                 password: document.getElementById('registerPassword').value,
                 confirmPassword: document.getElementById('registerConfirmPassword').value
             };
-            
-            console.log('注册数据:', userData);
             
             const errorDiv = document.getElementById('registerError');
             
@@ -799,115 +658,50 @@ async function testAPIConnection() {
             
             try {
                 const result = await callAPI('registerUser', userData);
-                handleRegisterSuccess(result);
+                
+                if (result && result.success) {
+                    errorDiv.style.color = 'green';
+                    errorDiv.textContent = result.message;
+                    
+                    // 清空注册表单
+                    document.getElementById('registerUserId').value = '';
+                    document.getElementById('registerName').value = '';
+                    document.getElementById('registerDepartment').value = '';
+                    document.getElementById('registerMajor').value = '';
+                    document.getElementById('registerRole').value = '';
+                    document.getElementById('registerPassword').value = '';
+                    document.getElementById('registerConfirmPassword').value = '';
+                    
+                    // 3秒后自动切换到登录界面
+                    setTimeout(() => {
+                        showLoginForm();
+                        if (result.userId) {
+                            document.getElementById('loginUserId').value = result.userId;
+                        }
+                    }, 3000);
+                    
+                } else {
+                    errorDiv.style.color = 'red';
+                    errorDiv.textContent = (result && result.message) || '注册失败';
+                }
             } catch (error) {
-                handleRegisterFailure(error);
-            }
-        }
-        
-        function handleRegisterSuccess(result) {
-            console.log('注册结果:', result);
-            const errorDiv = document.getElementById('registerError');
-            
-            if (result && result.success) {
-                errorDiv.style.color = 'green';
-                errorDiv.textContent = result.message;
-                
-                // 清空注册表单
-                document.getElementById('registerUserId').value = '';
-                document.getElementById('registerName').value = '';
-                document.getElementById('registerDepartment').value = '';
-                document.getElementById('registerMajor').value = '';
-                document.getElementById('registerRole').value = '';
-                document.getElementById('registerPassword').value = '';
-                document.getElementById('registerConfirmPassword').value = '';
-                
-                // 3秒后自动切换到登录界面
-                setTimeout(() => {
-                    showLoginForm();
-                    if (result.userId) {
-                        document.getElementById('loginUserId').value = result.userId;
-                    }
-                }, 3000);
-                
-            } else {
+                console.error('注册失败:', error);
                 errorDiv.style.color = 'red';
-                errorDiv.textContent = (result && result.message) || '注册失败';
+                errorDiv.textContent = '注册出错：' + error.message;
             }
         }
-        
-        function handleRegisterFailure(error) {
-            console.error('注册失败:', error);
-            const errorDiv = document.getElementById('registerError');
-            errorDiv.style.color = 'red';
-            errorDiv.textContent = '注册出错：' + (error.message || error);
-        }
-        
-        // ========== 登录相关 ==========
-        
-        async function login() {
-            const userId = document.getElementById('loginUserId').value.trim();
-            const password = document.getElementById('loginPassword').value.trim();
-            const errorDiv = document.getElementById('loginError');
-            
-            if (!userId || !password) {
-                errorDiv.textContent = '请输入用户ID和密码';
-                return;
-            }
-            
-            errorDiv.textContent = '正在登录...';
-            
-            try {
-                const result = await callAPI('authenticateUser', { userId, password });
-                handleLoginSuccess(result);
-            } catch (error) {
-                handleLoginFailure(error);
-            }
-        }
-        
-        function handleLoginSuccess(result) {
-            const errorDiv = document.getElementById('loginError');
-            
-            if (result.success) {
-                currentUser = result;
-                
-                // 隐藏登录界面，显示主应用
-                document.getElementById('loginContainer').style.display = 'none';
-                document.getElementById('mainApp').style.display = 'block';
-                
-                // 更新用户信息显示
-                updateUserInterface();
-                
-                // 初始化日历
-                initializeCalendars();
-                
-                // 加载用户数据
-                loadUserData();
-                
-            } else {
-                errorDiv.textContent = result.message || '登录失败';
-            }
-        }
-        
-        function handleLoginFailure(error) {
-            document.getElementById('loginError').textContent = '登录出错：' + error.message;
-        }
-        
+
+        // ========== 退出登录 ==========
         function logout() {
             currentUser = null;
-            
-            // 显示登录界面，隐藏主应用
             document.getElementById('loginContainer').style.display = 'flex';
             document.getElementById('mainApp').style.display = 'none';
-            
-            // 清除登录表单
             document.getElementById('loginUserId').value = '';
             document.getElementById('loginPassword').value = '';
             document.getElementById('loginError').textContent = '';
         }
-        
+
         // ========== 用户界面更新 ==========
-        
         function updateUserInterface() {
             if (!currentUser) return;
             
@@ -929,9 +723,8 @@ async function testAPIConnection() {
                 analysisBtn.style.display = 'none';
             }
         }
-        
+
         // ========== 日历相关 ==========
-        
         function initializeCalendars() {
             const miniCalendarEl = document.getElementById('miniCalendar');
             miniCalendar = new FullCalendar.Calendar(miniCalendarEl, {
@@ -945,7 +738,9 @@ async function testAPIConnection() {
                 height: 'auto',
                 events: [],
                 dateClick: function(info) {
-                    mainCalendar.gotoDate(info.dateStr);
+                    if (mainCalendar) {
+                        mainCalendar.gotoDate(info.dateStr);
+                    }
                 }
             });
             
@@ -979,29 +774,34 @@ async function testAPIConnection() {
             // 加载日历事件
             loadCalendarEvents();
         }
-        
+
         async function loadCalendarEvents() {
             if (!currentUser) return;
             
             try {
                 const events = await callAPI('getStudentCourseEvents', { userId: currentUser.userId });
                 
-                mainCalendar.removeAllEvents();
-                miniCalendar.removeAllEvents();
+                if (mainCalendar) {
+                    mainCalendar.removeAllEvents();
+                    events.forEach(event => {
+                        mainCalendar.addEvent(event);
+                    });
+                }
                 
-                events.forEach(event => {
-                    mainCalendar.addEvent(event);
-                    miniCalendar.addEvent(event);
-                });
+                if (miniCalendar) {
+                    miniCalendar.removeAllEvents();
+                    events.forEach(event => {
+                        miniCalendar.addEvent(event);
+                    });
+                }
                 
                 updateTodayStats();
             } catch (error) {
                 console.error('加载日历事件失败:', error);
             }
         }
-        
+
         // ========== 数据加载 ==========
-        
         function loadUserData() {
             if (!currentUser) return;
             
@@ -1013,7 +813,7 @@ async function testAPIConnection() {
             // 加载用户个人信息
             loadUserProfile();
         }
-        
+
         function loadDepartmentsList() {
             // 这里可以调用后端获取部门列表，目前使用静态数据
             const departments = ['文科研究科', '理科研究科', '工学研究科', '医学研究科'];
@@ -1026,7 +826,7 @@ async function testAPIConnection() {
                 departmentSelect.appendChild(option);
             });
         }
-        
+
         async function loadUserProfile() {
             document.getElementById('profileLoading').style.display = 'block';
             document.getElementById('profileContent').style.display = 'none';
@@ -1041,9 +841,8 @@ async function testAPIConnection() {
                 document.getElementById('profileLoading').style.display = 'none';
             }
         }
-        
+
         // ========== 学生选择相关 ==========
-        
         async function loadDepartmentStudents() {
             const department = document.getElementById('departmentSelect').value;
             if (!department) return;
@@ -1068,7 +867,7 @@ async function testAPIConnection() {
                 console.error('加载学生失败:', error);
             }
         }
-        
+
         function loadMajorStudents() {
             const major = document.getElementById('majorSelect').value;
             if (!major) {
@@ -1078,7 +877,7 @@ async function testAPIConnection() {
                 displayStudentList(filteredStudents);
             }
         }
-        
+
         function displayStudentList(students) {
             const studentList = document.getElementById('studentList');
             studentList.innerHTML = '';
@@ -1101,7 +900,7 @@ async function testAPIConnection() {
             
             updateSelectedCount();
         }
-        
+
         function toggleStudent(studentId) {
             const student = allStudents.find(s => s.id === studentId);
             if (!student) return;
@@ -1119,7 +918,7 @@ async function testAPIConnection() {
                 return !major || s.major === major;
             }));
         }
-        
+
         function selectAllStudents() {
             const major = document.getElementById('majorSelect').value;
             const studentsToSelect = major ? 
@@ -1134,7 +933,7 @@ async function testAPIConnection() {
             updateSelectedCount();
             displayStudentList(studentsToSelect);
         }
-        
+
         function clearAllStudents() {
             selectedStudents = [];
             updateSelectedCount();
@@ -1143,13 +942,12 @@ async function testAPIConnection() {
                 return !major || s.major === major;
             }));
         }
-        
+
         function updateSelectedCount() {
             document.getElementById('selectedCount').textContent = selectedStudents.length;
         }
-        
+
         // ========== 数据分析相关 ==========
-        
         async function generateReport() {
             if (selectedStudents.length === 0) {
                 alert('请先选择学生');
@@ -1189,7 +987,7 @@ async function testAPIConnection() {
                 document.getElementById('loadingIndicator').style.display = 'none';
             }
         }
-        
+
         function displayReportResults(data) {
             document.getElementById('resultCount').textContent = `共 ${data.length} 条记录`;
             
@@ -1209,7 +1007,7 @@ async function testAPIConnection() {
             
             generateCopyableReport(data);
         }
-        
+
         function generateCopyableReport(data) {
             const copyArea = document.getElementById('copyArea');
             let report = '学生数据分析报告\n\n';
@@ -1228,7 +1026,7 @@ async function testAPIConnection() {
             report += '请基于以上数据分析学生表现。';
             copyArea.textContent = report;
         }
-        
+
         function exportReport() {
             const copyArea = document.getElementById('copyArea');
             const text = copyArea.textContent;
@@ -1246,7 +1044,7 @@ async function testAPIConnection() {
                 copyArea.select();
             });
         }
-        
+
         function resetFilters() {
             document.getElementById('departmentSelect').value = '';
             document.getElementById('majorSelect').value = '';
@@ -1265,9 +1063,8 @@ async function testAPIConnection() {
             document.getElementById('resultsPanel').style.display = 'none';
             document.getElementById('exportBtn').style.display = 'none';
         }
-        
+
         // ========== 用户信息显示 ==========
-        
         function displayUserProfile(userInfo) {
             const basicInfo = document.getElementById('basicInfo');
             basicInfo.innerHTML = `
@@ -1324,7 +1121,7 @@ async function testAPIConnection() {
                 loadStudentConsultations(userInfo.userId);
             }
         }
-        
+
         async function loadStudentAttendance(userId) {
             try {
                 const attendanceData = await callAPI('getStudentAttendanceStats', { userId });
@@ -1345,7 +1142,7 @@ async function testAPIConnection() {
                 console.error('加载出勤信息失败:', error);
             }
         }
-        
+
         async function loadStudentConsultations(userId) {
             try {
                 const consultations = await callAPI('getConsultationRecords', { userId });
@@ -1371,9 +1168,8 @@ async function testAPIConnection() {
                 console.error('加载面谈记录失败:', error);
             }
         }
-        
+
         // ========== 通用功能 ==========
-        
         function switchTab(tabName) {
             // 更新导航状态
             document.querySelectorAll('.nav-tab').forEach(tab => {
@@ -1400,14 +1196,14 @@ async function testAPIConnection() {
                 loadUserProfile();
             }
         }
-        
+
         function refreshData() {
             if (currentUser) {
                 loadCalendarEvents();
                 updateTodayStats();
             }
         }
-        
+
         function updateTodayStats() {
             // 这里可以更新今日统计数据
             // 目前使用静态数据
@@ -1416,7 +1212,7 @@ async function testAPIConnection() {
             document.getElementById('todayReminders').textContent = '3';
             document.getElementById('attendanceRate').textContent = '95%';
         }
-        
+
         function showEventDetails(event) {
             const details = [];
             details.push(`标题: ${event.title}`);
@@ -1430,9 +1226,91 @@ async function testAPIConnection() {
             
             alert(details.join('\n'));
         }
-        
+
         function showHelp() {
             alert('使用帮助：\n\n1. 登录后可查看个人课程安排\n2. 数据分析功能需要老师权限\n3. 点击日历事件可查看详情\n4. 个人信息页面显示详细资料');
+        }
+
+        // ========== 页面初始化 ==========
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，开始绑定事件...');
+            
+            try {
+                // 设置默认时间
+                const now = new Date();
+                document.getElementById('startMonth').value = now.toISOString().slice(0, 7);
+                document.getElementById('endMonth').value = now.toISOString().slice(0, 7);
+                
+                // 绑定按钮事件
+                document.getElementById('loginBtn').addEventListener('click', login);
+                document.getElementById('registerBtn').addEventListener('click', register);
+                document.getElementById('logoutBtn').addEventListener('click', logout);
+                
+                // 绑定链接事件
+                document.getElementById('showRegisterBtn').addEventListener('click', showRegisterForm);
+                document.getElementById('showLoginBtn').addEventListener('click', showLoginForm);
+                
+                // 绑定导航事件
+                document.querySelectorAll('.nav-tab').forEach(tab => {
+                    tab.addEventListener('click', function() {
+                        switchTab(this.dataset.tab);
+                    });
+                });
+                
+                // 绑定功能按钮事件
+                document.getElementById('refreshDataBtn').addEventListener('click', refreshData);
+                document.getElementById('analysisBtn').addEventListener('click', () => switchTab('analysis'));
+                document.getElementById('profileBtn').addEventListener('click', () => switchTab('profile'));
+                document.getElementById('helpBtn').addEventListener('click', showHelp);
+                
+                // 绑定数据分析相关事件
+                document.getElementById('departmentSelect').addEventListener('change', loadDepartmentStudents);
+                document.getElementById('majorSelect').addEventListener('change', loadMajorStudents);
+                document.getElementById('selectAllBtn').addEventListener('click', selectAllStudents);
+                document.getElementById('clearAllBtn').addEventListener('click', clearAllStudents);
+                document.getElementById('resetFiltersBtn').addEventListener('click', resetFilters);
+                document.getElementById('generateReportBtn').addEventListener('click', generateReport);
+                document.getElementById('exportBtn').addEventListener('click', exportReport);
+                
+                // 绑定回车键登录
+                document.getElementById('loginPassword').addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        login();
+                    }
+                });
+                
+                console.log('事件绑定成功');
+                
+                // 测试API连接
+                testAPIConnection();
+                
+            } catch (error) {
+                console.error('初始化失败:', error);
+                alert('页面初始化失败: ' + error.message);
+            }
+        });
+
+        // ========== API连接测试 ==========
+        async function testAPIConnection() {
+            try {
+                console.log('开始测试API连接...');
+                const result = await callAPI('testConnection');
+                console.log('API连接测试成功:', result);
+                
+                // 更新页面显示
+                const errorDiv = document.getElementById('loginError');
+                if (errorDiv) {
+                    errorDiv.style.color = 'green';
+                    errorDiv.textContent = 'API连接成功';
+                }
+            } catch (error) {
+                console.error('API连接测试失败:', error);
+                const errorDiv = document.getElementById('loginError');
+                if (errorDiv) {
+                    errorDiv.textContent = '服务器连接失败，请稍后重试';
+                    errorDiv.style.color = 'red';
+                }
+            }
         }
     </script>
 </body>

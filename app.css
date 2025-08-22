@@ -1,0 +1,124 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: Arial, sans-serif; background: #fff; color: #000; }
+
+/* 登录界面 */
+.login-container { display: flex; justify-content: center; align-items: center; height: 100vh; background: #f5f5f5; }
+.login-box { background: white; padding: 40px; border: 1px solid #ddd; border-radius: 8px; width: 300px; text-align: center; }
+.login-box h1 { margin-bottom: 30px; font-size: 24px; }
+.login-box input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; }
+.login-box button { width: 100%; padding: 10px; background: #000; color: white; border: none; border-radius: 4px; font-size: 14px; cursor: pointer; margin-top: 10px; }
+.login-box button:hover { background: #333; }
+.error-message { color: red; margin-top: 10px; font-size: 12px; }
+.link-text { color: #007bff; cursor: pointer; text-decoration: underline; font-size: 12px; margin-top: 15px; }
+.link-text:hover { color: #0056b3; }
+
+/* 主界面 */
+.main-app { display: none; }
+
+/* 顶部导航 */
+.header { background: #f5f5f5; padding: 15px 20px; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; align-items: center; }
+.header h1 { font-size: 20px; }
+.user-info { display: flex; align-items: center; gap: 15px; }
+.user-info span { font-size: 14px; }
+.logout-btn { padding: 5px 10px; border: 1px solid #999; background: #fff; cursor: pointer; border-radius: 4px; font-size: 12px; }
+
+/* 标签导航 */
+.nav-tabs { display: flex; border-bottom: 1px solid #ddd; background: #f9f9f9; }
+.nav-tab { padding: 10px 20px; border: none; background: none; cursor: pointer; border-bottom: 2px solid transparent; }
+.nav-tab.active { border-bottom-color: #000; background: #fff; }
+
+/* 主要布局 */
+.main-container { display: flex; height: calc(100vh - 120px); }
+.content-panel { flex: 1; padding: 20px; display: none; overflow-y: auto; display: flex; flex-direction: column; overflow: hidden; }
+.calendar-main { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#mainCalendar { flex: 1; min-height: 0; }
+.content-panel.active { display: block; }
+
+/* 日历布局 */
+.calendar-layout { display: flex; gap: 20px; height: 100%; }
+.calendar-sidebar { width: 250px; border: 1px solid #ddd; padding: 15px; }
+.calendar-main { flex: 1; border: 1px solid #ddd; padding: 15px; }
+
+.sidebar-section { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+.sidebar-section:last-child { border-bottom: none; }
+.sidebar-section h3 { margin-bottom: 10px; font-size: 14px; }
+
+/* 统计网格 */
+.stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.stat-item { text-align: center; padding: 8px; border: 1px solid #ddd; }
+.stat-number { font-size: 16px; font-weight: bold; }
+.stat-label { font-size: 11px; margin-top: 2px; }
+
+/* 功能按钮 */
+.function-buttons { display: flex; flex-direction: column; gap: 8px; }
+.function-btn { padding: 8px 12px; border: 1px solid #999; background: #f5f5f5; cursor: pointer; text-align: center; font-size: 12px; }
+.function-btn:hover { background: #eee; }
+
+/* 数据分析页面 */
+.filter-panel { border: 1px solid #ddd; padding: 20px; margin-bottom: 20px; }
+.filter-section { margin-bottom: 15px; padding-bottom: 15px; border-bottom: 1px solid #eee; }
+.filter-section:last-child { border-bottom: none; }
+.filter-section h3 { margin-bottom: 10px; font-size: 14px; }
+
+.filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; }
+.filter-item { display: flex; flex-direction: column; }
+.filter-item label { margin-bottom: 3px; font-size: 12px; }
+.filter-item select, .filter-item input { padding: 5px; border: 1px solid #999; font-size: 12px; }
+
+/* 学生列表 */
+.student-list { max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; }
+.student-item { display: flex; align-items: center; gap: 8px; padding: 5px; border-bottom: 1px solid #eee; }
+.student-item:last-child { border-bottom: none; }
+.student-item input { margin: 0; }
+.student-item label { margin: 0; cursor: pointer; font-size: 12px; flex: 1; }
+.student-item.selected { background: #f0f0f0; }
+
+/* 按钮样式 */
+.btn { padding: 8px 16px; border: 1px solid #999; background: #f5f5f5; cursor: pointer; font-size: 12px; }
+.btn:hover { background: #eee; }
+.btn-primary { background: #000; color: #fff; }
+.btn-primary:hover { background: #333; }
+
+.action-buttons { display: flex; gap: 10px; justify-content: center; margin-top: 15px; }
+
+/* 结果展示 */
+.results-panel { border: 1px solid #ddd; margin-top: 20px; display: none; }
+.results-header { background: #f5f5f5; padding: 10px; border-bottom: 1px solid #ddd; }
+.results-content { padding: 15px; }
+
+.data-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+.data-table th, .data-table td { padding: 6px; border: 1px solid #ddd; text-align: left; font-size: 11px; }
+.data-table th { background: #f5f5f5; font-weight: bold; }
+
+.copy-area { background: #f9f9f9; border: 1px solid #ddd; padding: 10px; font-family: monospace; font-size: 10px; max-height: 200px; overflow-y: auto; margin-top: 10px; }
+
+/* 用户详情页面 */
+.user-profile { max-width: 600px; }
+.profile-section { margin-bottom: 20px; padding: 15px; border: 1px solid #ddd; }
+.profile-section h3 { margin-bottom: 10px; font-size: 14px; }
+.profile-item { display: flex; margin-bottom: 8px; }
+.profile-item label { min-width: 120px; font-weight: bold; font-size: 12px; }
+.profile-item span { font-size: 12px; }
+
+/* 加载动画 */
+.loading { text-align: center; padding: 20px; }
+.spinner { border: 2px solid #f3f3f3; border-top: 2px solid #999; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; margin: 0 auto 10px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* 小日历样式 */
+.mini-calendar .fc { font-size: 10px; }
+.mini-calendar .fc-button { padding: 2px 4px; font-size: 9px; }
+.mini-calendar .fc-daygrid-day { height: 20px; }
+.mini-calendar .fc-daygrid-day-number { font-size: 9px; }
+.mini-calendar .fc-event { font-size: 6px; height: 2px; }
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .calendar-layout { flex-direction: column; }
+  .calendar-sidebar { width: 100%; }
+  .filter-grid { grid-template-columns: 1fr; }
+}
+
+/* 隐藏FullCalendar默认工具栏 */
+.fc-toolbar { display: none; }
+.fc-toolbar.show { display: flex; }

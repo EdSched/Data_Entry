@@ -217,3 +217,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   }catch{}
 });
+const hamburger = document.getElementById('hamburger');
+const sidebar = document.getElementById('sidebar');
+const backdrop = document.getElementById('backdrop');
+
+hamburger.addEventListener('click', () => {
+  sidebar.classList.add('open');
+  backdrop.classList.add('show');
+});
+
+backdrop.addEventListener('click', () => {
+  sidebar.classList.remove('open');
+  backdrop.classList.remove('show');
+});
+

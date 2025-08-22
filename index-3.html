@@ -2,85 +2,94 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>师生管理平台 · 简化主页</title>
-  <!-- FullCalendar（必须） -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>师生管理平台</title>
+  <!-- FullCalendar -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
-  <!-- 你的样式和脚本 -->
+  <!-- 样式 -->
   <link rel="stylesheet" href="app.css"/>
 </head>
 <body>
-  <!-- 登录界面 -->
-  <div id="loginContainer" class="login-container" style="display:flex;">
-    <div class="login-box">
-      <h1>师生管理平台</h1>
-
-      <!-- 登录表单（只保留“用户ID”） -->
-      <div id="loginForm">
-        <input type="text" id="loginUsername" placeholder="用户ID（由老师分配）" />
-        <button type="button" id="loginBtn">登录</button>
-        <div class="link-text" id="showRegisterBtn">还没有账号？登记信息</div>
-
-        <!-- 这里会显示 API 自检 & 登录提示 -->
-        <div id="loginError" class="error-message" style="margin-top:8px;"></div>
-      </div>
-
-      <!-- 注册表单（保持可用，但默认隐藏） -->
-      <div id="registerForm" style="display:none; margin-top:16px;">
-        <input type="text" id="registerName" placeholder="姓名" />
-        <input type="email" id="registerEmail" placeholder="邮箱（用于区分同名，不对外公开）" />
-        <select id="registerDepartment">
-          <option value="">选择所属部门</option>
-          <option value="文科大学院">文科大学院</option>
-          <option value="理科大学院">理科大学院</option>
-          <option value="其他">其他</option>
-        </select>
-        <input type="text" id="registerMajor" placeholder="专业" />
-        <select id="registerRole">
-          <option value="">选择身份</option>
-          <option value="学生">学生</option>
-          <option value="老师">老师</option>
-        </select>
-        <button type="button" id="registerBtn">登记</button>
-        <div class="link-text" id="showLoginBtn">已有账号？返回登录</div>
-        <div id="registerError" class="error-message" style="margin-top:8px;"></div>
-      </div>
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <button id="hamburger" aria-label="打开菜单">☰</button>
+    <div class="brand">师生管理平台</div>
+    <div class="spacer"></div>
+    <div id="userBadge" class="user-badge" style="display:none;">
+      <span id="greeting"></span>
+      <button id="logoutBtn" class="btn btn-outline">退出</button>
     </div>
-  </div>
+  </header>
 
-  <!-- 主应用（登录后只显示一个日历 + 子页面入口） -->
-  <div id="mainApp" class="main-app" style="display:none;">
-    <div class="header">
-      <h1>师生管理平台</h1>
-      <div class="user-info">
-        <span id="userGreeting">欢迎，</span>
-        <span id="userRole"></span>
-        <button class="logout-btn" id="logoutBtn">退出</button>
-      </div>
+  <!-- 左侧抽屉导航 -->
+  <aside id="sidebar" class="sidebar">
+    <div class="sidebar-header">导航</div>
+    <nav class="nav">
+      <a class="nav-link active" href="index.html">日历</a>
+      <a class="nav-link" id="linkArrange" href="arrange.html">课程安排（子页）</a>
+      <a class="nav-link" href="analysis.html">数据分析（子页）</a>
+      <a class="nav-link" href="myschedule.html">我的日程（子页）</a>
+      <a class="nav-link" href="profile.html">个人信息（子页）</a>
+    </nav>
+    <div class="sidebar-footer">
+      <button id="refreshBtn" class="btn btn-outline btn-full">刷新日历</button>
+      <div id="apiPing" class="muted small">API: —</div>
     </div>
+  </aside>
+  <div id="backdrop" class="backdrop"></div>
 
-    <!-- 只有一个大日历容器；手机=当天，电脑=周（逻辑在 app.js 内） -->
-    <div class="main-container" style="padding:16px;">
+  <!-- 登录容器（仅用户ID） -->
+  <main id="loginContainer" class="center-wrap">
+    <section class="card card-narrow">
+      <h1 class="title">登录</h1>
+      <div class="form-row">
+        <label for="loginUsername" class="label">用户ID</label>
+        <input id="loginUsername" class="input" placeholder="例如：S001 / T001 / A001" />
+      </div>
+      <button id="loginBtn" class="btn btn-solid btn-full">登录</button>
+      <div id="loginError" class="error"></div>
+
+      <details class="mt-16">
+        <summary class="small">没有账号？登记信息</summary>
+        <div class="grid2 mt-8">
+          <input id="registerName" class="input" placeholder="姓名"/>
+          <input id="registerEmail" class="input" placeholder="邮箱"/>
+          <select id="registerDepartment" class="input">
+            <option value="">所属</option><option>文科大学院</option><option>理科大学院</option><option>其他</option>
+          </select>
+          <input id="registerMajor" class="input" placeholder="专业"/>
+          <select id="registerRole" class="input">
+            <option value="">身份</option><option>学生</option><option>老师</option>
+          </select>
+        </div>
+        <button id="registerBtn" class="btn btn-outline mt-8">提交登记</button>
+        <div id="registerError" class="error"></div>
+      </details>
+      <div id="apiStatusTip" class="muted small mt-12">正在检测 API…</div>
+    </section>
+  </main>
+
+  <!-- 主页面：只有一个主日历 -->
+  <main id="appContainer" class="app" style="display:none;">
+    <section class="card">
+      <div class="calendar-head">
+        <div class="calendar-title" id="calendarTitle">—</div>
+        <div class="calendar-ctrl">
+          <button id="prevBtn" class="btn btn-outline">‹</button>
+          <button id="todayBtn" class="btn btn-outline">今天</button>
+          <button id="nextBtn" class="btn btn-outline">›</button>
+          <div class="seg">
+            <button id="dayBtn" class="seg-btn active">日</button>
+            <button id="weekBtn" class="seg-btn">周</button>
+            <button id="monthBtn" class="seg-btn">月</button>
+          </div>
+        </div>
+      </div>
       <div id="mainCalendar"></div>
+    </section>
+  </main>
 
-      <!-- 子页面入口（简洁一列按钮；你可把链接目标改成真实页面） -->
-      <div style="margin-top:16px; display:flex; gap:8px; flex-wrap:wrap;">
-        <button class="function-btn" id="refreshDataBtn">刷新日历</button>
-        <button class="function-btn" id="analysisBtn">数据分析（子页面）</button>
-        <button class="function-btn" id="profileBtn">个人信息（子页面）</button>
-        <!-- 可选：老师/管理员才显示的登记面板入口（逻辑在 app.js 里判断权限；此处仅占位，不需要具体表单） -->
-        <div id="publishPanel" style="display:none;"></div>
-      </div>
-
-      <!-- 个人信息区域（保持 ID，供 app.js 懒加载使用；默认不占空间） -->
-      <div id="profileLoading" style="display:none;"></div>
-      <div id="profileContent" style="display:none;">
-        <div id="basicInfo"></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- 你的脚本（确保文件存在） -->
-  <script src="appV2.js" defer></script>
+  <!-- 逻辑 -->
+  <script src="app.js" defer></script>
 </body>
 </html>

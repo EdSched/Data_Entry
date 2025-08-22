@@ -138,16 +138,16 @@
     <div class="login-box">
       <h1>师生管理平台</h1>
 
-      <!-- 登录表单（只保留“用户名”） -->
+      <!-- 登录表单（只保留“用户ID”） -->
       <div id="loginForm">
-        <!-- 改：只需要用户名 -->
-        <input type="text" id="loginUsername" placeholder="用户名（由老师分配）" />
+        <!-- 改：只需要用户ID -->
+        <input type="text" id="loginUsername" placeholder="用户ID（由老师分配）" />
         <button type="button" id="loginBtn">登录</button>
         <div class="link-text" id="showRegisterBtn">还没有账号？登记信息</div>
         <div id="loginError" class="error-message"></div>
       </div>
 
-      <!-- 注册表单（姓名+邮箱+所属/专业/身份；不填用户名、不设密码） -->
+      <!-- 注册表单（姓名+邮箱+所属/专业/身份；不填用户ID、不设密码） -->
       <div id="registerForm" style="display: none;">
         <!-- 移除：用户ID、密码、确认密码 -->
         <input type="text" id="registerName" placeholder="姓名" />
@@ -496,13 +496,13 @@
       document.getElementById('registerError').textContent = '';
     }
 
-    // ========== 登录（用户名唯一通道） ==========
+    // ========== 登录（用户ID唯一通道） ==========
     async function login() {
       const username = (document.getElementById('loginUsername').value || '').trim();
       const errorDiv = document.getElementById('loginError');
 
       if (!username) {
-        errorDiv.textContent = '请输入用户名';
+        errorDiv.textContent = '请输入用户ID';
         return;
       }
       errorDiv.textContent = '正在登录...';
@@ -513,7 +513,7 @@
       if (result && result.success) {
         // 后端返回的 user 里建议包含：username / name / department / major / role / vip / email
         currentUser = result.user || {};
-        // 兼容老代码：把 userId 当作“用户名”传下去
+        // 兼容老代码：把 userId 当作“用户ID”传下去
         currentUser.userId = currentUser.username || username;
 
         // 进入主应用
@@ -524,7 +524,7 @@
         initializeCalendars();
         loadUserData();
       } else {
-        errorDiv.textContent = (result && result.message) || '登录失败：用户名不存在';
+        errorDiv.textContent = (result && result.message) || '登录失败：用户ID不存在';
       }
     }
 
@@ -544,12 +544,12 @@
 
       errorDiv.textContent = '正在登记...';
 
-      // 改：调用后台的 registerByProfile（不带用户名、不带密码）
+      // 改：调用后台的 registerByProfile（不带用户ID、不带密码）
       const result = await callAPI('registerByProfile', { name, email, department, major, role });
 
       if (result && result.success) {
         errorDiv.style.color = 'green';
-        errorDiv.textContent = '登记成功！请联系老师获取您的“用户名”，之后使用用户名登录。';
+        errorDiv.textContent = '登记成功！请联系老师获取您的“用户ID”，之后使用用户ID登录。';
 
         // 清空注册表单
         document.getElementById('registerName').value = '';
@@ -763,7 +763,7 @@ document.getElementById('pubSubmitBtn').addEventListener('click', async function
       document.getElementById('profileLoading').style.display = 'block';
       document.getElementById('profileContent').style.display = 'none';
       try {
-        // 同样把“用户名”作为 userId 传给后端
+        // 同样把“用户ID”作为 userId 传给后端
         const userInfo = await callAPI('getCurrentUserInfo', { userId: currentUser.userId });
         displayUserProfile(userInfo || currentUser || {});
         document.getElementById('profileLoading').style.display = 'none';
@@ -950,7 +950,7 @@ document.getElementById('pubSubmitBtn').addEventListener('click', async function
       const info = userInfo || {};
       const basicInfo = document.getElementById('basicInfo');
       basicInfo.innerHTML = `
-        <div class="profile-item"><label>用户名:</label><span>${info.username || info.userId || ''}</span></div>
+        <div class="profile-item"><label>用户ID:</label><span>${info.username || info.userId || ''}</span></div>
         <div class="profile-item"><label>姓名:</label><span>${info.name || ''}</span></div>
         <div class="profile-item"><label>所属:</label><span>${info.department || ''}</span></div>
         <div class="profile-item"><label>专业:</label><span>${info.major || ''}</span></div>
@@ -1059,7 +1059,7 @@ document.getElementById('pubSubmitBtn').addEventListener('click', async function
           alert('使用帮助：\n\n1. 登录后可查看个人课程安排\n2. 数据分析功能需要老师权限\n3. 点击日历事件可查看详情\n4. 个人信息页面显示详细资料');
         });
 
-        // 回车键直接登录（绑定到“用户名”输入框）
+        // 回车键直接登录（绑定到“用户ID”输入框）
         document.getElementById('loginUsername').addEventListener('keypress', function(e) {
           if (e.key === 'Enter') login();
         });

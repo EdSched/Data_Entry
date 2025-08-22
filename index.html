@@ -37,7 +37,9 @@
 
     /* 主要布局 */
     .main-container { display: flex; height: calc(100vh - 120px); }
-    .content-panel { flex: 1; padding: 20px; display: none; overflow-y: auto; }
+    .content-panel { flex: 1; padding: 20px; display: none; overflow-y: auto; display: flex;flex-direction: column;overflow: hidden; /* 避免内层膨胀把父层撑破 */}
+    .calendar-main {flex: 1;min-height: 0;display: flex;flex-direction: column;}
+    #mainCalendar {flex: 1;min-height: 0;}
     .content-panel.active { display: block; }
 
     /* 日历布局 */
@@ -674,6 +676,13 @@ document.getElementById('pubSubmitBtn').addEventListener('click', async function
         buttonText: { today: '今天', week: '周', day: '日' },
         height: 'auto',
         events: [],
+        allDaySlot: false,
+        slotMinTime: '09:00:00',
+        slotMaxTime: '21:00:00',
+        slotDuration: '00:30:00',
+        slotLabelInterval: '01:00:00',
+        scrollTime: '09:00:00',
+        expandRows: true
         eventClick: async function(info) {
   const ev = info.event;
   const ext = ev.extendedProps || {};

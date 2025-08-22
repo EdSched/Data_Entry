@@ -221,4 +221,70 @@ html, body { overflow-x: hidden; }
   word-break: keep-all;        /* 中文/数字不随便断词 */
   white-space: nowrap;
 }
+/* === 日历优先：整块置顶全宽，交互区下置 === */
+#calendarPanel .calendar-layout {
+  display: flex;
+  flex-direction: column;         /* 先让日历在上、交互在下 */
+  gap: 16px;
+  height: auto;                   /* 避免被 calc 限死高度 */
+}
+
+/* 主日历区域高度：桌面更高，手机适中 */
+#calendarPanel .calendar-main {
+  order: 1;
+  border: 1px solid #ddd;
+  padding: 12px;
+}
+#mainCalendar { height: 68vh; min-height: 420px; }
+
+/* 交互区（原来的 sidebar）改成卡片区，放在日历下面 */
+#calendarPanel .calendar-sidebar {
+  order: 2;
+  width: 100%;
+  border: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr;     /* 默认一列，向下滚动 */
+  gap: 12px;
+}
+
+/* 卡片风格统一 */
+#calendarPanel .calendar-sidebar .sidebar-section {
+  border: 1px solid #ddd;
+  background: #fff;
+  padding: 12px;
+}
+
+/* ——老师发布面板：强制显示并排在最前—— */
+#publishPanel { 
+  display: block !important;      /* 临时兜底，确保出现 */
+  order: 1;                       /* 排在交互区第一位 */
+}
+
+/* 小日历、今日概览排在其后 */
+#miniCalendar { max-width: 100%; }
+#calendarPanel .stats-grid { grid-template-columns: repeat(4, 1fr); }
+
+/* 顶部 FullCalendar 工具条居中显示（周视图切换那排按钮） */
+#mainCalendar .fc-toolbar { 
+  display: flex !important; 
+  justify-content: center; 
+}
+
+/* 桌面端：交互区改三列栅格，观感更紧凑 */
+@media (min-width: 1024px) {
+  #calendarPanel .calendar-sidebar {
+    grid-template-columns: repeat(3, minmax(260px, 1fr));
+  }
+  #mainCalendar { height: 72vh; }
+}
+
+/* 手机端：标题别占太高、缩小字号；一屏尽量多露出时间格 */
+@media (max-width: 768px) {
+  #mainCalendar { height: 58vh; min-height: 360px; }
+  .header h1 { font-size: 18px; }
+  .nav-tabs .nav-tab { padding: 8px 12px; }
+  .mini-calendar .fc { font-size: 12px; }
+}
+
 

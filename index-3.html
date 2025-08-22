@@ -5,51 +5,64 @@
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>师生管理平台 · 主页面</title>
 
-<!-- ① 引入你现有的全局样式（不用改你文件，替换为你的路径即可） -->
+<!-- 你现有的全站样式（改成你的真实路径；如果没有就删掉这一行也行） -->
 <link rel="stylesheet" href="app.css">
 
 <!-- FullCalendar -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
 
 <style>
-  /* 仅本页的极少量样式，尽量不和你现有 CSS 冲突 */
+  /* 页面仅用到的少量样式，尽量不和 app.css 冲突 */
+  :root{ --ok:#16a34a; --warn:#f59e0b; --err:#dc2626; --line:#e5e7eb; }
   body{margin:0;background:#f7f7f8;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",Arial,sans-serif;color:#111}
 
-  /* 登录页 */
-  #loginView{display:flex;min-height:100dvh;align-items:center;justify-content:center;padding:24px}
-  .login-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;max-width:360px;width:100%}
+  /* 顶部连接状态条 */
+  .statusbar{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
+  .sb-dot{width:10px;height:10px;border-radius:50%}
+  .sb-online{background:var(--ok)} .sb-checking{background:var(--warn)} .sb-offline{background:var(--err)}
+  .sb-msg{flex:1} .sb-btn{border:1px solid #111;border-radius:8px;background:#111;color:#fff;padding:6px 10px;cursor:pointer}
+  .sb-btn[disabled]{opacity:.5;cursor:not-allowed}
+
+  /* 登录视图 */
+  #loginView{display:flex;min-height:calc(100dvh - 48px);align-items:center;justify-content:center;padding:24px}
+  .login-card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:20px;max-width:380px;width:100%}
   .login-card h1{font-size:18px;margin:0 0 12px}
   .login-card input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px}
   .login-card button{width:100%;margin-top:10px;padding:12px;border-radius:8px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
-  .login-msg{margin-top:8px;font-size:12px;color:#d32f2f;min-height:1.2em}
+  .login-msg{margin-top:8px;font-size:12px;min-height:1.2em;color:#6b7280}
 
   /* 主页面 */
   #homeView{display:none}
-  header.home{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e7eb}
+  header.home{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid var(--line)}
   .wrap{max-width:1080px;margin:0 auto;padding:16px}
-  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px}
   #mainCalendar{min-height:60vh}
   nav.menu{display:grid;gap:10px;margin-top:16px}
   nav.menu a{display:block;text-decoration:none;border:1px solid #111;border-radius:10px;padding:12px;text-align:center;color:#111;background:#fff}
   nav.menu a:hover{background:#111;color:#fff}
-  @media (max-width: 768px){
-    #mainCalendar{min-height:58vh}
-  }
+  @media (max-width: 768px){ #mainCalendar{min-height:58vh} }
 </style>
 </head>
 <body>
 
-<!-- 登录视图（只保留“用户ID”登录） -->
+<!-- 顶部：API 连接状态 -->
+<div class="statusbar" id="statusbar">
+  <span id="sbDot" class="sb-dot sb-checking"></span>
+  <div class="sb-msg" id="sbMsg">正在检测服务器连接…</div>
+  <button class="sb-btn" id="sbRetry" style="display:none;">重试</button>
+</div>
+
+<!-- 登录视图：仅“用户ID”登录 -->
 <section id="loginView">
   <div class="login-card">
     <h1>师生管理平台</h1>
-    <input id="loginUsername" placeholder="用户ID（由老师分配）" />
+    <input id="loginUsername" placeholder="用户ID（由老师分配）" autocomplete="username" />
     <button id="loginBtn">登录</button>
     <div id="loginMsg" class="login-msg"></div>
   </div>
 </section>
 
-<!-- 主页面视图：上方日历 + 下方子页面按钮 -->
+<!-- 主页面：上方日历（手机=当天/电脑=周） + 下方子页面按钮 -->
 <section id="homeView">
   <header class="home">
     <strong>师生管理平台</strong>
@@ -57,9 +70,7 @@
   </header>
 
   <div class="wrap">
-    <div class="card">
-      <div id="mainCalendar"></div>
-    </div>
+    <div class="card"><div id="mainCalendar"></div></div>
 
     <nav class="menu" aria-label="功能菜单">
       <a href="calendar.html">周日历（完整页）</a>
@@ -71,24 +82,24 @@
   </div>
 </section>
 
-<!-- ② 引入你现有的通用脚本（不用改你文件，替换路径即可） -->
+<!-- 你现有的全站脚本（改成你的真实路径；如果没有就删掉这一行也行） -->
 <script src="app.js"></script>
 
 <script>
-  // ===== 维持与你现有接口一致 =====
+  // ===== API 基础 =====
   const API_URL = 'https://script.google.com/macros/s/AKfycbwJYf3jeNAF37vgVXTiWnEgYS5dlh9l9UChkiEhThh4OwV3TVEvP3ZtIS8bpm5G3HLf/exec';
   let currentUser = null;
-  let calendar;
+  let calendar = null;
 
   async function callAPI(action, params = {}) {
     try {
-      const formData = new URLSearchParams();
-      formData.append('action', action);
-      formData.append('params', JSON.stringify(params));
+      const form = new URLSearchParams();
+      form.append('action', action);
+      form.append('params', JSON.stringify(params));
       const res = await fetch(API_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: formData,
+        body: form,
         mode: 'cors'
       });
       const text = await res.text();
@@ -101,86 +112,113 @@
     }
   }
 
-  // ===== 登录 =====
-  async function login() {
-    const u = (document.getElementById('loginUsername').value || '').trim();
-    const msg = document.getElementById('loginMsg');
-    if (!u) { msg.textContent = '请输入用户ID'; return; }
-    msg.style.color = '#6b7280'; msg.textContent = '正在登录…';
+  // ===== 顶部状态条：连接检测 =====
+  const sbDot = document.getElementById('sbDot');
+  const sbMsg = document.getElementById('sbMsg');
+  const sbRetry = document.getElementById('sbRetry');
 
-    const res = await callAPI('loginByUsername', { username: u });
-    if (res && res.success) {
-      currentUser = res.user || { username: u, userId: u };
-      currentUser.userId = currentUser.username || u;
-      // 切到主页
-      document.getElementById('loginView').style.display = 'none';
-      document.getElementById('homeView').style.display = 'block';
-      document.getElementById('who').textContent = `${currentUser.name || currentUser.userId}（${currentUser.role || ''}）`;
-      // 初始化日历
-      initCalendar();
-    } else {
-      msg.style.color = '#d32f2f';
-      msg.textContent = (res && res.message) ? String(res.message) : '登录失败';
+  function setSB(state, msg, showRetry=false){
+    sbDot.className = 'sb-dot ' + (state==='online' ? 'sb-online' : state==='offline' ? 'sb-offline' : 'sb-checking');
+    sbMsg.textContent = msg;
+    sbRetry.style.display = showRetry ? 'inline-block' : 'none';
+    sbRetry.disabled = (state==='checking');
+  }
+
+  async function testConnection(){
+    try{
+      setSB('checking','正在检测服务器连接…');
+      const t0 = Date.now();
+      const r = await callAPI('testConnection');
+      if (r && r.success){
+        const ms = Date.now() - t0;
+        setSB('online', `在线 · ${r.spreadsheetName || '表格'} · 响应 ${ms}ms · 用户表 ${r.userCount ?? '-'} 条`);
+      }else{
+        setSB('offline', (r && r.message) ? ('离线 · ' + r.message) : '离线 · 服务器无响应', true);
+      }
+    }catch(e){
+      setSB('offline','离线 · ' + e, true);
     }
   }
 
-  // ===== 日历：手机=当天，电脑=周。仅一个实例，可手动切换 =====
-  const BREAKPOINT = 768;
-  function getInitialView() {
-    return (window.innerWidth <= BREAKPOINT) ? 'timeGridDay' : 'timeGridWeek';
+  sbRetry.addEventListener('click', testConnection);
+
+  // ===== 登录 =====
+  async function login(){
+    const u = (document.getElementById('loginUsername').value || '').trim();
+    const msg = document.getElementById('loginMsg');
+    if (!u){ msg.style.color = '#dc2626'; msg.textContent = '请输入用户ID'; return; }
+
+    msg.style.color = '#6b7280';
+    msg.textContent = '正在登录…';
+
+    const r = await callAPI('loginByUsername', { username: u });
+    if (r && r.success){
+      currentUser = r.user || { username:u, userId:u, name:u };
+      currentUser.userId = currentUser.username || u;
+
+      // 切换视图
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('homeView').style.display  = 'block';
+      document.getElementById('who').textContent = `${currentUser.name || currentUser.userId}（${currentUser.role || ''}）`;
+
+      initCalendar(); // 登录成功后再渲染日历
+    }else{
+      msg.style.color = '#dc2626';
+      msg.textContent = (r && r.message) ? String(r.message) : '登录失败';
+    }
   }
 
-  async function initCalendar() {
+  // ===== 日历：手机=当天，电脑=周；同一个实例即可切换 =====
+  const BREAKPOINT = 768;
+  function initialView(){ return (window.innerWidth <= BREAKPOINT) ? 'timeGridDay' : 'timeGridWeek'; }
+
+  async function initCalendar(){
     const el = document.getElementById('mainCalendar');
+    if (calendar){ calendar.destroy(); calendar = null; }
+
     calendar = new FullCalendar.Calendar(el, {
       locale: 'zh-cn',
-      initialView: getInitialView(),
-      headerToolbar: {
-        left: 'prev,next today',
-        center: 'title',
-        right: 'timeGridDay,timeGridWeek,dayGridMonth' // 需要时可切换
-      },
+      initialView: initialView(),
+      headerToolbar: { left:'prev,next today', center:'title', right:'timeGridDay,timeGridWeek,dayGridMonth' },
       buttonText: { today:'今天', day:'日', week:'周', month:'月' },
-      allDaySlot: false,
-      slotMinTime: '09:00:00',
-      slotMaxTime: '21:00:00',
-      slotDuration: '00:30:00',
-      slotLabelInterval: '01:00:00',
-      scrollTime: '09:00:00',
-      height: 'auto',
-      expandRows: true,
+      allDaySlot:false,
+      slotMinTime:'09:00:00',
+      slotMaxTime:'21:00:00',
+      slotDuration:'00:30:00',
+      slotLabelInterval:'01:00:00',
+      scrollTime:'09:00:00',
+      height:'auto',
+      expandRows:true,
       events: async (info, success, failure) => {
-        try {
-          if (!currentUser) { success([]); return; }
+        try{
           const evs = await callAPI('listVisibleSlots', { userId: currentUser.userId });
           success(Array.isArray(evs) ? evs : []);
-        } catch (e) {
-          failure(e);
-        }
+        }catch(e){ failure(e); }
       },
-      eventClick: (info) => {
+      eventClick: (info)=>{
         const ev = info.event, ext = ev.extendedProps || {};
-        // 仅保留最小交互；后续可替换为你的完整逻辑
         alert(`标题：${ev.title}\n时间：${ev.start.toLocaleString('zh-CN')}`);
       }
     });
     calendar.render();
 
-    // 视口跨断点时切换视图
-    let lastIsMobile = window.innerWidth <= BREAKPOINT;
-    window.addEventListener('resize', () => {
+    // 跨断点自动切换视图
+    let lastMobile = window.innerWidth <= BREAKPOINT;
+    window.addEventListener('resize', ()=>{
       const isMobile = window.innerWidth <= BREAKPOINT;
-      if (isMobile !== lastIsMobile) {
+      if (!calendar) return;
+      if (isMobile !== lastMobile){
         calendar.changeView(isMobile ? 'timeGridDay' : 'timeGridWeek');
-        lastIsMobile = isMobile;
+        lastMobile = isMobile;
       }
     });
   }
 
   // 绑定
-  document.addEventListener('DOMContentLoaded', () => {
+  document.addEventListener('DOMContentLoaded', ()=>{
+    testConnection(); // 一进入就检测 API 连接并给出文字提示
     document.getElementById('loginBtn').addEventListener('click', login);
-    document.getElementById('loginUsername').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+    document.getElementById('loginUsername').addEventListener('keypress', e=>{ if(e.key==='Enter') login(); });
   });
 </script>
 </body>

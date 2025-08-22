@@ -122,3 +122,64 @@ body { font-family: Arial, sans-serif; background: #fff; color: #000; }
 /* 隐藏FullCalendar默认工具栏 */
 .fc-toolbar { display: none; }
 .fc-toolbar.show { display: flex; }
+
+/* ====== 手机端优先：周日历在上，侧栏在下 ====== */
+@media (max-width: 768px) {
+  /* 整体容器用自然高度，允许整页滚动 */
+  .main-container { 
+    height: auto !important;
+  }
+
+  /* 内容面板不再自带内层滚动，避免“卡高度” */
+  .content-panel {
+    overflow: visible !important;
+    min-height: 0 !important;
+  }
+
+  /* 日历区域先显示，侧栏排在后面纵向排列 */
+  .calendar-layout {
+    display: flex;
+    flex-direction: column !important;
+    gap: 12px !important;
+    height: auto !important;
+  }
+
+  .calendar-main {
+    order: 1 !important;
+    width: 100% !important;
+    border: 1px solid #ddd; /* 保留主区域边界 */
+  }
+
+  .calendar-sidebar {
+    order: 2 !important;
+    width: 100% !important;
+    margin-top: 8px !important;
+    border: 1px solid #ddd;
+  }
+
+  /* 让周日历首屏可见：给一个可视高度 */
+  #mainCalendar {
+    min-height: 75vh;   /* 可按需调成 70–80vh */
+    height: auto !important;
+  }
+
+  /* 工具栏在手机端必须可见（上一周/下一周/今天） */
+  .fc-toolbar {
+    display: flex !important;
+  }
+
+  /* 侧栏里的表单控件在小屏下铺满 */
+  .calendar-sidebar input,
+  .calendar-sidebar select,
+  .calendar-sidebar button {
+    max-width: 100%;
+    width: 100%;
+  }
+
+  /* 小日历在手机上稍微放大一点可读性（可保留你原来的） */
+  .mini-calendar .fc { font-size: 11px; }
+  .mini-calendar .fc-daygrid-day { height: 22px; }
+}
+
+/* 防横向滚动条（有些控件宽度超出时兜底） */
+html, body { overflow-x: hidden; }

@@ -225,6 +225,69 @@
             </div>
 
             <div class="sidebar-section">
+              <div class="sidebar-section" id="publishPanel" style="display:none;">
+  <h3>老师登记</h3>
+  <div class="filter-item">
+    <label>课程属性</label>
+    <select id="pubAttr">
+      <option value="大课">大课（只读）</option>
+      <option value="VIP">VIP（可约）</option>
+      <option value="面谈">面谈（可约）</option>
+    </select>
+  </div>
+  <div class="filter-item">
+    <label>课程名（大课必填）</label>
+    <input type="text" id="pubCourseName" />
+  </div>
+  <div class="filter-item">
+    <label>模式</label>
+    <select id="pubMode">
+      <option value="single">单次</option>
+      <option value="range">区间+周几</option>
+    </select>
+  </div>
+  <div class="filter-item" id="singleDateRow">
+    <label>日期</label>
+    <input type="date" id="pubDate" />
+  </div>
+  <div class="filter-item" id="rangeRows" style="display:none;">
+    <label>起止日期</label>
+    <div style="display:flex;gap:6px;">
+      <input type="date" id="pubStartDate" />
+      <input type="date" id="pubEndDate" />
+    </div>
+    <label style="margin-top:6px;">周几（可多选）</label>
+    <div>
+      <label><input type="checkbox" class="wd" value="1">周一</label>
+      <label><input type="checkbox" class="wd" value="2">周二</label>
+      <label><input type="checkbox" class="wd" value="3">周三</label>
+      <label><input type="checkbox" class="wd" value="4">周四</label>
+      <label><input type="checkbox" class="wd" value="5">周五</label>
+      <label><input type="checkbox" class="wd" value="6">周六</label>
+      <label><input type="checkbox" class="wd" value="0">周日</label>
+    </div>
+    <label style="margin-top:6px;">回数（可选）</label>
+    <input type="number" id="pubCount" min="1" placeholder="不填则按区间+周几全部展开" />
+  </div>
+  <div class="filter-item">
+    <label>时间（开始-结束）</label>
+    <div style="display:flex;gap:6px;">
+      <input type="time" id="pubStartTime" value="09:00" />
+      <input type="time" id="pubEndTime" value="10:00" />
+    </div>
+    <div style="font-size:11px;color:#666;">仅允许整点或半点（:00 / :30）</div>
+  </div>
+  <div class="filter-item">
+    <label>面向专业（逗号分隔；空=全专业）</label>
+    <input type="text" id="pubMajors" placeholder="例：文科研究科,工学研究科" />
+  </div>
+  <div class="filter-item">
+    <label>可见学生IDs（逗号分隔；VIP/面谈用）</label>
+    <input type="text" id="pubVisibleIds" placeholder="例：S001,S015" />
+  </div>
+  <button class="btn btn-primary" id="pubSubmitBtn">发布</button>
+</div>
+
               <div class="function-buttons">
                 <button class="function-btn" id="refreshDataBtn">刷新数据</button>
                 <button class="function-btn" id="analysisBtn">数据分析</button>
@@ -511,21 +574,84 @@
     }
 
     // ========== 用户界面更新 ==========
-    function updateUserInterface() {
-      if (!currentUser) return;
-      document.getElementById('userGreeting').textContent = `欢迎，${currentUser.name || currentUser.username || ''}`;
-      document.getElementById('userRole').textContent = `(${currentUser.role || ''})`;
+function updateUserInterface() {
+  if (!currentUser) return;
+  document.getElementById('userGreeting').textContent = `欢迎，${currentUser.name}`;
+  document.getElementById('userRole').textContent = `(${currentUser.role})`;
 
-      const analysisTab = document.getElementById('analysisTab');
-      const analysisBtn = document.getElementById('analysisBtn');
-      if ((currentUser.role || '').toLowerCase() === '老师' || (currentUser.role || '').toLowerCase() === 'teacher') {
-        analysisTab.style.display = 'block';
-        analysisBtn.style.display = 'block';
-      } else {
-        analysisTab.style.display = 'none';
-        analysisBtn.style.display = 'none';
-      }
-    }
+  const analysisTab = document.getElementById('analysisTab');
+  const analysisBtn = document.getElementById('analysisBtn');
+  const isTeacher = (currentUser.role === '老师' || String(currentUser.userId).startsWith('T'));
+  const isAdmin = String(currentUser.userId).startsWith('A');
+
+  if (isTeacher || isAdmin) {
+    analysisTab.style.display = 'block';
+    analysisBtn.style.display = 'block';
+    document.getElementById('publishPanel').style.display = 'block'; // 显示登记面板
+  } else {
+    analysisTab.style.display = 'none';
+    analysisBtn.style.display = 'none';
+    document.getElementById('publishPanel').style.display = 'none';
+  }
+}
+
+// 绑定模式切换 & 发布按钮（放到 DOMContentLoaded 里）
+document.getElementById('pubMode').addEventListener('change', function() {
+  const isRange = this.value === 'range';
+  document.getElementById('singleDateRow').style.display = isRange ? 'none' : 'block';
+  document.getElementById('rangeRows').style.display = isRange ? 'block' : 'none';
+});
+
+document.getElementById('pubSubmitBtn').addEventListener('click', async function() {
+  if (!currentUser) return;
+  const isTeacher = (currentUser.role === '老师' || String(currentUser.userId).startsWith('T'));
+  const isAdmin = String(currentUser.userId).startsWith('A');
+  if (!isTeacher && !isAdmin) { alert('只有老师/管理员可以发布'); return; }
+
+  const attr = document.getElementById('pubAttr').value;
+  const courseName = document.getElementById('pubCourseName').value.trim();
+  const mode = document.getElementById('pubMode').value;
+  const startTime = document.getElementById('pubStartTime').value;
+  const endTime = document.getElementById('pubEndTime').value;
+  const majors = document.getElementById('pubMajors').value.trim();
+  const visibleStudentIds = document.getElementById('pubVisibleIds').value.trim();
+
+  if (attr === '大课' && !courseName) { alert('大课需填写课程名'); return; }
+  if (!startTime || !endTime) { alert('请填写时间'); return; }
+
+  const params = {
+    teacherId: currentUser.userId,
+    attr, courseName, mode,
+    startTime, endTime,
+    majors, visibleStudentIds
+  };
+
+  if (mode === 'single') {
+    const date = document.getElementById('pubDate').value;
+    if (!date) { alert('请选择日期'); return; }
+    params.date = date;
+  } else {
+    const sd = document.getElementById('pubStartDate').value;
+    const ed = document.getElementById('pubEndDate').value;
+    if (!sd || !ed) { alert('请选择起止日期'); return; }
+    const wds = Array.from(document.querySelectorAll('.wd:checked')).map(cb => Number(cb.value));
+    if (wds.length === 0) { alert('请选择周几'); return; }
+    params.startDate = sd;
+    params.endDate = ed;
+    params.weekdays = wds;
+    const c = document.getElementById('pubCount').value;
+    if (c) params.count = Number(c);
+  }
+
+  const res = await callAPI('publishSlots', params);
+  if (res && res.success) {
+    alert(res.message || '发布成功');
+    loadCalendarEvents();
+  } else {
+    alert(res.message || '发布失败');
+  }
+});
+
 
     // ========== 日历相关 ==========
     function initializeCalendars() {
@@ -536,6 +662,7 @@
         headerToolbar: { left: 'prev', center: 'title', right: 'next' },
         height: 'auto',
         events: [],
+        slotMinTime: '09:00:00',slotMaxTime: '21:00:00',expandRows: true,
         dateClick: function(info) { if (mainCalendar) mainCalendar.gotoDate(info.dateStr); }
       });
 
@@ -547,7 +674,31 @@
         buttonText: { today: '今天', week: '周', day: '日' },
         height: 'auto',
         events: [],
-        eventClick: function(info) { showEventDetails(info.event); }
+        eventClick: async function(info) {
+  const ev = info.event;
+  const ext = ev.extendedProps || {};
+  // 大课只读；老师端不预约；仅学生且可约才允许
+  if (!currentUser) return;
+  const isStudent = (currentUser.role === '学生' || String(currentUser.userId).startsWith('S'));
+  if (isStudent && ext.canBook && ext.status === '可约') {
+    const note = prompt(`预约备注（可填具体到达时间等）：\n${ev.title}  ${ev.start.toLocaleString('zh-CN')}`);
+    const res = await callAPI('bookSlot', {
+      slotId: ev.id,
+      studentId: currentUser.userId,
+      studentName: currentUser.name,
+      note: note || ''
+    });
+    if (res && res.success) {
+      alert('预约成功');
+      loadCalendarEvents();
+    } else {
+      alert(res.message || '预约失败');
+    }
+  } else {
+    // 只读详情
+    showEventDetails(info.event);
+  }
+}
       });
 
       mainCalendar.render();
@@ -560,23 +711,23 @@
     }
 
     async function loadCalendarEvents() {
-      if (!currentUser) return;
-      try {
-        // 兼容老参数名：把“用户名”作为 userId 传给后端
-        const events = await callAPI('getStudentCourseEvents', { userId: currentUser.userId });
-        if (mainCalendar) {
-          mainCalendar.removeAllEvents();
-          (events || []).forEach(e => mainCalendar.addEvent(e));
-        }
-        if (miniCalendar) {
-          miniCalendar.removeAllEvents();
-          (events || []).forEach(e => miniCalendar.addEvent(e));
-        }
-        updateTodayStats();
-      } catch (error) {
-        console.error('加载日历事件失败:', error);
-      }
+  if (!currentUser) return;
+  try {
+    const events = await callAPI('listVisibleSlots', { userId: currentUser.userId });
+    if (mainCalendar) {
+      mainCalendar.removeAllEvents();
+      events.forEach(ev => mainCalendar.addEvent(ev));
     }
+    if (miniCalendar) {
+      miniCalendar.removeAllEvents();
+      events.forEach(ev => miniCalendar.addEvent(ev));
+    }
+    updateTodayStats();
+  } catch (e) {
+    console.error('加载槽位失败:', e);
+  }
+}
+
 
     // ========== 数据加载 ==========
     function loadUserData() {

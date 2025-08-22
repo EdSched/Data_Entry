@@ -183,3 +183,42 @@ body { font-family: Arial, sans-serif; background: #fff; color: #000; }
 
 /* 防横向滚动条（有些控件宽度超出时兜底） */
 html, body { overflow-x: hidden; }
+/* —— 手机端把 FullCalendar 的标题横着显示，并缩到一行 —— */
+@media (max-width: 768px) {
+  /* 工具栏必须可见 */
+  .fc-toolbar { display: flex !important; }
+
+  /* 中间那块标题：强制一行、别换行、缩点字 */
+  .fc .fc-toolbar-title {
+    white-space: nowrap;       /* 不换行 */
+    overflow: hidden;          /* 超出隐藏 */
+    text-overflow: ellipsis;   /* 超出用省略号 */
+    font-size: 16px;           /* 适当缩小 */
+    line-height: 1.2;
+  }
+
+  /* 工具栏整体留点空间，按钮别太大 */
+  .fc .fc-toolbar.fc-header-toolbar {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+  .fc .fc-button {
+    padding: 4px 8px;
+    font-size: 12px;
+    line-height: 1.1;
+  }
+
+  /* 避免标题被左右按钮挤压：让中间块能伸展 */
+  .fc .fc-toolbar-chunk:nth-child(2) {
+    flex: 1 1 auto;            /* 中间块可伸缩 */
+    display: flex;
+    justify-content: center;   /* 标题居中 */
+  }
+}
+
+/* 兜底：任何情况下都不要把标题按字拆成竖排 */
+.fc .fc-toolbar-title {
+  word-break: keep-all;        /* 中文/数字不随便断词 */
+  white-space: nowrap;
+}
+

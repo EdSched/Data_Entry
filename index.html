@@ -154,8 +154,8 @@
 
         <select id="registerDepartment">
           <option value="">选择所属部门</option>
-          <option value="文科大学院">大学院</option>
-          <option value="理科大学院">大学院</option>
+          <option value="文科大学院">文科大学院</option>
+          <option value="理科大学院">理科大学院</option>
           <option value="其他">其他</option>
         </select>
 
@@ -588,7 +588,7 @@
     }
 
     function loadDepartmentsList() {
-      const departments = ['文科研究科', '理科研究科', '工学研究科', '医学研究科'];
+      const departments = ['文科大学院', '理科大学院'];
       const departmentSelect = document.getElementById('departmentSelect');
       departmentSelect.innerHTML = '<option value="">请选择所属部门</option>';
       departments.forEach(dept => {

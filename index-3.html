@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>师生管理平台 · 主页面</title>
+
+<!-- ① 引入你现有的全局样式（不用改你文件，替换为你的路径即可） -->
+<link rel="stylesheet" href="assets/base.css">
+<link rel="stylesheet" href="app.css">
+
+<!-- FullCalendar -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
+
+<style>
+  /* 仅本页的极少量样式，尽量不和你现有 CSS 冲突 */
+  body{margin:0;background:#f7f7f8;font-family:system-ui,-apple-system,"PingFang SC","Microsoft YaHei",Arial,sans-serif;color:#111}
+
+  /* 登录页 */
+  #loginView{display:flex;min-height:100dvh;align-items:center;justify-content:center;padding:24px}
+  .login-card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:20px;max-width:360px;width:100%}
+  .login-card h1{font-size:18px;margin:0 0 12px}
+  .login-card input{width:100%;padding:10px;border:1px solid #ddd;border-radius:8px}
+  .login-card button{width:100%;margin-top:10px;padding:12px;border-radius:8px;border:1px solid #111;background:#111;color:#fff;cursor:pointer}
+  .login-msg{margin-top:8px;font-size:12px;color:#d32f2f;min-height:1.2em}
+
+  /* 主页面 */
+  #homeView{display:none}
+  header.home{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#fff;border-bottom:1px solid #e5e7eb}
+  .wrap{max-width:1080px;margin:0 auto;padding:16px}
+  .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:12px}
+  #mainCalendar{min-height:60vh}
+  nav.menu{display:grid;gap:10px;margin-top:16px}
+  nav.menu a{display:block;text-decoration:none;border:1px solid #111;border-radius:10px;padding:12px;text-align:center;color:#111;background:#fff}
+  nav.menu a:hover{background:#111;color:#fff}
+  @media (max-width: 768px){
+    #mainCalendar{min-height:58vh}
+  }
+</style>
+</head>
+<body>
+
+<!-- 登录视图（只保留“用户ID”登录） -->
+<section id="loginView">
+  <div class="login-card">
+    <h1>师生管理平台</h1>
+    <input id="loginUsername" placeholder="用户ID（由老师分配）" />
+    <button id="loginBtn">登录</button>
+    <div id="loginMsg" class="login-msg"></div>
+  </div>
+</section>
+
+<!-- 主页面视图：上方日历 + 下方子页面按钮 -->
+<section id="homeView">
+  <header class="home">
+    <strong>师生管理平台</strong>
+    <div>登录用户：<span id="who">未登录</span></div>
+  </header>
+
+  <div class="wrap">
+    <div class="card">
+      <div id="mainCalendar"></div>
+    </div>
+
+    <nav class="menu" aria-label="功能菜单">
+      <a href="calendar.html">周日历（完整页）</a>
+      <a href="analysis.html">数据分析</a>
+      <a href="publish.html">课程安排（老师登记）</a>
+      <a href="manage.html">我的日程</a>
+      <a href="profile.html">个人信息</a>
+    </nav>
+  </div>
+</section>
+
+<!-- ② 引入你现有的通用脚本（不用改你文件，替换路径即可） -->
+<script src="app.js"></script>
+
+<script>
+  // ===== 维持与你现有接口一致 =====
+  const API_URL = 'https://script.google.com/macros/s/AKfycbwJYf3jeNAF37vgVXTiWnEgYS5dlh9l9UChkiEhThh4OwV3TVEvP3ZtIS8bpm5G3HLf/exec';
+  let currentUser = null;
+  let calendar;
+
+  async function callAPI(action, params = {}) {
+    try {
+      const formData = new URLSearchParams();
+      formData.append('action', action);
+      formData.append('params', JSON.stringify(params));
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: formData,
+        mode: 'cors'
+      });
+      const text = await res.text();
+      let clean = text.trim();
+      const s = clean.indexOf('{'), e = clean.lastIndexOf('}');
+      if (s !== -1 && e !== -1 && e > s) clean = clean.substring(s, e + 1);
+      return JSON.parse(clean);
+    } catch (err) {
+      return { success:false, message:String(err) };
+    }
+  }
+
+  // ===== 登录 =====
+  async function login() {
+    const u = (document.getElementById('loginUsername').value || '').trim();
+    const msg = document.getElementById('loginMsg');
+    if (!u) { msg.textContent = '请输入用户ID'; return; }
+    msg.style.color = '#6b7280'; msg.textContent = '正在登录…';
+
+    const res = await callAPI('loginByUsername', { username: u });
+    if (res && res.success) {
+      currentUser = res.user || { username: u, userId: u };
+      currentUser.userId = currentUser.username || u;
+      // 切到主页
+      document.getElementById('loginView').style.display = 'none';
+      document.getElementById('homeView').style.display = 'block';
+      document.getElementById('who').textContent = `${currentUser.name || currentUser.userId}（${currentUser.role || ''}）`;
+      // 初始化日历
+      initCalendar();
+    } else {
+      msg.style.color = '#d32f2f';
+      msg.textContent = (res && res.message) ? String(res.message) : '登录失败';
+    }
+  }
+
+  // ===== 日历：手机=当天，电脑=周。仅一个实例，可手动切换 =====
+  const BREAKPOINT = 768;
+  function getInitialView() {
+    return (window.innerWidth <= BREAKPOINT) ? 'timeGridDay' : 'timeGridWeek';
+  }
+
+  async function initCalendar() {
+    const el = document.getElementById('mainCalendar');
+    calendar = new FullCalendar.Calendar(el, {
+      locale: 'zh-cn',
+      initialView: getInitialView(),
+      headerToolbar: {
+        left: 'prev,next today',
+        center: 'title',
+        right: 'timeGridDay,timeGridWeek,dayGridMonth' // 需要时可切换
+      },
+      buttonText: { today:'今天', day:'日', week:'周', month:'月' },
+      allDaySlot: false,
+      slotMinTime: '09:00:00',
+      slotMaxTime: '21:00:00',
+      slotDuration: '00:30:00',
+      slotLabelInterval: '01:00:00',
+      scrollTime: '09:00:00',
+      height: 'auto',
+      expandRows: true,
+      events: async (info, success, failure) => {
+        try {
+          if (!currentUser) { success([]); return; }
+          const evs = await callAPI('listVisibleSlots', { userId: currentUser.userId });
+          success(Array.isArray(evs) ? evs : []);
+        } catch (e) {
+          failure(e);
+        }
+      },
+      eventClick: (info) => {
+        const ev = info.event, ext = ev.extendedProps || {};
+        // 仅保留最小交互；后续可替换为你的完整逻辑
+        alert(`标题：${ev.title}\n时间：${ev.start.toLocaleString('zh-CN')}`);
+      }
+    });
+    calendar.render();
+
+    // 视口跨断点时切换视图
+    let lastIsMobile = window.innerWidth <= BREAKPOINT;
+    window.addEventListener('resize', () => {
+      const isMobile = window.innerWidth <= BREAKPOINT;
+      if (isMobile !== lastIsMobile) {
+        calendar.changeView(isMobile ? 'timeGridDay' : 'timeGridWeek');
+        lastIsMobile = isMobile;
+      }
+    });
+  }
+
+  // 绑定
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('loginBtn').addEventListener('click', login);
+    document.getElementById('loginUsername').addEventListener('keypress', e => { if (e.key === 'Enter') login(); });
+  });
+</script>
+</body>
+</html>

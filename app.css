@@ -286,5 +286,48 @@ html, body { overflow-x: hidden; }
   .nav-tabs .nav-tab { padding: 8px 12px; }
   .mini-calendar .fc { font-size: 12px; }
 }
+/* 主布局：左侧栏固定宽，右侧大日历 */
+#calendarPanel .calendar-layout{
+  display:grid;
+  grid-template-columns: 280px 1fr;  /* 左侧栏宽度可按需改 */
+  gap:16px;
+  align-items:start;
+}
+
+/* 左侧栏卡片风格统一 */
+#calendarPanel .calendar-sidebar{
+  border:0; padding:0;
+  display:flex; flex-direction:column; gap:12px;
+}
+#calendarPanel .sidebar-section{
+  border:1px solid #ddd; background:#fff; padding:12px;
+}
+
+/* 右侧大日历盒子 */
+#calendarPanel .calendar-main{
+  border:1px solid #ddd; background:#fff; padding:12px;
+}
+#mainCalendar{ height:70vh; min-height:460px; }
+
+/* 日历下方的“卡片区”（等会用JS创建） */
+#belowCalendar{
+  grid-column: 1 / -1;     /* 占据两列 */
+  display:grid;
+  grid-template-columns: 1fr 1fr 1fr;  /* 三列栅格放卡片 */
+  gap:12px; margin-top:8px;
+}
+#belowCalendar > .sidebar-section,
+#belowCalendar > .filter-panel,
+#belowCalendar > .user-profile{
+  border:1px solid #ddd; background:#fff; padding:12px;
+}
+
+/* 手机端：改为一列，日历高度收敛一些 */
+@media (max-width: 768px){
+  #calendarPanel .calendar-layout{ grid-template-columns: 1fr; }
+  #mainCalendar{ height:58vh; min-height:360px; }
+  #belowCalendar{ grid-template-columns: 1fr; }
+}
+
 
 

@@ -327,3 +327,49 @@ refreshBtn?.addEventListener('click', () => loadCalendarEvents());
     if (e.key === 'Escape') toggleSidebar(false);
   });
 })();
+/* ========== 侧栏导航：主日历/子页面切换 ========== */
+(function () {
+  const pageHost = document.getElementById('pageHost');
+  const subFrame = document.getElementById('subPage');
+  const calendarCard = document.querySelector('#appContainer > .card'); // 主日历那张卡片
+  const links = document.querySelectorAll('#sidebar .nav .nav-link');
+
+  function isMobile() { return window.matchMedia('(max-width: 1023px)').matches; }
+
+  function showCalendar() {
+    // 显示主日历，隐藏子页
+    calendarCard.style.display = '';
+    pageHost.classList.remove('show');
+    // 侧栏“日历”激活态
+    links.forEach(a => a.classList.toggle('active', (a.textContent || '').trim() === '日历'));
+    if (isMobile()) window.toggleSidebar(false);
+  }
+
+  function openSubpage(url, linkEl) {
+    if (!url) return;
+    // 隐藏主日历、显示子页（iframe 载入）
+    calendarCard.style.display = 'none';
+    pageHost.classList.add('show');
+    if (subFrame.getAttribute('src') !== url) subFrame.setAttribute('src', url);
+    links.forEach(a => a.classList.toggle('active', a === linkEl));
+    if (isMobile()) window.toggleSidebar(false);
+  }
+
+  links.forEach(a => {
+    a.addEventListener('click', (e) => {
+      const href = a.getAttribute('href') || '';
+      // 阻止默认整页跳转（避免回到登录页）
+      e.preventDefault();
+      // “日历”项（href 指向 index.html 或文案为“日历”）
+      const text = (a.textContent || '').trim();
+      if (text === '日历' || /index\.html$/i.test(href) || href === '#calendar') {
+        showCalendar();
+      } else {
+        openSubpage(href, a);
+      }
+    });
+  });
+
+  // 可选：首次进入默认显示主日历
+  showCalendar();
+})();

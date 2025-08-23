@@ -56,16 +56,13 @@
         <span id="userGreeting">欢迎，</span>
         <span id="userRole"></span>
         <button class="logout-btn" id="logoutBtn">退出</button>
-        <button class="btn btn-outline" id="drawerToggle" style="display:none;">菜单</button>
       </div>
     </header>
 
     <div class="app">
       <div class="wrap">
         <aside>
-          <div style="width:100%;display:flex;justify-content:center;margin:6px 0 8px;">
-  <span style="display:block;width:36px;height:4px;border-radius:99px;background:#ddd;"></span>
-</div>
+          <div class="drawer-handle"><span class="grip"></span></div>
           <div class="sidebar-section">
             <h3>今日概览</h3>
             <div class="stats-grid">
@@ -310,6 +307,7 @@
     </div>
   </div>
  <script src="app.js" defer></script>
-<div class="backdrop" id="drawerBackdrop"></div>
+ <div class="backdrop" id="drawerBackdrop"></div>
+<div class="edge-hotzone-top" id="edgeHotzoneTop"></div>
 </body>
 </html>

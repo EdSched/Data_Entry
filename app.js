@@ -1,640 +1,477 @@
-// ========== 全局变量 ==========
-const API_URL = 'https://script.google.com/macros/s/AKfycbwJYf3jeNAF37vgVXTiWnEgYS5dlh9l9UChkiEhThh4OwV3TVEvP3ZtIS8bpm5G3HLf/exec';
-let currentUser = null;
-let allStudents = [];
-let selectedStudents = [];
-let mainCalendar, miniCalendar;
 
-// ========== API调用函数 ==========
+// ================== 配置 ==================
+const API_URL = 'https://script.google.com/macros/s/AKfycbwJYf3jeNAF37vgVXTiWnEgYS5dlh9l9UChkiEhThh4OwV3TVEvP3ZtIS8bpm5G3HLf/exec';
+
+// ================== 工具 ==================
+const $ = (id) => document.getElementById(id);
+const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+function setApiStatus({ok, text}) {
+  const dotTop = $('apiDotTop'), txtTop = $('apiTextTop');
+  const inline = $('apiStatusInline');
+  if (dotTop) dotTop.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
+  if (txtTop) txtTop.textContent = text || (ok ? 'API 正常' : (ok===false ? 'API 连接失败' : 'API 检测中'));
+  if (inline) {
+    const dot = inline.querySelector('.api-dot') || document.createElement('span');
+    dot.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
+    dot.style.cssText = 'display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;';
+    if (!inline.querySelector('.api-dot')) inline.prepend(dot);
+    inline.lastChild && (inline.lastChild.nodeType===3 ? inline.lastChild.textContent=' ' : null);
+    inline.append(text ? (' ' + text) : (ok ? ' API连接成功' : (ok===false ? ' API连接失败' : ' 正在检测 API 连接…')));
+  }
+}
+
+// ================== API 调用 ==================
 async function callAPI(action, params = {}) {
   try {
     const formData = new URLSearchParams();
     formData.append('action', action);
     formData.append('params', JSON.stringify(params));
 
-    const response = await fetch(API_URL, {
+    // 加一个 8 秒超时，避免长时间无响应
+    const controller = new AbortController();
+    const t = setTimeout(()=>controller.abort(), 8000);
+
+    const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       body: formData,
-      mode: 'cors'
+      mode: 'cors',
+      signal: controller.signal
     });
+    clearTimeout(t);
 
-    const text = await response.text();
+    const text = await res.text();
     let cleanText = text.trim();
-    const jsonStart = cleanText.indexOf('{');
-    const jsonEnd = cleanText.lastIndexOf('}');
-    if (jsonStart !== -1 && jsonEnd !== -1 && jsonEnd > jsonStart) {
-      cleanText = cleanText.substring(jsonStart, jsonEnd + 1);
-    }
+    const s = cleanText.indexOf('{');
+    const e = cleanText.lastIndexOf('}');
+    if (s !== -1 && e !== -1 && e > s) cleanText = cleanText.substring(s, e + 1);
     return JSON.parse(cleanText);
-  } catch (error) {
-    return { success: false, message: '网络请求失败: ' + error.message };
+  } catch (err) {
+    return { success:false, message: '网络请求失败: ' + err.message };
   }
 }
 
-// ========== 界面切换 ==========
+// ================== 侧边导航与页面切换 ==================
+const navLinks = [];
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.nav-link').forEach(link => {
+    navLinks.push(link);
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pageId = link.dataset.page;
+      if (pageId) showPage(pageId);
+    });
+  });
+});
+function showPage(pageId) {
+  document.querySelectorAll('.page-content').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+  const page = document.getElementById(pageId + 'Page');
+  if (page) { page.style.display = 'block'; page.classList.add('active'); }
+  navLinks.forEach(a => a.classList.remove('active'));
+  const active = document.querySelector('.nav-link[data-page="'+pageId+'"]');
+  if (active) active.classList.add('active');
+  if (pageId === 'calendar' && window.calendar) setTimeout(() => window.calendar.updateSize(), 50);
+}
+
+// ================== 登录/注册/登出 ==================
+let currentUser = null;
+
 function showRegisterForm() {
-  document.getElementById('loginForm').style.display = 'none';
-  document.getElementById('registerForm').style.display = 'block';
-  clearMessages();
+  $('loginForm').style.display = 'none';
+  $('registerForm').style.display = 'block';
+  $('loginError').textContent = '';
+  $('registerError').textContent = '';
 }
 function showLoginForm() {
-  document.getElementById('registerForm').style.display = 'none';
-  document.getElementById('loginForm').style.display = 'block';
-  clearMessages();
-}
-function clearMessages() {
-  const le = document.getElementById('loginError');
-  const re = document.getElementById('registerError');
-  if (le) { le.textContent = ''; le.style.color = ''; }
-  if (re) { re.textContent = ''; }
+  $('registerForm').style.display = 'none';
+  $('loginForm').style.display = 'block';
+  $('loginError').textContent = '';
+  $('registerError').textContent = '';
 }
 
-// ========== 登录（用户ID唯一通道） ==========
 async function login() {
-  const username = (document.getElementById('loginUsername').value || '').trim();
-  const errorDiv = document.getElementById('loginError');
-
-  if (!username) {
-    errorDiv.textContent = '请输入用户ID';
-    return;
-  }
-  errorDiv.textContent = '正在登录...';
-
+  const username = ($('loginUsername').value || '').trim();
+  const err = $('loginError');
+  if (!username) { err.textContent = '请输入用户ID'; return; }
+  err.style.color = ''; err.textContent = '正在登录…';
   const result = await callAPI('loginByUsername', { username });
-
   if (result && result.success) {
     currentUser = result.user || {};
     currentUser.userId = currentUser.username || username;
 
-    document.getElementById('loginContainer').style.display = 'none';
-    document.getElementById('mainApp').style.display = 'block';
+    // 显示主应用
+    $('loginContainer').style.display = 'none';
+    $('mainApp').style.display = 'block';
+    try { window.location.hash = '#app'; } catch {}
 
     updateUserInterface();
-    initializeCalendars();
+    initCalendar();         // 创建日历
+    bindArrangePanel();     // 课程发布
+    bindAnalysisHandlers(); // 数据分析
     loadUserData();
   } else {
-    errorDiv.textContent = (result && result.message) || '登录失败：用户ID不存在';
+    err.style.color = '#c00';
+    err.textContent = (result && result.message) || '登录失败：用户ID不存在';
   }
 }
 
-// ========== 注册 ==========
-async function register() {
-  const name = (document.getElementById('registerName').value || '').trim();
-  const email = (document.getElementById('registerEmail').value || '').trim();
-  const department = document.getElementById('registerDepartment').value;
-  const major = (document.getElementById('registerMajor').value || '').trim();
-  const role = document.getElementById('registerRole').value;
-  const errorDiv = document.getElementById('registerError');
-
-  if (!name || !email || !department || !major || !role) {
-    errorDiv.textContent = '请填写姓名、邮箱、所属、专业、身份';
-    return;
-  }
-
-  errorDiv.textContent = '正在登记...';
-
+async function registerUser() {
+  const name = ($('registerName').value || '').trim();
+  const email = ($('registerEmail').value || '').trim();
+  const department = $('registerDepartment').value;
+  const major = ($('registerMajor').value || '').trim();
+  const role = $('registerRole').value;
+  const err = $('registerError');
+  if (!name || !email || !department || !major || !role) { err.textContent = '请填写姓名、邮箱、所属、专业、身份'; return; }
+  err.style.color=''; err.textContent = '正在登记…';
   const result = await callAPI('registerByProfile', { name, email, department, major, role });
-
   if (result && result.success) {
-    errorDiv.style.color = 'green';
-    errorDiv.textContent = '登记成功！请联系老师获取您的“用户ID”，之后使用用户ID登录。';
-
-    document.getElementById('registerName').value = '';
-    document.getElementById('registerEmail').value = '';
-    document.getElementById('registerDepartment').value = '';
-    document.getElementById('registerMajor').value = '';
-    document.getElementById('registerRole').value = '';
-
-    setTimeout(showLoginForm, 2000);
+    err.style.color='green'; err.textContent='登记成功！请联系老师获取“用户ID”，之后使用用户ID登录。';
+    $('registerName').value=''; $('registerEmail').value=''; $('registerDepartment').value=''; $('registerMajor').value=''; $('registerRole').value='';
+    setTimeout(showLoginForm, 1200);
   } else {
-    errorDiv.style.color = 'red';
-    errorDiv.textContent = (result && result.message) || '登记失败';
+    err.style.color='#c00'; err.textContent=(result && result.message) || '登记失败';
   }
 }
 
-// ========== 退出登录 ==========
 function logout() {
   currentUser = null;
-  document.getElementById('loginContainer').style.display = 'flex';
-  document.getElementById('mainApp').style.display = 'none';
-  document.getElementById('loginUsername').value = '';
-  document.getElementById('loginError').textContent = '';
+  $('mainApp').style.display = 'none';
+  $('loginContainer').style.display = 'flex';
+  $('loginUsername').value = '';
+  $('loginError').textContent = '';
+  setApiStatus({ok:null, text:'API 检测中'}); // 回到检测中
+  try { window.location.hash = '#login'; } catch {}
 }
 
-// ========== 用户界面更新 ==========
+// 修复移动端 100vh：用 window.innerHeight 动态计算 --vh
+(function(){
+  function setVh(){
+    document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+  }
+  setVh();
+  window.addEventListener('resize', setVh, {passive:true});
+  window.addEventListener('orientationchange', function(){
+    setTimeout(setVh, 150);
+    // FullCalendar 在尺寸变化后需要刷新
+    setTimeout(()=>{ try{ window.calendar && window.calendar.updateSize(); }catch(e){} }, 300);
+  }, {passive:true});
+})();
+
+// ================== 用户界面填充 ==================
 function updateUserInterface() {
   if (!currentUser) return;
-  document.getElementById('userGreeting').textContent = `欢迎，${currentUser.name}`;
-  document.getElementById('userRole').textContent = `(${currentUser.role})`;
+  $('userGreeting').textContent = '欢迎，' + (currentUser.name || currentUser.userId);
+  $('userRole').textContent = '(' + (currentUser.role || '') + ')';
+  $('profileName').value = currentUser.name || '';
+  $('profileId').value   = currentUser.userId || '';
+  $('profileDept').value = currentUser.department || '';
+  $('profileRole').value = currentUser.role || '';
 
-  const analysisTab = document.getElementById('analysisTab');
-  const analysisBtn = document.getElementById('analysisBtn');
-  const isTeacher = (currentUser.role === '老师' || String(currentUser.userId).startsWith('T'));
-  const isAdmin = String(currentUser.userId).startsWith('A');
-
-  if (isTeacher || isAdmin) {
-    analysisTab.style.display = 'block';
-    analysisBtn.style.display = 'block';
-    document.getElementById('publishPanel').style.display = 'block'; // 显示登记面板
-  } else {
-    analysisTab.style.display = 'none';
-    analysisBtn.style.display = 'none';
-    document.getElementById('publishPanel').style.display = 'none';
-  }
+  const isTeacher = (String(currentUser.role) === '老师' || String(currentUser.userId || '').startsWith('T'));
+  const isAdmin   = String(currentUser.userId || '').startsWith('A');
+  const analysisNav = document.querySelector('.nav-link[data-page="analysis"]');
+  if (analysisNav) analysisNav.style.display = (isTeacher || isAdmin) ? '' : 'none';
 }
 
-// 发布面板行为
-document.addEventListener('DOMContentLoaded', () => {
-  const pubMode = document.getElementById('pubMode');
-  if (pubMode) {
-    pubMode.addEventListener('change', function () {
-      const isRange = this.value === 'range';
-      document.getElementById('singleDateRow').style.display = isRange ? 'none' : 'block';
-      document.getElementById('rangeRows').style.display = isRange ? 'block' : 'none';
-    });
-  }
+// ================== 日历 ==================
+let calendar = null;
 
-  const pubSubmitBtn = document.getElementById('pubSubmitBtn');
-  if (pubSubmitBtn) {
-    pubSubmitBtn.addEventListener('click', async function () {
-      if (!currentUser) return;
-      const isTeacher = (currentUser.role === '老师' || String(currentUser.userId).startsWith('T'));
-      const isAdmin = String(currentUser.userId).startsWith('A');
-      if (!isTeacher && !isAdmin) { alert('只有老师/管理员可以发布'); return; }
-
-      const attr = document.getElementById('pubAttr').value;
-      const courseName = document.getElementById('pubCourseName').value.trim();
-      const mode = document.getElementById('pubMode').value;
-      const startTime = document.getElementById('pubStartTime').value;
-      const endTime = document.getElementById('pubEndTime').value;
-      const majors = document.getElementById('pubMajors').value.trim();
-      const visibleStudentIds = document.getElementById('pubVisibleIds').value.trim();
-
-      if (attr === '大课' && !courseName) { alert('大课需填写课程名'); return; }
-      if (!startTime || !endTime) { alert('请填写时间'); return; }
-
-      const params = {
-        teacherId: currentUser.userId,
-        attr, courseName, mode,
-        startTime, endTime,
-        majors, visibleStudentIds
-      };
-
-      if (mode === 'single') {
-        const date = document.getElementById('pubDate').value;
-        if (!date) { alert('请选择日期'); return; }
-        params.date = date;
-      } else {
-        const sd = document.getElementById('pubStartDate').value;
-        const ed = document.getElementById('pubEndDate').value;
-        if (!sd || !ed) { alert('请选择起止日期'); return; }
-        const wds = Array.from(document.querySelectorAll('.wd:checked')).map(cb => Number(cb.value));
-        if (wds.length === 0) { alert('请选择周几'); return; }
-        params.startDate = sd;
-        params.endDate = ed;
-        params.weekdays = wds;
-        const c = document.getElementById('pubCount').value;
-        if (c) params.count = Number(c);
-      }
-
-      const res = await callAPI('publishSlots', params);
-      if (res && res.success) {
-        alert(res.message || '发布成功');
-        loadCalendarEvents();
-      } else {
-        alert(res.message || '发布失败');
-      }
-    });
-  }
-});
-
-// ========== 日历相关 ==========
-function initializeCalendars() {
-  const miniCalendarEl = document.getElementById('miniCalendar');
-  miniCalendar = new FullCalendar.Calendar(miniCalendarEl, {
-    initialView: 'dayGridMonth',
-    locale: 'zh-cn',
-    headerToolbar: { left: 'prev', center: 'title', right: 'next' },
-    height: 'auto',
-    events: [],
-    slotMinTime: '09:00:00', slotMaxTime: '21:00:00', expandRows: true,
-    dateClick: function (info) { if (mainCalendar) mainCalendar.gotoDate(info.dateStr); }
+function initCalendar() {
+  const el = $('mainCalendar'); if (!el) return;
+  const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
+  calendar = new FullCalendar.Calendar(el, {
+    initialView, locale: 'zh-cn', firstDay: 1, height: 'auto',
+    headerToolbar: false, allDaySlot: false, slotMinTime:'08:00:00', slotMaxTime:'22:00:00', slotDuration:'00:30:00', expandRows:true,
+    datesSet: updateCalendarTitle,
+    eventClick: handleEventClick
   });
+  $('prevBtn').onclick = () => calendar.prev();
+  $('nextBtn').onclick = () => calendar.next();
+  $('todayBtn').onclick = () => calendar.today();
+  $('dayBtn').onclick = () => changeView('timeGridDay', $('dayBtn'));
+  $('weekBtn').onclick = () => changeView('timeGridWeek', $('weekBtn'));
+  $('monthBtn').onclick = () => changeView('dayGridMonth', $('monthBtn'));
+  $('refreshDataBtn').onclick = refreshData;
 
-  const mainCalendarEl = document.getElementById('mainCalendar');
-  mainCalendar = new FullCalendar.Calendar(mainCalendarEl, {
-    initialView: 'timeGridWeek',
-    locale: 'zh-cn',
-    headerToolbar: { left: 'prev,next', center: 'title', right: 'today,timeGridWeek,timeGridDay' },
-    buttonText: { today: '今天', week: '周', day: '日' },
-    height: 'auto',
-    events: [],
-    allDaySlot: false,
-    slotMinTime: '09:00:00',
-    slotMaxTime: '21:00:00',
-    slotDuration: '00:30:00',
-    slotLabelInterval: '01:00:00',
-    scrollTime: '09:00:00',
-    expandRows: true,
-    // 修复：此处缺逗号
-    eventClick: async function (info) {
-      const ev = info.event;
-      const ext = ev.extendedProps || {};
-      if (!currentUser) return;
-      const isStudent = (currentUser.role === '学生' || String(currentUser.userId).startsWith('S'));
-      if (isStudent && ext.canBook && ext.status === '可约') {
-        const note = prompt(`预约备注（可填具体到达时间等）：\n${ev.title}  ${ev.start.toLocaleString('zh-CN')}`);
-        const res = await callAPI('bookSlot', {
-          slotId: ev.id,
-          studentId: currentUser.userId,
-          studentName: currentUser.name,
-          note: note || ''
-        });
-        if (res && res.success) {
-          alert('预约成功');
-          loadCalendarEvents();
-        } else {
-          alert(res.message || '预约失败');
-        }
-      } else {
-        showEventDetails(info.event);
-      }
-    }
-  });
-
-  mainCalendar.render();
-  miniCalendar.render();
-
-  const toolbar = mainCalendarEl.querySelector('.fc-toolbar');
-  if (toolbar) toolbar.classList.add('show');
-
+  calendar.render();
+  updateCalendarTitle();
   loadCalendarEvents();
 }
 
+function changeView(viewName, activeBtn) {
+  if (!calendar) return;
+  calendar.changeView(viewName);
+  ['dayBtn','weekBtn','monthBtn'].forEach(id => { const b=$(id); if(b) b.classList.remove('active'); });
+  if (activeBtn) activeBtn.classList.add('active');
+  updateCalendarTitle();
+}
+
+function updateCalendarTitle() {
+  if (!calendar) return;
+  const view = calendar.view, date = calendar.getDate();
+  const y = date.getFullYear(), m = String(date.getMonth()+1).padStart(2,'0'), d = String(date.getDate()).padStart(2,'0');
+  if (view.type === 'timeGridDay') $('calendarTitle').textContent = `${y}/${m}/${d}`;
+  else if (view.type === 'timeGridWeek') {
+    const s = new Date(view.currentStart), e = new Date(view.currentEnd); e.setDate(e.getDate()-1);
+    $('calendarTitle').textContent = `${y}/${String(s.getMonth()+1).padStart(2,'0')}/${String(s.getDate()).padStart(2,'0')} – ${String(e.getMonth()+1).padStart(2,'0')}/${String(e.getDate()).padStart(2,'0')}`;
+  } else $('calendarTitle').textContent = `${y}/${m}`;
+}
+
 async function loadCalendarEvents() {
-  if (!currentUser) return;
+  if (!currentUser || !calendar) return;
   try {
     const events = await callAPI('listVisibleSlots', { userId: currentUser.userId });
-    if (mainCalendar) {
-      mainCalendar.removeAllEvents();
-      if (Array.isArray(events)) events.forEach(ev => mainCalendar.addEvent(ev));
-    }
-    if (miniCalendar) {
-      miniCalendar.removeAllEvents();
-      if (Array.isArray(events)) events.forEach(ev => miniCalendar.addEvent(ev));
-    }
+    calendar.removeAllEvents();
+    if (Array.isArray(events)) events.forEach(ev => calendar.addEvent(ev));
     updateTodayStats();
-  } catch (e) {
-    console.error('加载槽位失败:', e);
+  } catch (e) { console.error('加载槽位失败:', e); }
+}
+
+async function handleEventClick(info) {
+  const ev = info.event, ext = ev.extendedProps || {};
+  if (!currentUser) return;
+  const isStudent = (String(currentUser.role) === '学生' || String(currentUser.userId || '').startsWith('S'));
+  if (isStudent && ext.canBook && ext.status === '可约') {
+    const note = prompt(`预约备注（可填具体到达时间等）：\n${ev.title}  ${ev.start.toLocaleString('zh-CN')}`);
+    const res = await callAPI('bookSlot', { slotId: ev.id, studentId: currentUser.userId, studentName: currentUser.name || '', note: note || '' });
+    if (res && res.success) { alert('预约成功'); loadCalendarEvents(); } else { alert((res && res.message) || '预约失败'); }
+  } else {
+    const details = [`标题: ${ev.title}`, `时间: ${ev.start.toLocaleString('zh-CN')}`];
+    if (ev.end) details.push(`结束: ${ev.end.toLocaleString('zh-CN')}`);
+    if (ext && ext.description) details.push(`描述: ${ext.description}`);
+    alert(details.join('\n'));
   }
 }
 
-// ========== 数据加载 ==========
-function loadUserData() {
-  if (!currentUser) return;
-  if ((currentUser.role || '').toLowerCase() === '老师' || (currentUser.role || '').toLowerCase() === 'teacher') {
-    loadDepartmentsList();
-  }
-  loadUserProfile();
+function refreshData(){ loadCalendarEvents(); }
+function updateTodayStats(){
+  // 如需从后端聚合统计，这里写入；当前占位
+  $('todayCourses').textContent = $('todayCourses').textContent || '0';
+  $('todayConsultations').textContent = $('todayConsultations').textContent || '0';
+  $('todayReminders').textContent = $('todayReminders').textContent || '0';
+  $('attendanceRate').textContent = $('attendanceRate').textContent || '—';
+}
+
+// ================== 课程发布 ==================
+function bindArrangePanel() {
+  const pubMode = $('pubMode'), singleDateRow = $('singleDateRow'), rangeRows = $('rangeRows');
+  if (pubMode) pubMode.addEventListener('change', function(){
+    const isRange = this.value === 'range'; singleDateRow.style.display = isRange ? 'none' : 'block'; rangeRows.style.display = isRange ? 'block' : 'none';
+  });
+  const pubSubmitBtn = $('pubSubmitBtn');
+  if (pubSubmitBtn) pubSubmitBtn.addEventListener('click', async function(){
+    if (!currentUser) return;
+    const isTeacher = (String(currentUser.role) === '老师' || String(currentUser.userId || '').startsWith('T'));
+    const isAdmin   = String(currentUser.userId || '').startsWith('A');
+    if (!isTeacher && !isAdmin) { alert('只有老师/管理员可以发布'); return; }
+
+    const attr = $('pubAttr').value;
+    const courseName = ($('pubCourseName').value || '').trim();
+    const mode = $('pubMode').value;
+    const startTime = $('pubStartTime').value;
+    const endTime = $('pubEndTime').value;
+    const majors = ($('pubMajors').value || '').trim();
+    const visibleStudentIds = ($('pubVisibleIds').value || '').trim();
+
+    if (attr === '大课' && !courseName) { alert('大课需填写课程名'); return; }
+    if (!startTime || !endTime) { alert('请填写时间'); return; }
+
+    const params = { teacherId: currentUser.userId, attr, courseName, mode, startTime, endTime, majors, visibleStudentIds };
+
+    if (mode === 'single') {
+      const date = $('pubDate').value; if (!date) { alert('请选择日期'); return; }
+      params.date = date;
+    } else {
+      const sd = $('pubStartDate').value, ed = $('pubEndDate').value;
+      if (!sd || !ed) { alert('请选择起止日期'); return; }
+      const wds = Array.from(document.querySelectorAll('.wd:checked')).map(cb => Number(cb.value));
+      if (wds.length === 0) { alert('请选择周几'); return; }
+      params.startDate = sd; params.endDate = ed; params.weekdays = wds;
+      const c = $('pubCount').value; if (c) params.count = Number(c);
+    }
+
+    const res = await callAPI('publishSlots', params);
+    if (res && res.success) { alert(res.message || '发布成功'); loadCalendarEvents(); } else { alert((res && res.message) || '发布失败'); }
+  });
+}
+
+// ================== 数据分析 ==================
+let allStudents = []; let selectedStudents = [];
+
+function bindAnalysisHandlers() {
+  $('departmentSelect')?.addEventListener('change', loadDepartmentStudents);
+  $('majorSelect')?.addEventListener('change', loadMajorStudents);
+  $('selectAllBtn')?.addEventListener('click', selectAllStudents);
+  $('clearAllBtn')?.addEventListener('click', clearAllStudents);
+  $('generateReportBtn')?.addEventListener('click', generateReport);
+  $('exportBtn')?.addEventListener('click', exportReport);
+  $('resetFiltersBtn')?.addEventListener('click', resetFilters);
+
+  const now = new Date();
+  $('startMonth').value = now.toISOString().slice(0,7);
+  $('endMonth').value = now.toISOString().slice(0,7);
 }
 
 function loadDepartmentsList() {
   const departments = ['文科大学院', '理科大学院'];
-  const departmentSelect = document.getElementById('departmentSelect');
-  departmentSelect.innerHTML = '<option value="">请选择所属部门</option>';
-  departments.forEach(dept => {
-    const option = document.createElement('option');
-    option.value = dept;
-    option.textContent = dept;
-    departmentSelect.appendChild(option);
-  });
+  const sel = $('departmentSelect'); if (!sel) return;
+  sel.innerHTML = '<option value="">请选择所属部门</option>';
+  departments.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
 }
 
-async function loadUserProfile() {
-  document.getElementById('profileLoading').style.display = 'block';
-  document.getElementById('profileContent').style.display = 'none';
-  try {
-    const userInfo = await callAPI('getCurrentUserInfo', { userId: currentUser.userId });
-    displayUserProfile(userInfo || currentUser || {});
-    document.getElementById('profileLoading').style.display = 'none';
-    document.getElementById('profileContent').style.display = 'block';
-  } catch (error) {
-    console.error('加载用户信息失败:', error);
-    document.getElementById('profileLoading').style.display = 'none';
-  }
-}
-
-// ========== 学生选择相关 ==========
 async function loadDepartmentStudents() {
-  const department = document.getElementById('departmentSelect').value;
-  if (!department) return;
+  const department = $('departmentSelect')?.value; if (!department) return;
   try {
     const students = await callAPI('getStudentsByClass', { department });
-    allStudents = students;
-    displayStudentList(students);
-    document.getElementById('studentListArea').style.display = 'block';
-
-    const majors = [...new Set((students || []).map(s => s.major))];
-    const majorSelect = document.getElementById('majorSelect');
-    majorSelect.innerHTML = '<option value="">所有专业</option>';
-    majors.forEach(major => {
-      const option = document.createElement('option');
-      option.value = major;
-      option.textContent = major;
-      majorSelect.appendChild(option);
-    });
-  } catch (error) {
-    console.error('加载学生失败:', error);
-  }
+    allStudents = Array.isArray(students) ? students : [];
+    displayStudentList(allStudents);
+    const majors = [...new Set(allStudents.map(s => s.major))];
+    const majorSelect = $('majorSelect');
+    if (majorSelect) {
+      majorSelect.innerHTML = '<option value="">所有专业</option>';
+      majors.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; majorSelect.appendChild(o); });
+    }
+    $('studentListArea').style.display = 'block';
+  } catch (e) { console.error('加载学生失败:', e); }
 }
 
 function loadMajorStudents() {
-  const major = document.getElementById('majorSelect').value;
-  if (!major) {
-    displayStudentList(allStudents);
-  } else {
-    const filtered = (allStudents || []).filter(s => s.major === major);
-    displayStudentList(filtered);
-  }
+  const major = $('majorSelect')?.value;
+  const list = major ? allStudents.filter(s => s.major === major) : allStudents;
+  displayStudentList(list);
 }
 
 function displayStudentList(students) {
-  const studentList = document.getElementById('studentList');
-  studentList.innerHTML = '';
-  (students || []).forEach(student => {
-    const isSelected = selectedStudents.some(s => s.id === student.id);
+  const box = $('studentList'); if (!box) return;
+  box.innerHTML='';
+  (students || []).forEach(stu => {
+    const isSelected = selectedStudents.some(s => s.id === stu.id);
     const div = document.createElement('div');
-    div.className = `student-item ${isSelected ? 'selected' : ''}`;
+    div.className = 'student-item';
     div.innerHTML = `
-      <input type="checkbox" id="student_${student.id}" ${isSelected ? 'checked' : ''} onchange="toggleStudent('${student.id}')">
-      <label for="student_${student.id}">${student.name} (${student.id}) - ${student.major}</label>
+      <input type="checkbox" id="student_${stu.id}" ${isSelected ? 'checked' : ''}>
+      <label for="student_${stu.id}">${stu.name} (${stu.id}) - ${stu.major}</label>
     `;
-    studentList.appendChild(div);
+    div.querySelector('input').addEventListener('change', () => toggleStudent(stu.id));
+    box.appendChild(div);
   });
   updateSelectedCount();
 }
 
 function toggleStudent(studentId) {
-  const student = allStudents.find(s => s.id === studentId);
-  if (!student) return;
+  const stu = allStudents.find(s => s.id === studentId); if (!stu) return;
   const idx = selectedStudents.findIndex(s => s.id === studentId);
-  if (idx === -1) selectedStudents.push(student);
-  else selectedStudents.splice(idx, 1);
-  updateSelectedCount();
-  displayStudentList(allStudents.filter(s => {
-    const major = document.getElementById('majorSelect').value;
-    return !major || s.major === major;
-  }));
+  if (idx === -1) selectedStudents.push(stu); else selectedStudents.splice(idx, 1);
+  updateSelectedCount(); loadMajorStudents();
 }
-
 function selectAllStudents() {
-  const major = document.getElementById('majorSelect').value;
+  const major = $('majorSelect')?.value;
   const list = major ? allStudents.filter(s => s.major === major) : allStudents;
   list.forEach(stu => { if (!selectedStudents.some(s => s.id === stu.id)) selectedStudents.push(stu); });
-  updateSelectedCount();
-  displayStudentList(list);
+  updateSelectedCount(); displayStudentList(list);
 }
+function clearAllStudents() { selectedStudents=[]; updateSelectedCount(); loadMajorStudents(); }
+function updateSelectedCount() { $('selectedCount').textContent = selectedStudents.length; }
 
-function clearAllStudents() {
-  selectedStudents = [];
-  updateSelectedCount();
-  displayStudentList(allStudents.filter(s => {
-    const major = document.getElementById('majorSelect').value;
-    return !major || s.major === major;
-  }));
-}
-
-function updateSelectedCount() {
-  document.getElementById('selectedCount').textContent = selectedStudents.length;
-}
-
-// ========== 数据分析 ==========
 async function generateReport() {
   if (selectedStudents.length === 0) { alert('请先选择学生'); return; }
-  const startMonth = document.getElementById('startMonth').value;
-  const endMonth = document.getElementById('endMonth').value;
+  const startMonth = $('startMonth').value || '';
+  const endMonth   = $('endMonth').value || '';
   const dataTypes = [];
-  if (document.getElementById('attendance').checked) dataTypes.push('出席');
-  if (document.getElementById('homework').checked) dataTypes.push('作业');
-  if (document.getElementById('consultation').checked) dataTypes.push('面谈');
-  if (document.getElementById('progress').checked) dataTypes.push('进度');
+  if ($('attendance').checked) dataTypes.push('出席');
+  if ($('homework').checked) dataTypes.push('作业');
+  if ($('consultation').checked) dataTypes.push('面谈');
+  if ($('progress').checked) dataTypes.push('进度');
 
-  document.getElementById('resultsPanel').style.display = 'block';
-  document.getElementById('loadingIndicator').style.display = 'block';
-  document.getElementById('resultsData').style.display = 'none';
+  $('resultsPanel').style.display = 'block';
+  $('loadingIndicator').style.display = 'flex';
+  $('resultsData').style.display = 'none';
 
   const studentIds = selectedStudents.map(s => s.id);
   try {
-    const reportData = await callAPI('generateStudentReport', { studentIds, startMonth, endMonth, dataTypes });
-    displayReportResults(reportData || []);
-    document.getElementById('loadingIndicator').style.display = 'none';
-    document.getElementById('resultsData').style.display = 'block';
-    document.getElementById('exportBtn').style.display = 'inline-block';
-  } catch (error) {
-    alert('生成报告失败：' + error.message);
-    document.getElementById('loadingIndicator').style.display = 'none';
+    const data = await callAPI('generateStudentReport', { studentIds, startMonth, endMonth, dataTypes });
+    displayReportResults(Array.isArray(data) ? data : []);
+    $('loadingIndicator').style.display = 'none';
+    $('resultsData').style.display = 'block';
+    $('exportBtn').style.display = 'inline-block';
+  } catch (e) {
+    alert('生成报告失败：' + e.message);
+    $('loadingIndicator').style.display = 'none';
   }
 }
 
 function displayReportResults(data) {
-  document.getElementById('resultCount').textContent = `共 ${data.length} 条记录`;
-  const tableBody = document.getElementById('tableBody');
-  tableBody.innerHTML = '';
-  (data || []).forEach(item => {
-    const row = document.createElement('tr');
-    row.innerHTML = `
-      <td>${item.student}</td>
-      <td>${item.type}</td>
-      <td>${item.value}</td>
-      <td>${item.note}</td>
+  $('resultCount').textContent = '共 ' + data.length + ' 条记录';
+  const tbody = $('tableBody'); tbody.innerHTML = '';
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.student}</td><td>${item.type}</td><td>${item.value}</td><td>${item.note || ''}</td>
     `;
-    tableBody.appendChild(row);
+    tbody.appendChild(tr);
   });
-  generateCopyableReport(data || []);
+  generateCopyableReport(data);
 }
 
 function generateCopyableReport(data) {
-  const copyArea = document.getElementById('copyArea');
   let report = '学生数据分析报告\n\n';
-  const students = [...new Set((data || []).map(item => item.student))];
-  students.forEach(stu => {
-    const sd = data.filter(i => i.student === stu);
-    report += `${stu}:\n`;
-    sd.forEach(i => { report += `- ${i.type}: ${i.value} (${i.note})\n`; });
+  const names = [...new Set(data.map(i => i.student))];
+  names.forEach(n => {
+    const rows = data.filter(i => i.student === n);
+    report += n + ':\n';
+    rows.forEach(r => { report += '- ' + r.type + ': ' + r.value + ' (' + (r.note || '') + ')\n'; });
     report += '\n';
   });
   report += '请基于以上数据分析学生表现。';
-  copyArea.textContent = report;
+  $('copyArea').textContent = report;
 }
-
 function exportReport() {
-  const copyArea = document.getElementById('copyArea');
-  const text = copyArea.textContent;
+  const text = $('copyArea').textContent || '';
   navigator.clipboard.writeText(text).then(() => {
-    const btn = document.getElementById('exportBtn');
-    const t = btn.textContent;
-    btn.textContent = '已复制!';
-    setTimeout(() => { btn.textContent = t; }, 2000);
-  }).catch(() => {
-    alert('复制失败，请手动选择文本');
-    copyArea.select();
-  });
+    const btn = $('exportBtn'); const t = btn.textContent;
+    btn.textContent = '已复制!'; setTimeout(() => { btn.textContent = t; }, 1500);
+  }).catch(() => { alert('复制失败，请手动选择文本'); });
 }
-
 function resetFilters() {
-  document.getElementById('departmentSelect').value = '';
-  document.getElementById('majorSelect').value = '';
-  selectedStudents = [];
-  allStudents = [];
-  document.getElementById('studentListArea').style.display = 'none';
-  const now = new Date();
-  document.getElementById('startMonth').value = now.toISOString().slice(0, 7);
-  document.getElementById('endMonth').value = now.toISOString().slice(0, 7);
-  document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = true);
-  document.getElementById('resultsPanel').style.display = 'none';
-  document.getElementById('exportBtn').style.display = 'none';
+  $('departmentSelect').value = ''; $('majorSelect').value = '';
+  selectedStudents = []; allStudents = []; $('studentListArea').style.display = 'none';
+  const now = new Date(); $('startMonth').value = now.toISOString().slice(0,7); $('endMonth').value = now.toISOString().slice(0,7);
+  ['attendance','homework','consultation','progress'].forEach(id => { const cb=$(id); if(cb) cb.checked = true; });
+  $('resultsPanel').style.display = 'none'; $('exportBtn').style.display = 'none';
 }
 
-// ========== 用户信息显示 ==========
-function displayUserProfile(info) {
-  info = info || {};
-  const basicInfo = document.getElementById('basicInfo');
-  basicInfo.innerHTML = `
-    <div class="profile-item"><label>用户ID:</label><span>${info.username || info.userId || ''}</span></div>
-    <div class="profile-item"><label>姓名:</label><span>${info.name || ''}</span></div>
-    <div class="profile-item"><label>所属:</label><span>${info.department || ''}</span></div>
-    <div class="profile-item"><label>专业:</label><span>${info.major || ''}</span></div>
-    <div class="profile-item"><label>身份:</label><span>${info.role || ''}</span></div>
-  `;
-
-  if ((info.role || '').toLowerCase() === '学生' || (info.role || '').toLowerCase() === 'student') {
-    if (info.status) {
-      document.getElementById('studyInfo').style.display = 'block';
-      document.getElementById('studyDetails').innerHTML = `
-        <div class="profile-item"><label>当前状态:</label><span>${info.status}</span></div>
-        <div class="profile-item"><label>希望入学时间:</label><span>${info.entryTime || '未设置'}</span></div>
-        <div class="profile-item"><label>担当老师:</label><span>${info.teacher || '未分配'}</span></div>
-        <div class="profile-item"><label>志望大学:</label><span>${info.targetUniversity || '未设置'}</span></div>
-      `;
-    }
-    loadStudentAttendance(info.userId || currentUser.userId);
-    loadStudentConsultations(info.userId || currentUser.userId);
-  }
+// ================== 用户数据加载（示例） ==================
+function loadUserData() {
+  const roleLower = String(currentUser?.role || '').toLowerCase();
+  if (roleLower === '老师' || roleLower === 'teacher') loadDepartmentsList();
 }
 
-async function loadStudentAttendance(userId) {
+// ================== 初始化 + API 连接状态检测 ==================
+document.addEventListener('DOMContentLoaded', async () => {
+  $('loginBtn')?.addEventListener('click', login);
+  $('registerBtn')?.addEventListener('click', registerUser);
+  $('logoutBtn')?.addEventListener('click', logout);
+  $('showRegisterBtn')?.addEventListener('click', showRegisterForm);
+  $('showLoginBtn')?.addEventListener('click', showLoginForm);
+  $('loginUsername')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
+
+  // 立即显示“检测中”
+  setApiStatus({ok:null, text:'API 检测中'});
+
+  // 并发两次轻探测：testConnection 和一次空动作
   try {
-    const d = await callAPI('getStudentAttendanceStats', { userId });
-    if (d) {
-      document.getElementById('attendanceInfo').style.display = 'block';
-      document.getElementById('attendanceDetails').innerHTML = `
-        <div class="profile-item"><label>总出勤率:</label><span>${d.totalAttendance}</span></div>
-        <div class="profile-item"><label>作业完成率:</label><span>${d.totalHomework}</span></div>
-      `;
+    const [r1, r2] = await Promise.allSettled([
+      callAPI('testConnection'),
+      callAPI('ping', {t: Date.now()})
+    ]);
+    const ok = (r1.value && r1.value.success) || (r2.value && r2.value.success);
+    setApiStatus({ok, text: ok ? 'API 连接成功' : 'API 连接异常'});
+    if (!ok) {
+      const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
     }
-  } catch (e) { console.error('加载出勤信息失败:', e); }
-}
-
-async function loadStudentConsultations(userId) {
-  try {
-    const cs = await callAPI('getConsultationRecords', { userId });
-    if (cs && cs.length > 0) {
-      document.getElementById('consultationInfo').style.display = 'block';
-      const latest = cs[0];
-      document.getElementById('consultationDetails').innerHTML = `
-        <div class="profile-item"><label>最近面谈:</label><span>${latest.month}</span></div>
-        <div class="profile-item"><label>面谈次数:</label><span>${latest.consultationCount}次</span></div>
-        <div class="profile-item"><label>当前问题:</label><span>${latest.currentIssues || '无'}</span></div>
-      `;
-    }
-  } catch (e) { console.error('加载面谈记录失败:', e); }
-}
-
-// ========== 通用功能 ==========
-function switchTab(tabName) {
-  document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
-  document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-  document.querySelectorAll('.content-panel').forEach(p => p.classList.remove('active'));
-  const panelMap = { 'calendar': 'calendarPanel', 'analysis': 'analysisPanel', 'profile': 'profilePanel' };
-  document.getElementById(panelMap[tabName]).classList.add('active');
-  if (tabName === 'profile') loadUserProfile();
-}
-
-function refreshData() {
-  if (currentUser) {
-    loadCalendarEvents();
-    updateTodayStats();
-  }
-}
-
-function updateTodayStats() {
-  document.getElementById('todayCourses').textContent = '2';
-  document.getElementById('todayConsultations').textContent = '1';
-  document.getElementById('todayReminders').textContent = '3';
-  document.getElementById('attendanceRate').textContent = '95%';
-}
-
-function showEventDetails(event) {
-  const details = [];
-  details.push(`标题: ${event.title}`);
-  details.push(`时间: ${event.start.toLocaleString('zh-CN')}`);
-  if (event.end) details.push(`结束: ${event.end.toLocaleString('zh-CN')}`);
-  if (event.extendedProps && event.extendedProps.description) details.push(`描述: ${event.extendedProps.description}`);
-  alert(details.join('\n'));
-}
-
-// ========== 页面初始化 ==========
-document.addEventListener('DOMContentLoaded', function () {
-  try {
-    const now = new Date();
-    document.getElementById('startMonth').value = now.toISOString().slice(0, 7);
-    document.getElementById('endMonth').value = now.toISOString().slice(0, 7);
-
-    // 绑定按钮
-    document.getElementById('loginBtn').addEventListener('click', login);
-    document.getElementById('registerBtn').addEventListener('click', register);
-    document.getElementById('logoutBtn').addEventListener('click', logout);
-
-    document.getElementById('showRegisterBtn').addEventListener('click', showRegisterForm);
-    document.getElementById('showLoginBtn').addEventListener('click', showLoginForm);
-
-    document.querySelectorAll('.nav-tab').forEach(tab => {
-      tab.addEventListener('click', function () { switchTab(this.dataset.tab); });
-    });
-
-    document.getElementById('refreshDataBtn').addEventListener('click', refreshData);
-    document.getElementById('analysisBtn').addEventListener('click', () => switchTab('analysis'));
-    document.getElementById('profileBtn').addEventListener('click', () => switchTab('profile'));
-    document.getElementById('helpBtn').addEventListener('click', () => {
-      alert('使用帮助：\n\n1. 登录后可查看个人课程安排\n2. 数据分析功能需要老师权限\n3. 点击日历事件可查看详情\n4. 个人信息页面显示详细资料');
-    });
-
-    document.getElementById('loginUsername').addEventListener('keypress', function (e) {
-      if (e.key === 'Enter') login();
-    });
-
-    testAPIConnection();
-  } catch (error) {
-    console.error('初始化失败:', error);
-    alert('页面初始化失败: ' + error.message);
+  } catch (e) {
+    setApiStatus({ok:false, text:'API 连接失败'});
+    const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
   }
 });
-
-// ========== API连接测试 ==========
-async function testAPIConnection() {
-  try {
-    const result = await callAPI('testConnection');
-    const errorDiv = document.getElementById('loginError');
-    if (errorDiv) {
-      errorDiv.style.color = 'green';
-      errorDiv.textContent = 'API连接成功';
-    }
-  } catch (error) {
-    const errorDiv = document.getElementById('loginError');
-    if (errorDiv) {
-      errorDiv.textContent = '服务器连接失败，请稍后重试';
-      errorDiv.style.color = 'red';
-    }
-  }
-}

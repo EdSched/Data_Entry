@@ -199,6 +199,17 @@ window.onLoginSuccess = function(user) {
   loadCalendarEvents();
 
   try { localStorage.setItem('eds:user', JSON.stringify(currentUser)); } catch(_) {}
+  // 让抽屉在点击菜单后收起；如果点的是当前页，就不跳转
+document.getElementById('sidebar')?.addEventListener('click', function (e) {
+  const a = e.target.closest('a.nav-link');
+  if (!a) return;
+
+  const cur = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
+  const target = (a.getAttribute('href') || 'index.html').toLowerCase();
+
+  if (target === cur) e.preventDefault();  // 同页：不刷新
+  toggleSidebar(false);                    // 不管怎样都收起
+}, { passive:false });
 };
 
 logoutBtn.addEventListener('click', () => {

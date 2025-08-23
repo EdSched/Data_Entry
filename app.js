@@ -447,6 +447,51 @@ function loadUserData() {
   if (roleLower === '老师' || roleLower === 'teacher') loadDepartmentsList();
 }
 
+function openDrawer(){
+  const aside = document.querySelector('aside');
+  const bd = document.getElementById('drawerBackdrop');
+  if(!aside || !bd) return;
+  aside.classList.add('open');
+  bd.classList.add('show');
+  // 禁止背景滚动
+  document.documentElement.style.overflow = 'hidden';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeDrawer(){
+  const aside = document.querySelector('aside');
+  const bd = document.getElementById('drawerBackdrop');
+  if(!aside || !bd) return;
+  aside.classList.remove('open');
+  bd.classList.remove('show');
+  // 恢复滚动
+  document.documentElement.style.overflow = '';
+  document.body.style.overflow = '';
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('drawerToggle');
+  const bd = document.getElementById('drawerBackdrop');
+  if (btn) btn.addEventListener('click', openDrawer);
+  if (bd)  bd.addEventListener('click', closeDrawer);
+
+  // 手机端：点击侧栏的导航项后自动收起抽屉
+  document.querySelectorAll('aside .nav-link').forEach(a=>{
+    a.addEventListener('click', ()=>{
+      if (window.matchMedia('(max-width: 768px)').matches) closeDrawer();
+      // 切到日历时，给它一次尺寸刷新
+      if (a.dataset.page === 'calendar' && window.calendar) {
+        setTimeout(()=>window.calendar.updateSize(), 80);
+      }
+    });
+  });
+
+  // 支持 Esc 关闭
+  document.addEventListener('keydown', (e)=>{
+    if (e.key === 'Escape') closeDrawer();
+  }, {passive:true});
+});
+
 // ================== 初始化 + API 连接状态检测 ==================
 document.addEventListener('DOMContentLoaded', async () => {
   $('loginBtn')?.addEventListener('click', login);

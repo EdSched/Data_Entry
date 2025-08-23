@@ -106,3 +106,40 @@ html,body{height:100%;margin:0;background:#fafafa;color:var(--text);font:14px/1.
 }
 .fc .fc-toolbar-title{font-size:16px}
 .fc .fc-button{border-radius:8px !important}
+
+/* ==== Drawer 修复（覆盖）==== */
+.topbar { position: sticky; top: 0; z-index: 1100; }
+
+#hamburger { display: inline-flex; align-items: center; justify-content: center; }
+
+.sidebar{
+  position: fixed;
+  left: -264px;                 /* 完整藏在屏外 */
+  top: 56px;                    /* 顶栏高度 */
+  width: 264px;
+  height: calc(100vh - 56px);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  transition: left .25s ease;
+  z-index: 1200;                /* 盖在主区之上 */
+  overflow: auto;
+}
+.sidebar.open { left: 0; }
+
+.backdrop{
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,.15);
+  opacity: 0; pointer-events: none;
+  transition: opacity .2s ease;
+  z-index: 1190;
+}
+.backdrop.show{ opacity: 1; pointer-events: auto; }
+
+/* 防止任何视图把抽屉盖掉 */
+#mainCalendar, .fc, .fc-view-harness { position: relative; z-index: 1; }
+
+/* 移动端顶栏略矮时同步抽屉高度 */
+@media (max-width: 768px){
+  .sidebar{ top: 56px; height: calc(100vh - 56px); }
+}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>我的日程 - 师生管理平台</title>
+  <link rel="stylesheet" href="appV3.css"/>
+</head>
+<body>
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <button id="hamburger" aria-label="打开菜单">☰</button>
+    <div class="brand">师生管理平台</div>
+    <div class="spacer"></div>
+    <div id="userBadge" class="user-badge">
+      <span id="greeting">欢迎，用户</span>
+      <button id="logoutBtn" class="btn btn-outline">退出</button>
+    </div>
+  </header>
+
+  <!-- 侧栏 + 遮罩 -->
+  <aside id="sidebar" class="sidebar open">
+    <div class="sidebar-header">导航</div>
+    <nav class="nav">
+      <a class="nav-link" href="index.html">日历</a>
+      <a class="nav-link" href="arrange.html">课程安排</a>
+      <a class="nav-link" href="analysis.html">数据分析</a>
+      <a class="nav-link active" href="myschedule.html">我的日程</a>
+      <a class="nav-link" href="profile.html">个人信息</a>
+    </nav>
+  </aside>
+  <div id="backdrop" class="backdrop"></div>
+
+  <!-- 主体 -->
+  <main class="app">
+    <section class="card">
+      <h2>我的日程</h2>
+      <p>这里是“我的日程”页面，你可以在此加载学生或老师的个人行程。</p>
+    </section>
+  </main>
+</body>
+</html>

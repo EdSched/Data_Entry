@@ -12,7 +12,6 @@
 <body>
   <!-- 顶栏 -->
   <header class="topbar">
-    <!-- 登录前不显示汉堡 -->
     <button id="hamburger" aria-label="打开菜单" style="display:none;">☰</button>
     <div class="brand">师生管理平台</div>
     <div class="spacer"></div>
@@ -22,7 +21,7 @@
     </div>
   </header>
 
-  <!-- 登录容器（仅用户ID） -->
+  <!-- 登录 -->
   <main id="loginContainer" class="center-wrap">
     <section class="card card-narrow">
       <h1 class="title">登录</h1>
@@ -53,43 +52,48 @@
     </section>
   </main>
 
-  <!-- 主页面：只有一个主日历 -->
+  <!-- 主页面：登录后显示 -->
   <main id="appContainer" class="app" style="display:none;">
-
-    <!-- ✅ 抽屉和遮罩被移到登录之后（主应用内部） -->
-    <aside id="sidebar" class="sidebar">
-      <div class="sidebar-header">导航</div>
-      <nav class="nav">
-        <a class="nav-link active" href="index.html">日历</a>
-        <a class="nav-link" id="linkArrange" href="arrange.html">课程安排（子页）</a>
-        <a class="nav-link" href="analysis.html">数据分析（子页）</a>
-        <a class="nav-link" href="myschedule.html">我的日程（子页）</a>
-        <a class="nav-link" href="profile.html">个人信息（子页）</a>
-      </nav>
-      <div class="sidebar-footer">
-        <button id="refreshBtn" class="btn btn-outline btn-full">刷新日历</button>
-        <div id="apiPing" class="muted small">API: —</div>
-      </div>
-    </aside>
-    <div id="backdrop" class="backdrop"></div>
-    <!-- ✅ 以上两块原本在登录前，已移动到此处 -->
-
-    <section class="card">
-      <div class="calendar-head">
-        <div class="calendar-title" id="calendarTitle">—</div>
-        <div class="calendar-ctrl">
-          <button id="prevBtn" class="btn btn-outline">‹</button>
-          <button id="todayBtn" class="btn btn-outline">今天</button>
-          <button id="nextBtn" class="btn btn-outline">›</button>
-          <div class="seg">
-            <button id="dayBtn" class="seg-btn active">日</button>
-            <button id="weekBtn" class="seg-btn">周</button>
-            <button id="monthBtn" class="seg-btn">月</button>
-          </div>
+    <div class="app-layout">
+      <!-- 侧栏（登录后常驻；桌面固定，移动抽屉） -->
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">导航</div>
+        <nav class="nav">
+          <a class="nav-link active" href="index.html">日历</a>
+          <a class="nav-link" id="linkArrange" href="arrange.html">课程安排（子页）</a>
+          <a class="nav-link" href="analysis.html">数据分析（子页）</a>
+          <a class="nav-link" href="myschedule.html">我的日程（子页）</a>
+          <a class="nav-link" href="profile.html">个人信息（子页）</a>
+        </nav>
+        <div class="sidebar-footer">
+          <button id="refreshBtn" class="btn btn-outline btn-full">刷新日历</button>
+          <div id="apiPing" class="muted small">API: —</div>
         </div>
-      </div>
-      <div id="mainCalendar"></div>
-    </section>
+      </aside>
+
+      <!-- 主内容：只有一个主日历 -->
+      <section class="page">
+        <section class="card">
+          <div class="calendar-head">
+            <div class="calendar-title" id="calendarTitle">—</div>
+            <div class="calendar-ctrl">
+              <button id="prevBtn" class="btn btn-outline">‹</button>
+              <button id="todayBtn" class="btn btn-outline">今天</button>
+              <button id="nextBtn" class="btn btn-outline">›</button>
+              <div class="seg">
+                <button id="dayBtn" class="seg-btn active">日</button>
+                <button id="weekBtn" class="seg-btn">周</button>
+                <button id="monthBtn" class="seg-btn">月</button>
+              </div>
+            </div>
+          </div>
+          <div id="mainCalendar"></div>
+        </section>
+      </section>
+    </div>
+
+    <!-- 移动端遮罩（桌面不会显示） -->
+    <div id="backdrop" class="backdrop"></div>
   </main>
 
   <!-- 逻辑 -->

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>师生管理平台</title>
+  <!-- FullCalendar -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
+  <style>
+:root{
+  --border:#e6e6e6;
+  --text:#111;
+  --muted:#666;
+  --bg:#fff;
+  --topbar:56px;
+  --sidebar:300px;
+}
+/* 顶栏 */
+.topbar{
+  position:sticky;top:0;z-index:1000;display:flex;align-items:center;gap:12px;
+  height:var(--topbar);background:var(--bg);border-bottom:1px solid var(--border);padding:0 12px;
+}
+.brand{font-weight:700;color:var(--text)}
+.spacer{flex:1}
+.user-badge{display:flex;align-items:center;gap:8px}
+.user-badge .btn{height:30px}
+
+/* section skeleton (head/body slots for titles and descriptions) */
+  .section{ margin-block: clamp(24px, 4vw, 48px); }
+  .section-head{ margin: 0 0 12px 0; }
+  .section-head .title{ margin: 0 0 4px 0; font-size: clamp(18px, 2.2vw, 22px); font-weight: 600; }
+  .section-head .desc{ margin: 0; color: var(--muted); }
+  .section-body{ display:block; }
+
+  /* ===== Showcase 基础 ===== */
+  .showcase{ margin-top: 32px; display: grid; gap: 24px; }
+
+  /* 统一卡片风格 */
+  .card{ position: relative; border: 1px solid var(--divider); border-radius: 14px; background: #fff; overflow: clip; }
+  .card-body{ padding: 18px 18px; }
+  .card-body.center{ display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; text-align:center; }
+  .card .title{ font-size: 20px; margin: 0 0 6px; }
+  .card .desc{ color: var(--muted); margin: 0; }
+  .card .kpi{ font-size: 28px; font-weight: 700; letter-spacing: .5px; }
+
+  /* 可选：作为封面图时用 .cover 填充内容区 */
+  .card .cover{ position:absolute; inset:0; width:100%; height:100%; object-fit: cover; opacity: .95; }
+
+  /* 固定比例：用 aspect-ratio 锁定尺寸 */
+  .ratio-16x9{ aspect-ratio: 16 / 9; }
+  .ratio-4x3 { aspect-ratio: 4 / 3; }
+  .ratio-1x1 { aspect-ratio: 1 / 1; }
+
+  /* 网格：桌面布局 */
+  .showcase-grid{ display:grid; gap: 18px; }
+  .showcase-grid.grid-2{ grid-template-columns: repeat(2, 1fr); }
+  .showcase-grid.grid-3{ grid-template-columns: repeat(3, 1fr); }
+  .showcase-grid.grid-4{ grid-template-columns: repeat(4, 1fr); }
+
+  /* banner 全宽卡片撑满一行 */
+  .showcase-banner{ width:100%; }
+
+  /* hover 小交互（桌面） + motion reduce */
+  @media (hover:hover){
+    .card{ transition: transform .18s ease; }
+    .card:hover{ transform: translateY(-2px); }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .card{ transition: none; }
+  }
+
+  /* ===== 平板：自动紧凑 ===== */
+  @media (min-width: 761px) and (max-width: 1180px){
+    .showcase-grid.grid-3{ grid-template-columns: repeat(2, 1fr); }
+    .showcase-grid.grid-4{ grid-template-columns: repeat(2, 1fr); }
+  }
+
+  /* ===== 手机：单列堆叠，留足触控空间 ===== */
+  @media (max-width: 760px){
+    .showcase{ gap: 16px; }
+    .showcase-grid{ gap: 16px; }
+    .card-body{ padding: 16px; }
+    .card .title{ font-size: 18px; }
+    .card .kpi{ font-size: 24px; }
+    /* 可选：手机上提高纵向可读性
+    .ratio-16x9{ aspect-ratio: 3 / 2; }
+    */
+  }
+    @media (max-width: 768px){
+  .showcase-grid { grid-template-columns: 1fr !important; }
+  /* 如果某些卡片不是 grid，而是自由元素，也兜底成单列 */
+  .showcase { display: flex; flex-direction: column; gap: 16px; }
+  .showcase > * { flex: 1 1 100%; }
+}
+/* 主容器与卡片 */
+.app{height:calc(100vh - var(--topbar));display:flex}
+.center-wrap{display:flex;justify-content:center;align-items:flex-start;padding:40px;width:100%;height:100vh;background:#fafafa}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px}
+.card-narrow{width:100%;max-width:520px}
+
+/* 表单/按钮（黑灰色系） */
+.title{margin:0 0 24px 0;font-size:24px;font-weight:600;color:var(--text)}
+.label{display:block;margin-bottom:6px;color:var(--muted);font-weight:500}
+.input{
+  width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:#fff;color:var(--text);
+  font-size:14px;transition:border-color 0.2s;
+}
+.input:focus{outline:none;border-color:#999}
+.input::placeholder{color:#aaa}
+.form-row{margin-bottom:16px}
+.btn{height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s}
+.btn:active{transform:translateY(1px)}
+.btn:hover{background:#f8f8f8}
+.btn-solid{border-color:#333;background:#333;color:#fff}
+.btn-solid:hover{background:#555;border-color:#555}
+.btn-outline{border-color:#333;background:#fff;color:#333}
+.btn-outline:hover{background:#f5f5f5}
+.btn-full{width:100%}
+.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+.small{font-size:12px}.muted{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.error{color:#d32f2f;font-size:12px;margin-top:8px}
+
+.calendar-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+.calendar-title{font-weight:700;font-size:20px;color:var(--text)}
+.calendar-ctrl{margin-left:auto;display:flex;gap:8px;align-items:center}
+.seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg-btn{border:0;background:#fff;padding:8px 16px;cursor:pointer;border-right:1px solid var(--border);font-size:14px;color:var(--text);transition:all 0.2s}
+.seg-btn:last-child{border-right:0}
+.seg-btn:hover{background:#f8f8f8}
+.seg-btn.active{background:#333;color:#fff}
+</style>
+  </head>
+  <body>
+    <header class="topbar">
+    <div class="brand">师生管理平台</div>
+    <div class="spacer"></div>
+    <div id="userBadge" class="user-badge" style="display:none;">
+      <span id="greeting"></span>
+      <button id="logoutBtn" class="btn btn-outline">退出</button>
+    </div>
+  </header>
+  <!-- 登录页面 -->
+  <main id="loginContainer" class="center-wrap">
+    <section class="card card-narrow">
+      <h1 class="title">登录</h1>
+      <div class="form-row">
+        <label for="loginUsername" class="label">用户ID</label>
+        <input id="loginUsername" class="input" placeholder="例如：S001 / T001 / A001" />
+      </div>
+      <button id="loginBtn" class="btn btn-solid btn-full">登录</button>
+      <div id="loginError" class="error"></div>
+
+      <details class="mt-16">
+        <summary class="small">没有账号？登记信息</summary>
+        <div class="grid2 mt-8">
+          <input id="registerName" class="input" placeholder="姓名"/>
+          <input id="registerEmail" class="input" placeholder="邮箱"/>
+          <select id="registerDepartment" class="input">
+            <option value="">所属</option><option>文科大学院</option><option>理科大学院</option><option>其他</option>
+          </select>
+          <input id="registerMajor" class="input" placeholder="专业"/>
+          <select id="registerRole" class="input">
+            <option value="">身份</option><option>学生</option><option>老师</option>
+          </select>
+        </div>
+        <button id="registerBtn" class="btn btn-outline mt-8">提交登记</button>
+        <div id="registerError" class="error"></div>
+      </details>
+      <div id="apiStatusTip" class="muted small mt-12">正在检测 API</div>
+    </section>
+  </main>
+
+  <div class="wrap">
+    <aside>
+      <div class="brand">
+      </div>
+      <div class="sidebar-section">
+              <h3>今日概览</h3>
+              <div class="stats-grid">
+                <div class="stat-item">
+                  <div class="stat-number" id="todayCourses">0</div>
+                  <div class="stat-label">课程</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number" id="todayConsultations">0</div>
+                  <div class="stat-label">面谈</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number" id="todayReminders">0</div>
+                  <div class="stat-label">提醒</div>
+                </div>
+                <div class="stat-item">
+                  <div class="stat-number" id="attendanceRate">0%</div>
+                  <div class="stat-label">出勤率</div>
+                </div>
+              </div>
+            </div>
+      <nav>
+        <a href="calendar.html"><span>我的日历</span></a>
+        <a href="arrange.html"><span>课程安排</span></a>
+        <a href="myschedule.html"><span>我的任务</span></a>
+        <a href="analysis.html"><span>数据分析</span></a>
+        <a href="profile.html"><span>个人信息</span></a>
+      </nav>
+    </aside>
+<main>
+  <section class="card">
+            <div class="calendar-head">
+              <div class="calendar-title" id="calendarTitle">加载中</div>
+              <div class="calendar-ctrl">
+                <button id="prevBtn" class="btn btn-outline">‹</button>
+                <button id="todayBtn" class="btn btn-outline">今天</button>
+                <button id="nextBtn" class="btn btn-outline">›</button>
+                <div class="seg">
+                  <button id="dayBtn" class="seg-btn active">日</button>
+                  <button id="weekBtn" class="seg-btn">周</button>
+                  <button id="monthBtn" class="seg-btn">月</button>
+                </div>
+              </div>
+            </div>
+          </section>
+</main>
+<script>
+// ========== 配置 ==========
+const API_URL = 'https://script.google.com/macros/s/AKfycbwJYf3jeNAF37vgVXTiWnEgYS5dlh9l9UChkiEhThh4OwV3TVEvP3ZtIS8bpm5G3HLf/exec';
+
+// ========== 小工具 ==========
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+
+async function callAPI(action, params = {}, timeout = 15000) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeout);
+  try {
+    const fd = new URLSearchParams();
+    fd.append('action', action);
+    fd.append('params', JSON.stringify(params));
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: fd,
+      mode: 'cors',
+      signal: controller.signal
+    });
+    const text = await res.text();
+    let clean = text.trim();
+    const s = clean.indexOf('{'), e = clean.lastIndexOf('}');
+    if (s !== -1 && e !== -1 && e > s) clean = clean.slice(s, e + 1);
+    return JSON.parse(clean);
+  } catch (err) {
+    return { success: false, message: String(err?.message || err) };
+  } finally {
+    clearTimeout(t);
+  }
+
+
+// ========== 节点 ==========
+const loginContainer = $('#loginContainer');
+const appContainer   = $('#appContainer');
+
+const greetingEl = $('#greeting');
+const userBadge  = $('#userBadge');
+const logoutBtn  = $('#logoutBtn');
+
+const hamburger  = $('#hamburger');
+const sidebar    = $('#sidebar');
+const backdrop   = $('#backdrop');
+
+const apiStatusTip = $('#apiStatusTip');
+
+const loginBtn   = $('#loginBtn');
+const loginInput = $('#loginUsername');
+const loginErr   = $('#loginError');
+
+const regBtn     = $('#registerBtn');
+const regErr     = $('#registerError');
+
+const prevBtn    = $('#prevBtn');
+const nextBtn    = $('#nextBtn');
+const todayBtn   = $('#todayBtn');
+const dayBtn     = $('#dayBtn');
+const weekBtn    = $('#weekBtn');
+const monthBtn   = $('#monthBtn');
+const titleEl    = $('#calendarTitle');
+
+const refreshBtn = $('#refreshBtn');
+
+let calendar = null;
+let currentUser = null;
+let currentPage = 'calendar';
+
+// ========== 页面切换 ==========
+function showPage(pageId) {
+  // 隐藏所有页面
+  $$('.page-content').forEach(page => page.style.display = 'none');
+  
+  // 显示指定页面
+  const targetPage = $(`#${pageId}Page`);
+  if (targetPage) {
+    targetPage.style.display = '';
+  }
+  
+  // 更新导航状态
+  $$('.nav-link').forEach(link => link.classList.remove('active'));
+  const activeLink = $(`.nav-link[data-page="${pageId}"]`);
+  if (activeLink) {
+    activeLink.classList.add('active');
+  }
+  
+  currentPage = pageId;
+  
+  // 如果切换到日历页面，确保日历正确渲染
+  if (pageId === 'calendar' && calendar) {
+    setTimeout(() => calendar.updateSize(), 100);
+  }
+}
+
+// ========== 抽屉控制 ==========
+function toggleSidebar(show) {
+  const willShow = (typeof show === 'boolean') ? show : !sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', willShow);
+  backdrop.classList.toggle('show', willShow);
+}
+
+// 移动端才显示汉堡按钮和抽屉功能
+function updateMobileLayout() {
+  const isMobile = window.matchMedia('(max-width: 1023px)').matches;
+  hamburger.style.display = isMobile ? 'inline-flex' : 'none';
+  
+  if (!isMobile) {
+    // 桌面端：移除抽屉状态
+    sidebar.classList.remove('open');
+    backdrop.classList.remove('show');
+  }
+}
+
+hamburger.addEventListener('click', () => toggleSidebar());
+backdrop.addEventListener('click', () => toggleSidebar(false));
+
+// 监听屏幕尺寸变化
+window.addEventListener('resize', updateMobileLayout);
+
+// ========== 导航处理 ==========
+sidebar.addEventListener('click', (e) => {
+  const link = e.target.closest('a.nav-link');
+  if (!link) return;
+  
+  e.preventDefault();
+  
+  const pageId = link.dataset.page;
+  if (pageId) {
+    showPage(pageId);
+    
+    // 移动端点击后收起抽屉
+    if (window.matchMedia('(max-width: 1023px)').matches) {
+      toggleSidebar(false);
+    }
+  }
+});
+
+// ========== 日历初始化 ==========
+function initCalendar() {
+  if (calendar) calendar.destroy();
+
+  const initialView = window.matchMedia('(max-width: 768px)').matches
+    ? 'timeGridDay'
+    : 'timeGridWeek';
+
+  calendar = new FullCalendar.Calendar($('#mainCalendar'), {
+    initialView,
+    locale: 'zh-cn',
+    firstDay: 1,
+    height: 'auto',
+    headerToolbar: false,
+    allDaySlot: false,
+    slotMinTime: '09:00:00',
+    slotMaxTime: '21:00:00',
+    slotDuration: '00:30:00',
+    expandRows: true,
+    events: [],
+    datesSet: updateCalendarTitle,
+    eventClick: (info) => {
+      const ev = info.event;
+      const ext = ev.extendedProps || {};
+      const isStudent = currentUser && (currentUser.role === '学生' || String(currentUser.id).startsWith('S'));
+      if (isStudent && ext.canBook && ext.status === '可约') {
+        const note = prompt(`预约备注：\n${ev.title}  ${ev.start.toLocaleString('zh-CN')}`) || '';
+        return bookSlot(ev.id, note);
+      }
+      const lines = [
+        `标题：${ev.title}`,
+        `时间：${ev.start.toLocaleString('zh-CN')}${ev.end ? ' - ' + ev.end.toLocaleString('zh-CN') : ''}`,
+        ext.attr ? `类型：${ext.attr}` : '',
+        ext.status ? `状态：${ext.status}` : ''
+      ].filter(Boolean);
+      alert(lines.join('\n'));
+    }
+  });
+
+  prevBtn.onclick  = () => calendar.prev();
+  nextBtn.onclick  = () => calendar.next();
+  todayBtn.onclick = () => calendar.today();
+
+  bindView(dayBtn,   'timeGridDay');
+  bindView(weekBtn,  'timeGridWeek');
+  bindView(monthBtn, 'dayGridMonth');
+
+  calendar.render();
+  updateCalendarTitle();
+}
+
+function bindView(btn, viewName) {
+  btn.onclick = () => {
+    calendar.changeView(viewName);
+    $$('.seg-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    updateCalendarTitle();
+  };
+}
+
+function updateCalendarTitle() {
+  if (!calendar) return;
+  const view = calendar.view;
+  const d = calendar.getDate();
+  const Y = d.getFullYear();
+  const M = String(d.getMonth() + 1).padStart(2, '0');
+  const D = String(d.getDate()).padStart(2, '0');
+
+  if (view.type === 'timeGridDay') {
+    titleEl.textContent = `${Y}/${M}/${D}`;
+    dayBtn.classList.add('active'); weekBtn.classList.remove('active'); monthBtn.classList.remove('active');
+  } else if (view.type === 'timeGridWeek') {
+    const start = new Date(view.currentStart);
+    const end   = new Date(view.currentEnd); end.setDate(end.getDate() - 1);
+    const sM = String(start.getMonth() + 1).padStart(2, '0');
+    const sD = String(start.getDate()).padStart(2, '0');
+    const eM = String(end.getMonth() + 1).padStart(2, '0');
+    const eD = String(end.getDate()).padStart(2, '0');
+    titleEl.textContent = `${Y}/${sM}/${sD} – ${eM}/${eD}`;
+    weekBtn.classList.add('active'); dayBtn.classList.remove('active'); monthBtn.classList.remove('active');
+  } else {
+    titleEl.textContent = `${Y}/${M}`;
+    monthBtn.classList.add('active'); dayBtn.classList.remove('active'); weekBtn.classList.remove('active');
+  }
+}
+
+async function loadCalendarEvents() {
+  if (!currentUser) return;
+  const res = await callAPI('listVisibleSlots', { userId: currentUser.id });
+  const events = Array.isArray(res) ? res : (res && res.events) || [];
+  if (calendar) {
+    calendar.removeAllEvents();
+    events.forEach(ev => calendar.addEvent(ev));
+  }
+}
+
+async function bookSlot(slotId, note) {
+  if (!currentUser) return;
+  const payload = {
+    slotId,
+    studentId: currentUser.id,
+    studentName: currentUser.name || currentUser.id,
+    note: note || ''
+  };
+  const res = await callAPI('bookSlot', payload);
+  alert(res?.success ? '预约成功' : (res?.message || '预约失败'));
+  if (res?.success) loadCalendarEvents();
+}
+
+// ========== 登录相关 ==========
+window.onLoginSuccess = function(user) {
+  currentUser = user || {};
+
+  // 切换到主应用界面
+  loginContainer.style.display = 'none';
+  appContainer.style.display = '';
+  userBadge.style.display = '';
+  
+  // 更新移动端布局
+  updateMobileLayout();
+
+  greetingEl.textContent = `欢迎，${currentUser.name || currentUser.id || '用户'}`;
+
+  // 显示日历页面
+  showPage('calendar');
+  initCalendar();
+  loadCalendarEvents();
+
+  try { 
+    localStorage.setItem('eds:user', JSON.stringify(currentUser)); 
+  } catch(_) {}
+};
+
+logoutBtn.addEventListener('click', () => {
+  toggleSidebar(false);
+  userBadge.style.display = 'none';
+  appContainer.style.display = 'none';
+  loginContainer.style.display = '';
+  hamburger.style.display = 'none';
+  try { localStorage.removeItem('eds:user'); } catch(_) {}
+  currentUser = null;
+});
+
+loginBtn.addEventListener('click', async () => {
+  const userId = loginInput.value.trim();
+  if (!userId) { 
+    loginErr.textContent = '请输入用户ID'; 
+    return; 
+  }
+  loginErr.textContent = '';
+
+  // 先尝试API登录
+  const apiRes = await callAPI('loginByUsername', { username: userId });
+  if (apiRes?.success && apiRes.user) {
+    const u = apiRes.user;
+    return window.onLoginSuccess({
+      id: u.username || userId,
+      name: u.name || u.username || userId,
+      role: u.role || (String(userId).startsWith('T') ? '老师' : (String(userId).startsWith('S') ? '学生' : (String(userId).startsWith('A') ? '管理员' : '用户')))
+    });
+  }
+
+  // API不通时本地模拟登录
+  const role = String(userId).startsWith('T') ? '老师'
+           : String(userId).startsWith('S') ? '学生'
+           : String(userId).startsWith('A') ? '管理员'
+           : '用户';
+  window.onLoginSuccess({ id: userId, name: userId, role });
+});
+
+loginInput.addEventListener('keydown', e => { 
+  if (e.key === 'Enter') loginBtn.click(); 
+});
+
+regBtn.addEventListener('click', async () => {
+  const name = $('#registerName').value.trim();
+  const email = $('#registerEmail').value.trim();
+  const department = $('#registerDepartment').value;
+  const major = $('#registerMajor').value.trim();
+  const role = $('#registerRole').value;
+  
+  regErr.textContent = '';
+  if (!name || !email || !department || !major || !role) { 
+    regErr.textContent = '请填写完整信息'; 
+    return; 
+  }
+  
+  const res = await callAPI('registerByProfile', { name, email, department, major, role });
+  regErr.style.color = res?.success ? 'green' : 'red';
+  regErr.textContent = res?.success ? '登记成功！请联系老师获取用户ID后登录。' : (res?.message || '登记失败');
+});
+
+// 刷新日历按钮
+if (refreshBtn) {
+  refreshBtn.addEventListener('click', () => {
+    showPage('calendar');
+    loadCalendarEvents();
+  });
+}
+
+// ========== 初始化 ==========
+(async function boot() {
+  if (apiStatusTip) {
+    apiStatusTip.textContent = '正在检测 API';
+    const ping = await callAPI('testConnection', {});
+    apiStatusTip.textContent = ping?.success ? 'API 已连接' : 'API 不可用，已启用本地登录';
+    const apiPing = $('#apiPing'); 
+    if (apiPing) apiPing.textContent = ping?.success ? 'API: 在线' : 'API: 离线';
+  }
+  
+  // 尝试自动登录
+  try {
+    const saved = localStorage.getItem('eds:user');
+    if (saved) {
+      const u = JSON.parse(saved);
+      if (u?.id) window.onLoginSuccess(u);
+    }
+  } catch(_) {}
+  
+  // 初始化移动端布局
+  updateMobileLayout();
+})();
+  </script>
+</script>
+</body>
+</html>

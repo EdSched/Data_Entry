@@ -146,62 +146,23 @@ html, body{height:auto;min-height:100%;overflow-y:auto}
   .wrap{height:auto;}                       /* 外层容器不锁高 */
   main{overflow:visible;}                   /* 让 body 承担滚动 */
 }
-/* ===== 手机端：侧栏改为顶部抽屉（盖在日历上方） ===== */
-@media (max-width: 768px){
-  aside{
-    position: fixed;
-    z-index: 1100;
-    left: 0; right: 0; top: var(--topbar); /* 顶栏下面开始下拉 */
-    width: 100%;
-    height: 65vh;                 /* 抽屉高度，可调 */
-    max-height: 80vh;
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 8px 24px rgba(0,0,0,.08);
-    background: var(--bg);
-    transform: translateY(-100%);  /* 默认收起：向上藏起 */
-    transition: transform .28s ease, opacity .2s ease;
-    opacity: 0;
-    overflow-y: auto;
-    padding: 16px 0;
-  }
-  aside.open{
-    transform: translateY(0);
-    opacity: 1;
-  }
-
-  /* 遮罩 */
-  .backdrop{
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,.28);
-    z-index: 1090;
-    opacity: 0; pointer-events: none;
-    transition: opacity .2s ease;
-  }
-  .backdrop.show{ opacity: 1; pointer-events: auto; }
-
-  /* 页面滚动交给 body，主区自然占满 */
-  .wrap{ flex-direction: column; height:auto; }
-  main{ overflow: visible; padding-bottom: 16px; }
-
-  /* 触发按钮（菜单）手机端可见 */
-  #drawerToggle{ display:inline-flex !important; }
-
-  /* 拖拽中禁用过渡，防掉帧 */
-  aside.dragging{ transition:none !important; }
+/* 横向拉手条样式 */
+.pull-down{
+  display:flex; align-items:center; justify-content:center;
+  gap:10px; height:32px; margin:8px 0 10px 0;
+  border:1px solid var(--border); border-radius:10px;
+  background:#f8f9fa; user-select:none; -webkit-user-select:none;
+  touch-action:none;      /* 允许我们接管拖拽手势 */
 }
+.pull-down .grip{
+  width:40px; height:4px; border-radius:99px; background:#d1d5db;
+}
+.pull-down .pull-text{ font-size:12px; color:#666; }
+.pull-down:active{ background:#eef0f2; }
 
-/* 抽屉把手（顶部小横条） */
-.drawer-handle{display:flex;justify-content:center;align-items:center;height:20px;margin-bottom:8px;}
-.drawer-handle .grip{width:36px;height:4px;border-radius:99px;background:#ddd;}
-
+/* 手机端更贴近屏幕边，字号再小一点 */
 @media (max-width:768px){
-  .edge-hotzone-top{
-    position: fixed;
-    left:0; right:0;
-    top: var(--topbar);           /* 就在顶栏下 */
-    height: 18px;                 /* 上滑热区 */
-    z-index: 1080;
-  }
+  .pull-down{ height:30px; margin:6px 0 8px 0; }
+  .pull-down .pull-text{ font-size:11px; }
 }
+@media (min-width:769px){ .pull-down{ display:none; } }

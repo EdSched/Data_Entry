@@ -3,22 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>师生管理平台</title>
+  <title>大学院管理平台</title>
   <!-- FullCalendar -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
   <style>
 :root{
-  --border:#e6e6e6;
-  --text:#111;
-  --muted:#666;
-  --bg:#fff;
-  --topbar:56px;
-  --sidebar:300px;
+  --border:#e6e6e6; --text:#111; --muted:#666; --bg:#fff; --topbar:56px; --sidebar:300px;
 }
-
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:#fafafa;color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
-
 /* 顶栏 */
 .topbar{
   position:sticky;top:0;z-index:1000;display:flex;align-items:center;gap:12px;
@@ -26,649 +17,921 @@ html,body{height:100%;margin:0;background:#fafafa;color:var(--text);font:14px/1.
 }
 .brand{font-weight:700;color:var(--text)}
 .spacer{flex:1}
-.user-badge{display:flex;align-items:center;gap:8px}
-.user-badge .btn{height:30px}
-
-/* 汉堡（只在移动端显示） */
-#hamburger{
-  display:none;width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:#fff;
-  font-size:18px;line-height:34px;text-align:center;cursor:pointer;user-select:none;color:var(--text);
-}
+.user-info{display:flex;align-items:center;gap:8px;}
+.logout-btn{height:30px;padding:0 12px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);cursor:pointer;font-size:12px;}
+.logout-btn:hover{background:#f8f8f8;}
+.api-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#666;padding:2px 8px;border:1px solid var(--border);border-radius:999px}
+.api-dot{width:8px;height:8px;border-radius:50%;}
+.api-dot.ok{background:#22c55e}
+.api-dot.err{background:#ef4444}
+.api-dot.wait{background:#f59e0b}
 
 /* 主容器与卡片 */
-.app{height:calc(100vh - var(--topbar));display:flex}
-.center-wrap{display:flex;justify-content:center;align-items:flex-start;padding:40px;width:100%;height:100vh;background:#fafafa}
+/* 使用自定义 --vh，避免 iOS 100vh 被地址栏压缩；并允许内容溢出时自然增高 */
+.app{min-height:calc(var(--vh, 1vh)*100 - var(--topbar));height:auto;display:flex}
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px}
-.card-narrow{width:100%;max-width:520px}
 
-/* 表单/按钮（黑灰色系） */
-.title{margin:0 0 24px 0;font-size:24px;font-weight:600;color:var(--text)}
-.label{display:block;margin-bottom:6px;color:var(--muted);font-weight:500}
-.input{
-  width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:#fff;color:var(--text);
-  font-size:14px;transition:border-color 0.2s;
+/* 侧边栏样式 */
+.wrap{display:flex;width:100%;height:100%;}
+aside{
+  width:var(--sidebar);background:var(--bg);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;padding:20px 0;
 }
-.input:focus{outline:none;border-color:#999}
-.input::placeholder{color:#aaa}
-.form-row{margin-bottom:16px}
-.btn{height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s}
+.sidebar-section{padding:0 20px 24px 20px;}
+.sidebar-section h3{margin:0 0 16px 0;font-size:16px;font-weight:600;color:var(--text);}
+
+/* 统计网格 */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.stat-item{text-align:center;padding:12px;background:#f8f9fa;border-radius:8px;}
+.stat-number{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.stat-label{font-size:12px;color:var(--muted);}
+
+/* 导航 */
+nav{padding:0;}
+nav a{
+  display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--text);
+  text-decoration:none;border-bottom:1px solid var(--border);transition:all 0.2s;
+}
+nav a:hover{background:#f8f9fa;}
+nav a.active{background:#333;color:#fff;}
+
+/* 主内容区 */
+main{flex:1;overflow-y:auto;padding:20px;}
+
+/* 表单/按钮 */
+.btn{
+  height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--border);
+  background:#fff;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s;
+  display:inline-flex;align-items:center;justify-content:center;text-decoration:none;
+}
 .btn:active{transform:translateY(1px)}
 .btn:hover{background:#f8f8f8}
 .btn-solid{border-color:#333;background:#333;color:#fff}
 .btn-solid:hover{background:#555;border-color:#555}
 .btn-outline{border-color:#333;background:#fff;color:#333}
 .btn-outline:hover{background:#f5f5f5}
-.btn-full{width:100%}
-.mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
-.small{font-size:12px}.muted{color:var(--muted)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.error{color:#d32f2f;font-size:12px;margin-top:8px}
+.btn-primary{border-color:#e6b56c;background:#fab041;color:#fff}
+.btn-primary:hover{background:#fab041;border-color:#fab041}
 
-/* 详情展开 */
-details{margin-top:16px}
-summary{cursor:pointer;color:var(--muted);font-size:12px;padding:8px 0}
-summary:hover{color:var(--text)}
-
-/* ===== 桌面端：固定侧栏布局 ===== */
-.app-layout{display:flex;height:100%;min-height:calc(100vh - var(--topbar))}
-
-/* 侧栏：桌面端固定显示，全高度 */
-.sidebar{
-  width:var(--sidebar);
-  background:#fff;border-right:1px solid var(--border);
-  display:flex;flex-direction:column;
-  min-height:100%;
-}
-.sidebar-header{padding:20px 24px;border-bottom:1px solid var(--border);font-weight:600;font-size:16px;color:var(--text)}
-.nav{display:flex;flex-direction:column;padding:16px;flex:1}
-.nav-link{display:block;padding:14px 20px;border-radius:8px;text-decoration:none;color:var(--text);border:1px solid transparent;margin-bottom:6px;font-weight:500;transition:all 0.2s}
-.nav-link:hover{border-color:var(--border);background:#f8f8f8}
-.nav-link.active{border-color:#333;background:#f5f5f5;color:#333}
-.sidebar-footer{margin-top:auto;padding:20px 24px;border-top:1px solid var(--border)}
-.sidebar-footer .btn{margin-bottom:12px}
-
-/* 主内容区域 */
-.main-content{
-  flex:1;
-  padding:20px;
-  overflow:auto;
-  background:#fafafa;
-  min-height:100%;
-}
-
-/* 遮罩（仅移动端使用） */
-.backdrop{display:none}
-
-/* 移动端：侧栏改为抽屉 */
-@media (max-width: 1023px) {
-  #hamburger{display:inline-flex;align-items:center;justify-content:center}
-  
-  .app-layout{position:relative}
-  
-  .sidebar{
-    position:fixed;
-    left:-var(--sidebar);
-    top:var(--topbar);
-    height:calc(100vh - var(--topbar));
-    z-index:1200;
-    transition:left .3s ease;
-    box-shadow:2px 0 10px rgba(0,0,0,0.15);
-    overflow-y:auto;
-  }
-  .sidebar.open{left:0}
-  
-  .main-content{padding:16px;width:100%}
-  
-  .backdrop{
-    display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);
-    opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:1100;
-  }
-  .backdrop.show{opacity:1;pointer-events:auto}
-}
-
-/* 日历相关样式 */
+/* 日历样式 */
 .calendar-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
 .calendar-title{font-weight:700;font-size:20px;color:var(--text)}
-.calendar-ctrl{margin-left:auto;display:flex;gap:8px;align-items:center}
+.calendar-ctrl{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
 .seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
-.seg-btn{border:0;background:#fff;padding:8px 16px;cursor:pointer;border-right:1px solid var(--border);font-size:14px;color:var(--text);transition:all 0.2s}
+.seg-btn{
+  border:0;background:#fff;padding:8px 16px;cursor:pointer;border-right:1px solid var(--border);
+  font-size:14px;color:var(--text);transition:all 0.2s;
+}
 .seg-btn:last-child{border-right:0}
 .seg-btn:hover{background:#f8f8f8}
 .seg-btn.active{background:#333;color:#fff}
 
-/* FullCalendar 黑灰色系 */
-.fc{
-  --fc-border-color: var(--border);
-  --fc-now-indicator-color:#333;
-  --fc-button-bg:#fff;
-  --fc-button-border-color:#333;
-  --fc-button-text-color:#333;
-  --fc-button-active-bg:#333;
-  --fc-button-active-border-color:#333;
-  --fc-button-active-text-color:#fff;
-  --fc-event-bg-color:#f5f5f5;
-  --fc-event-border-color:#333;
-  --fc-event-text-color:#333;
-}
-.fc .fc-toolbar-title{font-size:16px;color:var(--text)}
-.fc .fc-button{border-radius:8px !important}
-.fc .fc-button:hover{background:#f8f8f8 !important}
+#mainCalendar{margin-top:20px;}
 
-/* 子页面内容样式 */
-.subpage-content{
-  background:#fff;
-  border:1px solid var(--border);
-  border-radius:12px;
-  padding:32px;
-  height:fit-content;
-  min-height:400px;
+/* FullCalendar 自定义 */
+.fc{font-size:14px;}
+.fc-toolbar{margin-bottom:16px;}
+.fc-button{
+  background:#fff;border:1px solid var(--border);color:var(--text);
+  border-radius:6px;padding:6px 12px;transition:all 0.2s;
 }
-.subpage-content h2{
-  margin:0 0 20px 0;
-  color:var(--text);
-  font-size:28px;
-  font-weight:600;
-}
-.subpage-content p{
-  color:var(--muted);
-  line-height:1.6;
-  margin-bottom:16px;
-}
+.fc-button:hover{background:#f8f8f8;}
+.fc-button-active{background:#333 !important;color:#fff !important;}
 
-/* 移除所有蓝色相关样式 */
-a{color:var(--text)}
-a:visited{color:var(--muted)}
-select{color:var(--text)}
-select option{color:var(--text)}
-input[type="text"], input[type="email"]{color:var(--text)}
+/* 页面内容 */
+.page-content{display:none;}
+.page-content.active{display:block;}
+
+/* 登录样式（沿用你原来的简洁布局） */
+.login-container{display:flex;align-items:center;justify-content:center;height:100vh;background:#fafafa;}
+.login-box{width:320px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:0 4px 16px rgba(0,0,0,0.04);}
+.login-box h1{font-size:20px;margin:0 0 12px 0}
+.login-box input, .login-box select{width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-top:8px;}
+.login-box button{width:100%;height:40px;margin-top:12px;}
+.link-text{margin-top:8px;color:#555;cursor:pointer;font-size:12px;text-align:center;}
+.error-message{margin-top:8px;color:#c00;font-size:12px;}
+.api-inline{margin-top:8px;font-size:12px;color:#666}
+
+/* 表单样式（分析页等） */
+.filter-item{margin-bottom:16px;}
+.filter-item label{display:block;margin-bottom:6px;color:var(--muted);font-weight:500;font-size:14px;}
+.filter-item input, .filter-item select{
+  width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;
+  background:#fff;color:var(--text);font-size:14px;
+}
+.filter-item input:focus, .filter-item select:focus{outline:none;border-color:#999;}
+
+/* 数据分析页面样式 */
+.filter-panel{margin-bottom:24px;}
+.filter-section{margin-bottom:20px;padding:16px;background:#f8f9fa;border-radius:8px;}
+.filter-section h3{margin:0 0 12px 0;font-size:16px;font-weight:600;color:var(--text);}
+.filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.student-list{max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;padding:8px;}
+.action-buttons{display:flex;gap:12px;margin-top:16px;}
+.results-panel{margin-top:24px;padding:16px;border:1px solid var(--border);border-radius:8px;}
+.results-header{font-size:16px;font-weight:600;margin-bottom:12px;color:var(--text);}
+.data-table{width:100%;border-collapse:collapse;margin-top:12px;}
+.data-table th, .data-table td{padding:8px;text-align:left;border-bottom:1px solid var(--border);font-size:14px;}
+.data-table th{background:#f8f9fa;font-weight:600;}
+.loading{display:flex;align-items:center;gap:8px;color:var(--muted);}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top:2px solid var(--text);border-radius:50%;animation:spin 1s linear infinite;}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  .wrap{flex-direction:column;}
+  aside{width:100%;height:auto;border-right:none;border-bottom:1px solid var(--border);}
+  main{padding:12px;}
+  .calendar-ctrl{margin-left:0;width:100%;justify-content:space-between;}
+  .seg{flex:1;}
+  .seg-btn{flex:1;font-size:12px;padding:6px 8px;}
+}
+/* 让整个页面而不是内部容器滚动，修复“不能下拉”的问题 */
+html, body{height:auto;min-height:100%;overflow-y:auto}
+
+/* 手机端：隐藏“今日概览”，并让内部容器不再强制内部滚动 */
+@media (max-width: 768px){
+  .sidebar-section.overview{display:none;}  /* 今日概览隐藏 */
+  .wrap{height:auto;}                       /* 外层容器不锁高 */
+  main{overflow:visible;}                   /* 让 body 承担滚动 */
+}
   </style>
 </head>
 <body>
-  <!-- 顶栏 -->
-  <header class="topbar">
-    <button id="hamburger" aria-label="打开菜单" style="display:none;">☰</button>
-    <div class="brand">师生管理平台</div>
-    <div class="spacer"></div>
-    <div id="userBadge" class="user-badge" style="display:none;">
-      <span id="greeting"></span>
-      <button id="logoutBtn" class="btn btn-outline">退出</button>
-    </div>
-  </header>
-
-  <!-- 登录页面 -->
-  <main id="loginContainer" class="center-wrap">
-    <section class="card card-narrow">
-      <h1 class="title">登录</h1>
-      <div class="form-row">
-        <label for="loginUsername" class="label">用户ID</label>
-        <input id="loginUsername" class="input" placeholder="例如：S001 / T001 / A001" />
+  <!-- 登录界面（保持你原有布局） -->
+  <div id="loginContainer" class="login-container">
+    <div class="login-box">
+      <h1>大学院管理平台</h1>
+      <div id="loginForm">
+        <input type="text" id="loginUsername" placeholder="用户ID（由老师分配）" />
+        <button type="button" id="loginBtn">登录</button>
+        <div class="link-text" id="showRegisterBtn">还没有账号？登记信息</div>
+        <div id="loginError" class="error-message"></div>
+        <!-- 新增：登录框里的 API 状态提示（更直观） -->
+        <div id="apiStatusInline" class="api-inline"><span class="api-dot wait" style="display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;"></span>正在检测 API 连接…</div>
       </div>
-      <button id="loginBtn" class="btn btn-solid btn-full">登录</button>
-      <div id="loginError" class="error"></div>
 
-      <details class="mt-16">
-        <summary class="small">没有账号？登记信息</summary>
-        <div class="grid2 mt-8">
-          <input id="registerName" class="input" placeholder="姓名"/>
-          <input id="registerEmail" class="input" placeholder="邮箱"/>
-          <select id="registerDepartment" class="input">
-            <option value="">所属</option><option>文科大学院</option><option>理科大学院</option><option>其他</option>
-          </select>
-          <input id="registerMajor" class="input" placeholder="专业"/>
-          <select id="registerRole" class="input">
-            <option value="">身份</option><option>学生</option><option>老师</option>
-          </select>
-        </div>
-        <button id="registerBtn" class="btn btn-outline mt-8">提交登记</button>
-        <div id="registerError" class="error"></div>
-      </details>
-      <div id="apiStatusTip" class="muted small mt-12">正在检测 API</div>
-    </section>
-  </main>
+      <div id="registerForm" style="display: none;">
+        <input type="text" id="registerName" placeholder="姓名" />
+        <input type="email" id="registerEmail" placeholder="邮箱（用于区分同名，不对外公开）" />
+        <select id="registerDepartment">
+          <option value="">选择所属部门</option>
+          <option value="文科大学院">文科大学院</option>
+          <option value="理科大学院">理科大学院</option>
+          <option value="其他">其他</option>
+        </select>
+        <input type="text" id="registerMajor" placeholder="专业" />
+        <select id="registerRole">
+          <option value="">选择身份</option>
+          <option value="学生">学生</option>
+          <option value="老师">老师</option>
+        </select>
+        <button type="button" id="registerBtn">登记</button>
+        <div class="link-text" id="showLoginBtn">已有账号？返回登录</div>
+        <div id="registerError" class="error-message"></div>
+      </div>
+    </div>
+  </div>
 
-  <!-- 主应用页面：登录后显示 -->
-  <main id="appContainer" class="app" style="display:none;">
-    <div class="app-layout">
-      <!-- 侧栏：桌面固定，移动抽屉 -->
-      <aside id="sidebar" class="sidebar">
-        <div class="sidebar-header">导航</div>
-        <nav class="nav">
-          <a class="nav-link active" href="#" data-page="calendar">日历</a>
-          <a class="nav-link" href="#" data-page="arrange">课程安排</a>
-          <a class="nav-link" href="#" data-page="analysis">数据分析</a>
-          <a class="nav-link" href="#" data-page="myschedule">我的日程</a>
-          <a class="nav-link" href="#" data-page="profile">个人信息</a>
-        </nav>
-        <div class="sidebar-footer">
-          <button id="refreshBtn" class="btn btn-outline btn-full">刷新日历</button>
-          <div id="apiPing" class="muted small mt-8">API: 检测中</div>
-        </div>
-      </aside>
+  <!-- 主应用包裹（登录后显示） -->
+  <div id="mainApp" style="display:none;">
+    <header class="topbar">
+      <div class="brand">大学院管理平台</div>
+      <div class="spacer"></div>
+      <span id="apiStatusTop" class="api-badge" title="API连接状态">
+        <span id="apiDotTop" class="api-dot wait"></span><span id="apiTextTop">API 检测中</span>
+      </span>
+      <div class="user-info">
+        <span id="userGreeting">欢迎，</span>
+        <span id="userRole"></span>
+        <button class="logout-btn" id="logoutBtn">退出</button>
+      </div>
+    </header>
 
-      <!-- 主内容区域 -->
-      <section class="main-content">
-        <!-- 日历页面 -->
-        <div id="calendarPage" class="page-content">
-          <section class="card">
-            <div class="calendar-head">
-              <div class="calendar-title" id="calendarTitle">加载中</div>
-              <div class="calendar-ctrl">
-                <button id="prevBtn" class="btn btn-outline">‹</button>
-                <button id="todayBtn" class="btn btn-outline">今天</button>
-                <button id="nextBtn" class="btn btn-outline">›</button>
-                <div class="seg">
-                  <button id="dayBtn" class="seg-btn active">日</button>
-                  <button id="weekBtn" class="seg-btn">周</button>
-                  <button id="monthBtn" class="seg-btn">月</button>
+    <div class="app">
+      <div class="wrap">
+        <aside>
+          <div class="sidebar-section overview">
+            <h3>今日概览</h3>
+            <div class="stats-grid">
+              <div class="stat-item"><div class="stat-number" id="todayCourses">0</div><div class="stat-label">课程</div></div>
+              <div class="stat-item"><div class="stat-number" id="todayConsultations">0</div><div class="stat-label">面谈</div></div>
+              <div class="stat-item"><div class="stat-number" id="todayReminders">0</div><div class="stat-label">作业</div></div>
+              <div class="stat-item"><div class="stat-number" id="attendanceRate">—</div><div class="stat-label">出勤率</div></div>
+            </div>
+          </div>
+          <nav>
+            <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
+            <a href="#" class="nav-link" data-page="arrange"><span>课程安排</span></a>
+            <a href="#" class="nav-link" data-page="schedule"><span>我的任务</span></a>
+            <a href="#" class="nav-link" data-page="analysis"><span>数据分析</span></a>
+            <a href="#" class="nav-link" data-page="profile"><span>个人信息</span></a>
+          </nav>
+        </aside>
+
+        <main>
+          <!-- 日历页面 -->
+          <div id="calendarPage" class="page-content active">
+            <section class="card">
+              <div class="calendar-head">
+                <div class="calendar-title" id="calendarTitle">我的日历</div>
+                <div class="calendar-ctrl">
+                  <button id="prevBtn" class="btn btn-outline">‹</button>
+                  <button id="todayBtn" class="btn btn-outline">今天</button>
+                  <button id="nextBtn" class="btn btn-outline">›</button>
+                  <div class="seg">
+                    <button id="dayBtn" class="seg-btn">日</button>
+                    <button id="weekBtn" class="seg-btn active">周</button>
+                    <button id="monthBtn" class="seg-btn">月</button>
+                  </div>
+                  <button class="btn btn-outline" id="refreshDataBtn">刷新</button>
                 </div>
               </div>
-            </div>
-            <div id="mainCalendar"></div>
-          </section>
-        </div>
-
-        <!-- 课程安排页面 -->
-        <div id="arrangePage" class="page-content" style="display:none;">
-          <div class="subpage-content">
-            <h2>课程安排</h2>
-            <p>这里是课程安排页面，可以查看和管理课程安排信息。</p>
-            <p>教师可以在此页面创建和编辑课程时间段，学生可以查看可预约的时间段。</p>
+              <div id="mainCalendar"></div>
+            </section>
           </div>
-        </div>
 
-        <!-- 数据分析页面 -->
-        <div id="analysisPage" class="page-content" style="display:none;">
-          <div class="subpage-content">
-            <h2>数据分析</h2>
-            <p>这里是数据分析页面，可以查看各类统计图表和数据报告。</p>
-            <p>包括预约统计、课程利用率分析、学生活跃度等数据可视化内容。</p>
+          <!-- 课程安排页面 -->
+          <div id="arrangePage" class="page-content">
+            <section class="card">
+              <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">课程安排</h2>
+              <div class="filter-item">
+                <label>课程属性</label>
+                <select id="pubAttr">
+                  <option value="大课">大课（只读）</option>
+                  <option value="VIP">VIP（可约）</option>
+                  <option value="面谈">面谈（可约）</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>课程名（大课必填）</label>
+                <input type="text" id="pubCourseName" />
+              </div>
+              <div class="filter-item">
+                <label>模式</label>
+                <select id="pubMode">
+                  <option value="single">单次</option>
+                  <option value="range">区间+周几</option>
+                </select>
+              </div>
+              <div class="filter-item" id="singleDateRow">
+                <label>日期</label>
+                <input type="date" id="pubDate" />
+              </div>
+              <div class="filter-item" id="rangeRows" style="display:none;">
+                <label>起止日期</label>
+                <div style="display:flex;gap:6px;">
+                  <input type="date" id="pubStartDate" />
+                  <input type="date" id="pubEndDate" />
+                </div>
+                <label style="margin-top:6px;">周几（可多选）</label>
+                <div>
+                  <label><input type="checkbox" class="wd" value="1">周一</label>
+                  <label><input type="checkbox" class="wd" value="2">周二</label>
+                  <label><input type="checkbox" class="wd" value="3">周三</label>
+                  <label><input type="checkbox" class="wd" value="4">周四</label>
+                  <label><input type="checkbox" class="wd" value="5">周五</label>
+                  <label><input type="checkbox" class="wd" value="6">周六</label>
+                  <label><input type="checkbox" class="wd" value="0">周日</label>
+                </div>
+                <label style="margin-top:6px;">回数（可选）</label>
+                <input type="number" id="pubCount" min="1" placeholder="不填则按区间+周几全部展开" />
+              </div>
+              <div class="filter-item">
+                <label>时间（开始-结束）</label>
+                <div style="display:flex;gap:6px;">
+                  <input type="time" id="pubStartTime" value="09:00" />
+                  <input type="time" id="pubEndTime" value="10:00" />
+                </div>
+                <div style="font-size:11px;color:#666;">仅允许整点或半点（:00 / :30）</div>
+              </div>
+              <div class="filter-item">
+                <label>面向专业（逗号分隔；空=全专业）</label>
+                <input type="text" id="pubMajors" placeholder="例：文科研究科,工学研究科" />
+              </div>
+              <div class="filter-item">
+                <label>可见学生IDs（逗号分隔；VIP/面谈用）</label>
+                <input type="text" id="pubVisibleIds" placeholder="例：S001,S015" />
+              </div>
+              <button class="btn btn-primary" id="pubSubmitBtn">发布</button>
+            </section>
           </div>
-        </div>
 
-        <!-- 我的日程页面 -->
-        <div id="myschedulePage" class="page-content" style="display:none;">
-          <div class="subpage-content">
-            <h2>我的日程</h2>
-            <p>这里是个人日程页面，可以查看和管理个人的预约和安排。</p>
-            <p>学生可以查看已预约的课程，教师可以查看教学安排和预约情况。</p>
+          <!-- 我的任务页面（静态示例） -->
+          <div id="schedulePage" class="page-content">
+            <section class="card">
+              <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">我的任务</h2>
+              <div style="display:grid;gap:12px;">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+                  <input type="checkbox" checked>
+                  <span>批改期中考试试卷</span>
+                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">今天截止</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+                  <input type="checkbox">
+                  <span>准备下周课程材料</span>
+                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">明天截止</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+                  <input type="checkbox">
+                  <span>学生面谈记录整理</span>
+                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">周五截止</span>
+                </div>
+              </div>
+            </section>
           </div>
-        </div>
 
-        <!-- 个人信息页面 -->
-        <div id="profilePage" class="page-content" style="display:none;">
-          <div class="subpage-content">
-            <h2>个人信息</h2>
-            <p>这里是个人信息页面，可以查看和修改个人资料。</p>
-            <p>包括基本信息、联系方式、所属院系等信息的查看和编辑。</p>
+          <!-- 数据分析页面 -->
+          <div id="analysisPage" class="page-content">
+            <section class="card">
+              <div class="filter-panel">
+                <div class="filter-section">
+                  <h3>学生选择</h3>
+                  <div class="filter-grid">
+                    <div class="filter-item">
+                      <label for="departmentSelect">选择所属</label>
+                      <select id="departmentSelect">
+                        <option value="">请选择所属部门</option>
+                      </select>
+                    </div>
+                    <div class="filter-item">
+                      <label for="majorSelect">选择专业</label>
+                      <select id="majorSelect">
+                        <option value="">请选择专业</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div id="studentListArea" style="display: none; margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                      <span style="font-size: 12px;">已选: <span id="selectedCount">0</span></span>
+                      <div>
+                        <button class="btn" style="padding: 3px 6px; font-size: 10px;" id="selectAllBtn">全选</button>
+                        <button class="btn" style="padding: 3px 6px; font-size: 10px;" id="clearAllBtn">清空</button>
+                      </div>
+                    </div>
+                    <div class="student-list" id="studentList"></div>
+                  </div>
+                </div>
+                <div class="filter-section">
+                  <h3>时间范围</h3>
+                  <div class="filter-grid">
+                    <div class="filter-item">
+                      <label for="startMonth">开始月份</label>
+                      <input type="month" id="startMonth">
+                    </div>
+                    <div class="filter-item">
+                      <label for="endMonth">结束月份</label>
+                      <input type="month" id="endMonth">
+                    </div>
+                  </div>
+                </div>
+                <div class="filter-section">
+                  <h3>数据类型</h3>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 5px;">
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" id="attendance" checked>
+                      <span style="font-size: 12px;">出勤情况</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" id="homework" checked>
+                      <span style="font-size: 12px;">作业情况</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" id="consultation" checked>
+                      <span style="font-size: 12px;">面谈记录</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" id="progress" checked>
+                      <span style="font-size: 12px;">学习进度</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="action-buttons">
+                  <button class="btn" id="resetFiltersBtn">重置</button>
+                  <button class="btn btn-primary" id="generateReportBtn">生成报告</button>
+                  <button class="btn" style="display: none;" id="exportBtn">复制报告</button>
+                </div>
+              </div>
+              <div class="results-panel" id="resultsPanel" style="display:none;">
+                <div class="results-header">
+                  <strong>分析结果</strong>
+                  <span id="resultCount"></span>
+                </div>
+                <div class="results-content">
+                  <div class="loading" id="loadingIndicator" style="display:none;">
+                    <div class="spinner"></div>
+                    正在查询数据...
+                  </div>
+                  <div id="resultsData" style="display: none;">
+                    <table class="data-table" id="dataTable">
+                      <thead>
+                        <tr>
+                          <th>学生</th><th>数据类型</th><th>数值</th><th>备注</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tableBody"></tbody>
+                    </table>
+                    <div class="copy-area" id="copyArea" style="white-space:pre-wrap;margin-top:12px;"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
           </div>
-        </div>
-      </section>
+
+          <!-- 个人信息（只读示例） -->
+          <div id="profilePage" class="page-content">
+            <section class="card">
+              <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">个人信息</h2>
+              <div style="display:grid;gap:16px;max-width:400px;">
+                <div><label style="display:block;margin-bottom:6px;color:var(--muted);font-weight:500;">姓名</label><input id="profileName" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;" value="" readonly></div>
+                <div><label style="display:block;margin-bottom:6px;color:var(--muted);font-weight:500;">工号/学号</label><input id="profileId" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;" value="" readonly></div>
+                <div><label style="display:block;margin-bottom:6px;color:var(--muted);font-weight:500;">所属院系</label><input id="profileDept" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;" value="" readonly></div>
+                <div><label style="display:block;margin-bottom:6px;color:var(--muted);font-weight:500;">身份</label><input id="profileRole" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;" value="" readonly></div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
     </div>
+  </div>
 
-    <!-- 移动端遮罩 -->
-    <div id="backdrop" class="backdrop"></div>
-  </main>
-
-  <script>
-// ========== 配置 ==========
+<script>
+// ================== 配置 ==================
 const API_URL = 'https://script.google.com/macros/s/AKfycbwJYf3jeNAF37vgVXTiWnEgYS5dlh9l9UChkiEhThh4OwV3TVEvP3ZtIS8bpm5G3HLf/exec';
 
-// ========== 小工具 ==========
-const $  = s => document.querySelector(s);
-const $$ = s => document.querySelectorAll(s);
+// ================== 工具 ==================
+const $ = (id) => document.getElementById(id);
+const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+function setApiStatus({ok, text}) {
+  const dotTop = $('apiDotTop'), txtTop = $('apiTextTop');
+  const inline = $('apiStatusInline');
+  if (dotTop) dotTop.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
+  if (txtTop) txtTop.textContent = text || (ok ? 'API 正常' : (ok===false ? 'API 连接失败' : 'API 检测中'));
+  if (inline) {
+    const dot = inline.querySelector('.api-dot') || document.createElement('span');
+    dot.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
+    dot.style.cssText = 'display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;';
+    if (!inline.querySelector('.api-dot')) inline.prepend(dot);
+    inline.lastChild && (inline.lastChild.nodeType===3 ? inline.lastChild.textContent=' ' : null);
+    inline.append(text ? (' ' + text) : (ok ? ' API连接成功' : (ok===false ? ' API连接失败' : ' 正在检测 API 连接…')));
+  }
+}
 
-async function callAPI(action, params = {}, timeout = 15000) {
-  const controller = new AbortController();
-  const t = setTimeout(() => controller.abort(), timeout);
+// ================== API 调用 ==================
+async function callAPI(action, params = {}) {
   try {
-    const fd = new URLSearchParams();
-    fd.append('action', action);
-    fd.append('params', JSON.stringify(params));
+    const formData = new URLSearchParams();
+    formData.append('action', action);
+    formData.append('params', JSON.stringify(params));
+
+    // 加一个 8 秒超时，避免长时间无响应
+    const controller = new AbortController();
+    const t = setTimeout(()=>controller.abort(), 8000);
+
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: fd,
+      body: formData,
       mode: 'cors',
       signal: controller.signal
     });
-    const text = await res.text();
-    let clean = text.trim();
-    const s = clean.indexOf('{'), e = clean.lastIndexOf('}');
-    if (s !== -1 && e !== -1 && e > s) clean = clean.slice(s, e + 1);
-    return JSON.parse(clean);
-  } catch (err) {
-    return { success: false, message: String(err?.message || err) };
-  } finally {
     clearTimeout(t);
+
+    const text = await res.text();
+    let cleanText = text.trim();
+    const s = cleanText.indexOf('{');
+    const e = cleanText.lastIndexOf('}');
+    if (s !== -1 && e !== -1 && e > s) cleanText = cleanText.substring(s, e + 1);
+    return JSON.parse(cleanText);
+  } catch (err) {
+    return { success:false, message: '网络请求失败: ' + err.message };
   }
 }
 
-// ========== 节点 ==========
-const loginContainer = $('#loginContainer');
-const appContainer   = $('#appContainer');
-
-const greetingEl = $('#greeting');
-const userBadge  = $('#userBadge');
-const logoutBtn  = $('#logoutBtn');
-
-const hamburger  = $('#hamburger');
-const sidebar    = $('#sidebar');
-const backdrop   = $('#backdrop');
-
-const apiStatusTip = $('#apiStatusTip');
-
-const loginBtn   = $('#loginBtn');
-const loginInput = $('#loginUsername');
-const loginErr   = $('#loginError');
-
-const regBtn     = $('#registerBtn');
-const regErr     = $('#registerError');
-
-const prevBtn    = $('#prevBtn');
-const nextBtn    = $('#nextBtn');
-const todayBtn   = $('#todayBtn');
-const dayBtn     = $('#dayBtn');
-const weekBtn    = $('#weekBtn');
-const monthBtn   = $('#monthBtn');
-const titleEl    = $('#calendarTitle');
-
-const refreshBtn = $('#refreshBtn');
-
-let calendar = null;
-let currentUser = null;
-let currentPage = 'calendar';
-
-// ========== 页面切换 ==========
-function showPage(pageId) {
-  // 隐藏所有页面
-  $$('.page-content').forEach(page => page.style.display = 'none');
-  
-  // 显示指定页面
-  const targetPage = $(`#${pageId}Page`);
-  if (targetPage) {
-    targetPage.style.display = '';
-  }
-  
-  // 更新导航状态
-  $$('.nav-link').forEach(link => link.classList.remove('active'));
-  const activeLink = $(`.nav-link[data-page="${pageId}"]`);
-  if (activeLink) {
-    activeLink.classList.add('active');
-  }
-  
-  currentPage = pageId;
-  
-  // 如果切换到日历页面，确保日历正确渲染
-  if (pageId === 'calendar' && calendar) {
-    setTimeout(() => calendar.updateSize(), 100);
-  }
-}
-
-// ========== 抽屉控制 ==========
-function toggleSidebar(show) {
-  const willShow = (typeof show === 'boolean') ? show : !sidebar.classList.contains('open');
-  sidebar.classList.toggle('open', willShow);
-  backdrop.classList.toggle('show', willShow);
-}
-
-// 移动端才显示汉堡按钮和抽屉功能
-function updateMobileLayout() {
-  const isMobile = window.matchMedia('(max-width: 1023px)').matches;
-  hamburger.style.display = isMobile ? 'inline-flex' : 'none';
-  
-  if (!isMobile) {
-    // 桌面端：移除抽屉状态
-    sidebar.classList.remove('open');
-    backdrop.classList.remove('show');
-  }
-}
-
-hamburger.addEventListener('click', () => toggleSidebar());
-backdrop.addEventListener('click', () => toggleSidebar(false));
-
-// 监听屏幕尺寸变化
-window.addEventListener('resize', updateMobileLayout);
-
-// ========== 导航处理 ==========
-sidebar.addEventListener('click', (e) => {
-  const link = e.target.closest('a.nav-link');
-  if (!link) return;
-  
-  e.preventDefault();
-  
-  const pageId = link.dataset.page;
-  if (pageId) {
-    showPage(pageId);
-    
-    // 移动端点击后收起抽屉
-    if (window.matchMedia('(max-width: 1023px)').matches) {
-      toggleSidebar(false);
-    }
-  }
-});
-
-// ========== 日历初始化 ==========
-function initCalendar() {
-  if (calendar) calendar.destroy();
-
-  const initialView = window.matchMedia('(max-width: 768px)').matches
-    ? 'timeGridDay'
-    : 'timeGridWeek';
-
-  calendar = new FullCalendar.Calendar($('#mainCalendar'), {
-    initialView,
-    locale: 'zh-cn',
-    firstDay: 1,
-    height: 'auto',
-    headerToolbar: false,
-    allDaySlot: false,
-    slotMinTime: '09:00:00',
-    slotMaxTime: '21:00:00',
-    slotDuration: '00:30:00',
-    expandRows: true,
-    events: [],
-    datesSet: updateCalendarTitle,
-    eventClick: (info) => {
-      const ev = info.event;
-      const ext = ev.extendedProps || {};
-      const isStudent = currentUser && (currentUser.role === '学生' || String(currentUser.id).startsWith('S'));
-      if (isStudent && ext.canBook && ext.status === '可约') {
-        const note = prompt(`预约备注：\n${ev.title}  ${ev.start.toLocaleString('zh-CN')}`) || '';
-        return bookSlot(ev.id, note);
-      }
-      const lines = [
-        `标题：${ev.title}`,
-        `时间：${ev.start.toLocaleString('zh-CN')}${ev.end ? ' - ' + ev.end.toLocaleString('zh-CN') : ''}`,
-        ext.attr ? `类型：${ext.attr}` : '',
-        ext.status ? `状态：${ext.status}` : ''
-      ].filter(Boolean);
-      alert(lines.join('\n'));
-    }
+// ================== 侧边导航与页面切换 ==================
+const navLinks = [];
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.nav-link').forEach(link => {
+    navLinks.push(link);
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pageId = link.dataset.page;
+      if (pageId) showPage(pageId);
+    });
   });
+});
+function showPage(pageId) {
+  document.querySelectorAll('.page-content').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+  const page = document.getElementById(pageId + 'Page');
+  if (page) { page.style.display = 'block'; page.classList.add('active'); }
+  navLinks.forEach(a => a.classList.remove('active'));
+  const active = document.querySelector('.nav-link[data-page="'+pageId+'"]');
+  if (active) active.classList.add('active');
+  if (pageId === 'calendar' && window.calendar) setTimeout(() => window.calendar.updateSize(), 50);
+}
 
-  prevBtn.onclick  = () => calendar.prev();
-  nextBtn.onclick  = () => calendar.next();
-  todayBtn.onclick = () => calendar.today();
+// ================== 登录/注册/登出 ==================
+let currentUser = null;
 
-  bindView(dayBtn,   'timeGridDay');
-  bindView(weekBtn,  'timeGridWeek');
-  bindView(monthBtn, 'dayGridMonth');
+function showRegisterForm() {
+  $('loginForm').style.display = 'none';
+  $('registerForm').style.display = 'block';
+  $('loginError').textContent = '';
+  $('registerError').textContent = '';
+}
+function showLoginForm() {
+  $('registerForm').style.display = 'none';
+  $('loginForm').style.display = 'block';
+  $('loginError').textContent = '';
+  $('registerError').textContent = '';
+}
+
+async function login() {
+  const username = ($('loginUsername').value || '').trim();
+  const err = $('loginError');
+  if (!username) { err.textContent = '请输入用户ID'; return; }
+  err.style.color = ''; err.textContent = '正在登录…';
+  const result = await callAPI('loginByUsername', { username });
+  if (result && result.success) {
+    currentUser = result.user || {};
+    currentUser.userId = currentUser.username || username;
+
+    // 显示主应用
+    $('loginContainer').style.display = 'none';
+    $('mainApp').style.display = 'block';
+    try { window.location.hash = '#app'; } catch {}
+
+    updateUserInterface();
+    initCalendar();         // 创建日历
+    bindArrangePanel();     // 课程发布
+    bindAnalysisHandlers(); // 数据分析
+    loadUserData();
+  } else {
+    err.style.color = '#c00';
+    err.textContent = (result && result.message) || '登录失败：用户ID不存在';
+  }
+}
+
+async function registerUser() {
+  const name = ($('registerName').value || '').trim();
+  const email = ($('registerEmail').value || '').trim();
+  const department = $('registerDepartment').value;
+  const major = ($('registerMajor').value || '').trim();
+  const role = $('registerRole').value;
+  const err = $('registerError');
+  if (!name || !email || !department || !major || !role) { err.textContent = '请填写姓名、邮箱、所属、专业、身份'; return; }
+  err.style.color=''; err.textContent = '正在登记…';
+  const result = await callAPI('registerByProfile', { name, email, department, major, role });
+  if (result && result.success) {
+    err.style.color='green'; err.textContent='登记成功！请联系老师获取“用户ID”，之后使用用户ID登录。';
+    $('registerName').value=''; $('registerEmail').value=''; $('registerDepartment').value=''; $('registerMajor').value=''; $('registerRole').value='';
+    setTimeout(showLoginForm, 1200);
+  } else {
+    err.style.color='#c00'; err.textContent=(result && result.message) || '登记失败';
+  }
+}
+
+function logout() {
+  currentUser = null;
+  $('mainApp').style.display = 'none';
+  $('loginContainer').style.display = 'flex';
+  $('loginUsername').value = '';
+  $('loginError').textContent = '';
+  setApiStatus({ok:null, text:'API 检测中'}); // 回到检测中
+  try { window.location.hash = '#login'; } catch {}
+}
+
+// 修复移动端 100vh：用 window.innerHeight 动态计算 --vh
+(function(){
+  function setVh(){
+    document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+  }
+  setVh();
+  window.addEventListener('resize', setVh, {passive:true});
+  window.addEventListener('orientationchange', function(){
+    setTimeout(setVh, 150);
+    // FullCalendar 在尺寸变化后需要刷新
+    setTimeout(()=>{ try{ window.calendar && window.calendar.updateSize(); }catch(e){} }, 300);
+  }, {passive:true});
+})();
+
+// ================== 用户界面填充 ==================
+function updateUserInterface() {
+  if (!currentUser) return;
+  $('userGreeting').textContent = '欢迎，' + (currentUser.name || currentUser.userId);
+  $('userRole').textContent = '(' + (currentUser.role || '') + ')';
+  $('profileName').value = currentUser.name || '';
+  $('profileId').value   = currentUser.userId || '';
+  $('profileDept').value = currentUser.department || '';
+  $('profileRole').value = currentUser.role || '';
+
+  const isTeacher = (String(currentUser.role) === '老师' || String(currentUser.userId || '').startsWith('T'));
+  const isAdmin   = String(currentUser.userId || '').startsWith('A');
+  const analysisNav = document.querySelector('.nav-link[data-page="analysis"]');
+  if (analysisNav) analysisNav.style.display = (isTeacher || isAdmin) ? '' : 'none';
+}
+
+// ================== 日历 ==================
+let calendar = null;
+
+function initCalendar() {
+  const el = $('mainCalendar'); if (!el) return;
+  const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
+  calendar = new FullCalendar.Calendar(el, {
+    initialView, locale: 'zh-cn', firstDay: 1, height: 'auto',
+    headerToolbar: false, allDaySlot: false, slotMinTime:'08:00:00', slotMaxTime:'22:00:00', slotDuration:'00:30:00', expandRows:true,
+    datesSet: updateCalendarTitle,
+    eventClick: handleEventClick
+  });
+  $('prevBtn').onclick = () => calendar.prev();
+  $('nextBtn').onclick = () => calendar.next();
+  $('todayBtn').onclick = () => calendar.today();
+  $('dayBtn').onclick = () => changeView('timeGridDay', $('dayBtn'));
+  $('weekBtn').onclick = () => changeView('timeGridWeek', $('weekBtn'));
+  $('monthBtn').onclick = () => changeView('dayGridMonth', $('monthBtn'));
+  $('refreshDataBtn').onclick = refreshData;
 
   calendar.render();
   updateCalendarTitle();
+  loadCalendarEvents();
 }
 
-function bindView(btn, viewName) {
-  btn.onclick = () => {
-    calendar.changeView(viewName);
-    $$('.seg-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    updateCalendarTitle();
-  };
+function changeView(viewName, activeBtn) {
+  if (!calendar) return;
+  calendar.changeView(viewName);
+  ['dayBtn','weekBtn','monthBtn'].forEach(id => { const b=$(id); if(b) b.classList.remove('active'); });
+  if (activeBtn) activeBtn.classList.add('active');
+  updateCalendarTitle();
 }
 
 function updateCalendarTitle() {
   if (!calendar) return;
-  const view = calendar.view;
-  const d = calendar.getDate();
-  const Y = d.getFullYear();
-  const M = String(d.getMonth() + 1).padStart(2, '0');
-  const D = String(d.getDate()).padStart(2, '0');
-
-  if (view.type === 'timeGridDay') {
-    titleEl.textContent = `${Y}/${M}/${D}`;
-    dayBtn.classList.add('active'); weekBtn.classList.remove('active'); monthBtn.classList.remove('active');
-  } else if (view.type === 'timeGridWeek') {
-    const start = new Date(view.currentStart);
-    const end   = new Date(view.currentEnd); end.setDate(end.getDate() - 1);
-    const sM = String(start.getMonth() + 1).padStart(2, '0');
-    const sD = String(start.getDate()).padStart(2, '0');
-    const eM = String(end.getMonth() + 1).padStart(2, '0');
-    const eD = String(end.getDate()).padStart(2, '0');
-    titleEl.textContent = `${Y}/${sM}/${sD} – ${eM}/${eD}`;
-    weekBtn.classList.add('active'); dayBtn.classList.remove('active'); monthBtn.classList.remove('active');
-  } else {
-    titleEl.textContent = `${Y}/${M}`;
-    monthBtn.classList.add('active'); dayBtn.classList.remove('active'); weekBtn.classList.remove('active');
-  }
+  const view = calendar.view, date = calendar.getDate();
+  const y = date.getFullYear(), m = String(date.getMonth()+1).padStart(2,'0'), d = String(date.getDate()).padStart(2,'0');
+  if (view.type === 'timeGridDay') $('calendarTitle').textContent = `${y}/${m}/${d}`;
+  else if (view.type === 'timeGridWeek') {
+    const s = new Date(view.currentStart), e = new Date(view.currentEnd); e.setDate(e.getDate()-1);
+    $('calendarTitle').textContent = `${y}/${String(s.getMonth()+1).padStart(2,'0')}/${String(s.getDate()).padStart(2,'0')} – ${String(e.getMonth()+1).padStart(2,'0')}/${String(e.getDate()).padStart(2,'0')}`;
+  } else $('calendarTitle').textContent = `${y}/${m}`;
 }
 
 async function loadCalendarEvents() {
-  if (!currentUser) return;
-  const res = await callAPI('listVisibleSlots', { userId: currentUser.id });
-  const events = Array.isArray(res) ? res : (res && res.events) || [];
-  if (calendar) {
+  if (!currentUser || !calendar) return;
+  try {
+    const events = await callAPI('listVisibleSlots', { userId: currentUser.userId });
     calendar.removeAllEvents();
-    events.forEach(ev => calendar.addEvent(ev));
-  }
+    if (Array.isArray(events)) events.forEach(ev => calendar.addEvent(ev));
+    updateTodayStats();
+  } catch (e) { console.error('加载槽位失败:', e); }
 }
 
-async function bookSlot(slotId, note) {
+async function handleEventClick(info) {
+  const ev = info.event, ext = ev.extendedProps || {};
   if (!currentUser) return;
-  const payload = {
-    slotId,
-    studentId: currentUser.id,
-    studentName: currentUser.name || currentUser.id,
-    note: note || ''
-  };
-  const res = await callAPI('bookSlot', payload);
-  alert(res?.success ? '预约成功' : (res?.message || '预约失败'));
-  if (res?.success) loadCalendarEvents();
+  const isStudent = (String(currentUser.role) === '学生' || String(currentUser.userId || '').startsWith('S'));
+  if (isStudent && ext.canBook && ext.status === '可约') {
+    const note = prompt(`预约备注（可填具体到达时间等）：\n${ev.title}  ${ev.start.toLocaleString('zh-CN')}`);
+    const res = await callAPI('bookSlot', { slotId: ev.id, studentId: currentUser.userId, studentName: currentUser.name || '', note: note || '' });
+    if (res && res.success) { alert('预约成功'); loadCalendarEvents(); } else { alert((res && res.message) || '预约失败'); }
+  } else {
+    const details = [`标题: ${ev.title}`, `时间: ${ev.start.toLocaleString('zh-CN')}`];
+    if (ev.end) details.push(`结束: ${ev.end.toLocaleString('zh-CN')}`);
+    if (ext && ext.description) details.push(`描述: ${ext.description}`);
+    alert(details.join('\n'));
+  }
 }
 
-// ========== 登录相关 ==========
-window.onLoginSuccess = function(user) {
-  currentUser = user || {};
+function refreshData(){ loadCalendarEvents(); }
+function updateTodayStats(){
+  // 如需从后端聚合统计，这里写入；当前占位
+  $('todayCourses').textContent = $('todayCourses').textContent || '0';
+  $('todayConsultations').textContent = $('todayConsultations').textContent || '0';
+  $('todayReminders').textContent = $('todayReminders').textContent || '0';
+  $('attendanceRate').textContent = $('attendanceRate').textContent || '—';
+}
 
-  // 切换到主应用界面
-  loginContainer.style.display = 'none';
-  appContainer.style.display = '';
-  userBadge.style.display = '';
-  
-  // 更新移动端布局
-  updateMobileLayout();
+// ================== 课程发布 ==================
+function bindArrangePanel() {
+  const pubMode = $('pubMode'), singleDateRow = $('singleDateRow'), rangeRows = $('rangeRows');
+  if (pubMode) pubMode.addEventListener('change', function(){
+    const isRange = this.value === 'range'; singleDateRow.style.display = isRange ? 'none' : 'block'; rangeRows.style.display = isRange ? 'block' : 'none';
+  });
+  const pubSubmitBtn = $('pubSubmitBtn');
+  if (pubSubmitBtn) pubSubmitBtn.addEventListener('click', async function(){
+    if (!currentUser) return;
+    const isTeacher = (String(currentUser.role) === '老师' || String(currentUser.userId || '').startsWith('T'));
+    const isAdmin   = String(currentUser.userId || '').startsWith('A');
+    if (!isTeacher && !isAdmin) { alert('只有老师/管理员可以发布'); return; }
 
-  greetingEl.textContent = `欢迎，${currentUser.name || currentUser.id || '用户'}`;
+    const attr = $('pubAttr').value;
+    const courseName = ($('pubCourseName').value || '').trim();
+    const mode = $('pubMode').value;
+    const startTime = $('pubStartTime').value;
+    const endTime = $('pubEndTime').value;
+    const majors = ($('pubMajors').value || '').trim();
+    const visibleStudentIds = ($('pubVisibleIds').value || '').trim();
 
-  // 显示日历页面
-  showPage('calendar');
-  initCalendar();
-  loadCalendarEvents();
+    if (attr === '大课' && !courseName) { alert('大课需填写课程名'); return; }
+    if (!startTime || !endTime) { alert('请填写时间'); return; }
 
-  try { 
-    localStorage.setItem('eds:user', JSON.stringify(currentUser)); 
-  } catch(_) {}
-};
+    const params = { teacherId: currentUser.userId, attr, courseName, mode, startTime, endTime, majors, visibleStudentIds };
 
-logoutBtn.addEventListener('click', () => {
-  toggleSidebar(false);
-  userBadge.style.display = 'none';
-  appContainer.style.display = 'none';
-  loginContainer.style.display = '';
-  hamburger.style.display = 'none';
-  try { localStorage.removeItem('eds:user'); } catch(_) {}
-  currentUser = null;
-});
+    if (mode === 'single') {
+      const date = $('pubDate').value; if (!date) { alert('请选择日期'); return; }
+      params.date = date;
+    } else {
+      const sd = $('pubStartDate').value, ed = $('pubEndDate').value;
+      if (!sd || !ed) { alert('请选择起止日期'); return; }
+      const wds = Array.from(document.querySelectorAll('.wd:checked')).map(cb => Number(cb.value));
+      if (wds.length === 0) { alert('请选择周几'); return; }
+      params.startDate = sd; params.endDate = ed; params.weekdays = wds;
+      const c = $('pubCount').value; if (c) params.count = Number(c);
+    }
 
-loginBtn.addEventListener('click', async () => {
-  const userId = loginInput.value.trim();
-  if (!userId) { 
-    loginErr.textContent = '请输入用户ID'; 
-    return; 
-  }
-  loginErr.textContent = '';
-
-  // 先尝试API登录
-  const apiRes = await callAPI('loginByUsername', { username: userId });
-  if (apiRes?.success && apiRes.user) {
-    const u = apiRes.user;
-    return window.onLoginSuccess({
-      id: u.username || userId,
-      name: u.name || u.username || userId,
-      role: u.role || (String(userId).startsWith('T') ? '老师' : (String(userId).startsWith('S') ? '学生' : (String(userId).startsWith('A') ? '管理员' : '用户')))
-    });
-  }
-
-  // API不通时本地模拟登录
-  const role = String(userId).startsWith('T') ? '老师'
-           : String(userId).startsWith('S') ? '学生'
-           : String(userId).startsWith('A') ? '管理员'
-           : '用户';
-  window.onLoginSuccess({ id: userId, name: userId, role });
-});
-
-loginInput.addEventListener('keydown', e => { 
-  if (e.key === 'Enter') loginBtn.click(); 
-});
-
-regBtn.addEventListener('click', async () => {
-  const name = $('#registerName').value.trim();
-  const email = $('#registerEmail').value.trim();
-  const department = $('#registerDepartment').value;
-  const major = $('#registerMajor').value.trim();
-  const role = $('#registerRole').value;
-  
-  regErr.textContent = '';
-  if (!name || !email || !department || !major || !role) { 
-    regErr.textContent = '请填写完整信息'; 
-    return; 
-  }
-  
-  const res = await callAPI('registerByProfile', { name, email, department, major, role });
-  regErr.style.color = res?.success ? 'green' : 'red';
-  regErr.textContent = res?.success ? '登记成功！请联系老师获取用户ID后登录。' : (res?.message || '登记失败');
-});
-
-// 刷新日历按钮
-if (refreshBtn) {
-  refreshBtn.addEventListener('click', () => {
-    showPage('calendar');
-    loadCalendarEvents();
+    const res = await callAPI('publishSlots', params);
+    if (res && res.success) { alert(res.message || '发布成功'); loadCalendarEvents(); } else { alert((res && res.message) || '发布失败'); }
   });
 }
 
-// ========== 初始化 ==========
-(async function boot() {
-  if (apiStatusTip) {
-    apiStatusTip.textContent = '正在检测 API';
-    const ping = await callAPI('testConnection', {});
-    apiStatusTip.textContent = ping?.success ? 'API 已连接' : 'API 不可用，已启用本地登录';
-    const apiPing = $('#apiPing'); 
-    if (apiPing) apiPing.textContent = ping?.success ? 'API: 在线' : 'API: 离线';
-  }
-  
-  // 尝试自动登录
+// ================== 数据分析 ==================
+let allStudents = []; let selectedStudents = [];
+
+function bindAnalysisHandlers() {
+  $('departmentSelect')?.addEventListener('change', loadDepartmentStudents);
+  $('majorSelect')?.addEventListener('change', loadMajorStudents);
+  $('selectAllBtn')?.addEventListener('click', selectAllStudents);
+  $('clearAllBtn')?.addEventListener('click', clearAllStudents);
+  $('generateReportBtn')?.addEventListener('click', generateReport);
+  $('exportBtn')?.addEventListener('click', exportReport);
+  $('resetFiltersBtn')?.addEventListener('click', resetFilters);
+
+  const now = new Date();
+  $('startMonth').value = now.toISOString().slice(0,7);
+  $('endMonth').value = now.toISOString().slice(0,7);
+}
+
+function loadDepartmentsList() {
+  const departments = ['文科大学院', '理科大学院'];
+  const sel = $('departmentSelect'); if (!sel) return;
+  sel.innerHTML = '<option value="">请选择所属部门</option>';
+  departments.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
+}
+
+async function loadDepartmentStudents() {
+  const department = $('departmentSelect')?.value; if (!department) return;
   try {
-    const saved = localStorage.getItem('eds:user');
-    if (saved) {
-      const u = JSON.parse(saved);
-      if (u?.id) window.onLoginSuccess(u);
+    const students = await callAPI('getStudentsByClass', { department });
+    allStudents = Array.isArray(students) ? students : [];
+    displayStudentList(allStudents);
+    const majors = [...new Set(allStudents.map(s => s.major))];
+    const majorSelect = $('majorSelect');
+    if (majorSelect) {
+      majorSelect.innerHTML = '<option value="">所有专业</option>';
+      majors.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; majorSelect.appendChild(o); });
     }
-  } catch(_) {}
-  
-  // 初始化移动端布局
-  updateMobileLayout();
-})();
-  </script>
+    $('studentListArea').style.display = 'block';
+  } catch (e) { console.error('加载学生失败:', e); }
+}
+
+function loadMajorStudents() {
+  const major = $('majorSelect')?.value;
+  const list = major ? allStudents.filter(s => s.major === major) : allStudents;
+  displayStudentList(list);
+}
+
+function displayStudentList(students) {
+  const box = $('studentList'); if (!box) return;
+  box.innerHTML='';
+  (students || []).forEach(stu => {
+    const isSelected = selectedStudents.some(s => s.id === stu.id);
+    const div = document.createElement('div');
+    div.className = 'student-item';
+    div.innerHTML = `
+      <input type="checkbox" id="student_${stu.id}" ${isSelected ? 'checked' : ''}>
+      <label for="student_${stu.id}">${stu.name} (${stu.id}) - ${stu.major}</label>
+    `;
+    div.querySelector('input').addEventListener('change', () => toggleStudent(stu.id));
+    box.appendChild(div);
+  });
+  updateSelectedCount();
+}
+
+function toggleStudent(studentId) {
+  const stu = allStudents.find(s => s.id === studentId); if (!stu) return;
+  const idx = selectedStudents.findIndex(s => s.id === studentId);
+  if (idx === -1) selectedStudents.push(stu); else selectedStudents.splice(idx, 1);
+  updateSelectedCount(); loadMajorStudents();
+}
+function selectAllStudents() {
+  const major = $('majorSelect')?.value;
+  const list = major ? allStudents.filter(s => s.major === major) : allStudents;
+  list.forEach(stu => { if (!selectedStudents.some(s => s.id === stu.id)) selectedStudents.push(stu); });
+  updateSelectedCount(); displayStudentList(list);
+}
+function clearAllStudents() { selectedStudents=[]; updateSelectedCount(); loadMajorStudents(); }
+function updateSelectedCount() { $('selectedCount').textContent = selectedStudents.length; }
+
+async function generateReport() {
+  if (selectedStudents.length === 0) { alert('请先选择学生'); return; }
+  const startMonth = $('startMonth').value || '';
+  const endMonth   = $('endMonth').value || '';
+  const dataTypes = [];
+  if ($('attendance').checked) dataTypes.push('出席');
+  if ($('homework').checked) dataTypes.push('作业');
+  if ($('consultation').checked) dataTypes.push('面谈');
+  if ($('progress').checked) dataTypes.push('进度');
+
+  $('resultsPanel').style.display = 'block';
+  $('loadingIndicator').style.display = 'flex';
+  $('resultsData').style.display = 'none';
+
+  const studentIds = selectedStudents.map(s => s.id);
+  try {
+    const data = await callAPI('generateStudentReport', { studentIds, startMonth, endMonth, dataTypes });
+    displayReportResults(Array.isArray(data) ? data : []);
+    $('loadingIndicator').style.display = 'none';
+    $('resultsData').style.display = 'block';
+    $('exportBtn').style.display = 'inline-block';
+  } catch (e) {
+    alert('生成报告失败：' + e.message);
+    $('loadingIndicator').style.display = 'none';
+  }
+}
+
+function displayReportResults(data) {
+  $('resultCount').textContent = '共 ' + data.length + ' 条记录';
+  const tbody = $('tableBody'); tbody.innerHTML = '';
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.student}</td><td>${item.type}</td><td>${item.value}</td><td>${item.note || ''}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  generateCopyableReport(data);
+}
+
+function generateCopyableReport(data) {
+  let report = '学生数据分析报告\n\n';
+  const names = [...new Set(data.map(i => i.student))];
+  names.forEach(n => {
+    const rows = data.filter(i => i.student === n);
+    report += n + ':\n';
+    rows.forEach(r => { report += '- ' + r.type + ': ' + r.value + ' (' + (r.note || '') + ')\n'; });
+    report += '\n';
+  });
+  report += '请基于以上数据分析学生表现。';
+  $('copyArea').textContent = report;
+}
+function exportReport() {
+  const text = $('copyArea').textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = $('exportBtn'); const t = btn.textContent;
+    btn.textContent = '已复制!'; setTimeout(() => { btn.textContent = t; }, 1500);
+  }).catch(() => { alert('复制失败，请手动选择文本'); });
+}
+function resetFilters() {
+  $('departmentSelect').value = ''; $('majorSelect').value = '';
+  selectedStudents = []; allStudents = []; $('studentListArea').style.display = 'none';
+  const now = new Date(); $('startMonth').value = now.toISOString().slice(0,7); $('endMonth').value = now.toISOString().slice(0,7);
+  ['attendance','homework','consultation','progress'].forEach(id => { const cb=$(id); if(cb) cb.checked = true; });
+  $('resultsPanel').style.display = 'none'; $('exportBtn').style.display = 'none';
+}
+
+// ================== 用户数据加载（示例） ==================
+function loadUserData() {
+  const roleLower = String(currentUser?.role || '').toLowerCase();
+  if (roleLower === '老师' || roleLower === 'teacher') loadDepartmentsList();
+}
+
+// ================== 初始化 + API 连接状态检测 ==================
+document.addEventListener('DOMContentLoaded', async () => {
+  $('loginBtn')?.addEventListener('click', login);
+  $('registerBtn')?.addEventListener('click', registerUser);
+  $('logoutBtn')?.addEventListener('click', logout);
+  $('showRegisterBtn')?.addEventListener('click', showRegisterForm);
+  $('showLoginBtn')?.addEventListener('click', showLoginForm);
+  $('loginUsername')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
+
+  // 立即显示“检测中”
+  setApiStatus({ok:null, text:'API 检测中'});
+
+  // 并发两次轻探测：testConnection 和一次空动作
+  try {
+    const [r1, r2] = await Promise.allSettled([
+      callAPI('testConnection'),
+      callAPI('ping', {t: Date.now()})
+    ]);
+    const ok = (r1.value && r1.value.success) || (r2.value && r2.value.success);
+    setApiStatus({ok, text: ok ? 'API 连接成功' : 'API 连接异常'});
+    if (!ok) {
+      const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
+    }
+  } catch (e) {
+    setApiStatus({ok:false, text:'API 连接失败'});
+    const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
+  }
+});
+</script>
 </body>
 </html>

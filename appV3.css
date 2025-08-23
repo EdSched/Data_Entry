@@ -3,6 +3,8 @@
   --text:#111;
   --muted:#777;
   --bg:#fff;
+  --topbar:56px;
+  --sidebar:264px;
 }
 
 *{box-sizing:border-box}
@@ -10,39 +12,19 @@ html,body{height:100%;margin:0;background:#fafafa;color:var(--text);font:14px/1.
 
 /* 顶栏 */
 .topbar{
-  position:sticky;top:0;z-index:100;display:flex;align-items:center;gap:12px;
-  height:56px;background:var(--bg);border-bottom:1px solid var(--border);padding:0 12px;
+  position:sticky;top:0;z-index:1000;display:flex;align-items:center;gap:12px;
+  height:var(--topbar);background:var(--bg);border-bottom:1px solid var(--border);padding:0 12px;
 }
 .brand{font-weight:700}
 .spacer{flex:1}
 .user-badge{display:flex;align-items:center;gap:8px}
 .user-badge .btn{height:30px}
 
-/* 汉堡按钮（登录后才显示） */
+/* 汉堡（登录后显示） */
 #hamburger{
   display:none;width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:#fff;
   font-size:18px;line-height:34px;text-align:center;cursor:pointer;user-select:none;
 }
-
-/* 抽屉与遮罩 */
-.sidebar{
-  position:fixed;left:0;top:56px;width:264px;height:calc(100vh - 56px);background:#fff;
-  border-right:1px solid var(--border);transform:translateX(-100%);transition:transform .25s ease;z-index:1000;
-  display:flex;flex-direction:column;
-}
-.sidebar.open{transform:translateX(0)}
-.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600}
-.nav{display:flex;flex-direction:column;padding:8px}
-.nav-link{
-  display:block;padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--text);border:1px solid transparent;
-}
-.nav-link:hover{border-color:var(--border);background:#fafafa}
-.nav-link.active{border-color:#000}
-.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
-.backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s;z-index:999;
-}
-.backdrop.show{opacity:1;pointer-events:auto}
 
 /* 主容器与卡片 */
 .app{padding:16px}
@@ -64,6 +46,44 @@ html,body{height:100%;margin:0;background:#fafafa;color:var(--text);font:14px/1.
 .mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
 .small{font-size:12px}.muted{color:var(--muted)}
 
+/* ===== 布局：桌面固定侧栏；移动抽屉 ===== */
+.app-layout{display:grid;grid-template-columns:var(--sidebar) 1fr;gap:16px;align-items:start}
+
+/* 侧栏：桌面固定 */
+.sidebar{
+  position:sticky;top:var(--topbar);height:calc(100vh - var(--topbar));
+  background:#fff;border:1px solid var(--border);border-left:0;border-radius:12px;padding:8px;overflow:auto;
+}
+.sidebar-header{padding:10px 8px;border-bottom:1px solid var(--border);font-weight:600}
+.nav{display:flex;flex-direction:column;padding:8px}
+.nav-link{display:block;padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--text);border:1px solid transparent}
+.nav-link:hover{border-color:var(--border);background:#fafafa}
+.nav-link.active{border-color:#000}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+
+/* 遮罩（仅移动） */
+.backdrop{display:none}
+
+/* 移动端：侧栏改为抽屉，主内容占满 */
+@media (max-width: 1023px) {
+  .app{padding:12px}
+  .app-layout{display:block}
+  #hamburger{display:inline-block}
+  .sidebar{
+    position:fixed;left:-280px;top:var(--topbar);width:var(--sidebar);height:calc(100vh - var(--topbar));
+    border-radius:0;border-left:1px solid var(--border);border-right:1px solid var(--border);
+    transition:left .25s ease;z-index:1100;
+  }
+  .sidebar.open{left:0}
+  .backdrop{
+    display:block;position:fixed;inset:0;background:rgba(0,0,0,.15);
+    opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:1090;
+  }
+  .backdrop.show{opacity:1;pointer-events:auto}
+  /* 防止 FullCalendar 盖抽屉 */
+  #mainCalendar, .fc, .fc-view-harness{position:relative;z-index:1}
+}
+
 /* 日历头 */
 .calendar-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
 .calendar-title{font-weight:700}
@@ -73,68 +93,16 @@ html,body{height:100%;margin:0;background:#fafafa;color:var(--text);font:14px/1.
 .seg-btn:last-child{border-right:0}
 .seg-btn.active{background:#000;color:#fff}
 
-/* FullCalendar 调整为黑白 */
-.fc{--fc-border-color: var(--border);--fc-now-indicator-color:#000;--fc-button-bg:#fff;--fc-button-border-color:#000;--fc-button-text-color:#000;--fc-button-active-bg:#000;--fc-button-active-border-color:#000;--fc-button-active-text-color:#fff}
+/* FullCalendar 黑白 */
+.fc{
+  --fc-border-color: var(--border);
+  --fc-now-indicator-color:#000;
+  --fc-button-bg:#fff;
+  --fc-button-border-color:#000;
+  --fc-button-text-color:#000;
+  --fc-button-active-bg:#000;
+  --fc-button-active-border-color:#000;
+  --fc-button-active-text-color:#fff;
+}
 .fc .fc-toolbar-title{font-size:16px}
 .fc .fc-button{border-radius:8px !important}
-
-/* === Drawer 最小样式补丁（放在文件最后，覆盖一切冲突） === */
-.topbar { position: sticky; top: 0; z-index: 1000; }
-
-#hamburger {
-  display: none;                 /* 登录前隐藏，登录后由 JS 打开 */
-  border: 1px solid #999;
-  background: #fff;
-  padding: 6px 10px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-/* 抽屉容器：默认隐藏在左侧，open 时滑出 */
-.sidebar {
-  position: fixed;
-  top: 48px;                     /* 顶栏高度，如果你的顶栏更高，请同步改 */
-  left: -280px;                  /* 藏到屏外 */
-  width: 260px;
-  height: calc(100vh - 48px);
-  background: #fff;
-  border-right: 1px solid #ddd;
-  box-shadow: 0 2px 12px rgba(0,0,0,.06);
-  transition: left 0.25s ease;
-  z-index: 1100;                 /* 高于日历 */
-  overflow: auto;
-}
-.sidebar.open { left: 0; }
-
-/* 遮罩 */
-.backdrop {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.15);
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-  z-index: 1090;
-}
-.backdrop.show {
-  opacity: 1;
-  pointer-events: auto;
-}
-
-/* 抽屉内链接样式（可保留你原来的） */
-.nav .nav-link {
-  display: block;
-  padding: 10px 14px;
-  border-bottom: 1px solid #f0f0f0;
-  text-decoration: none;
-  color: #111;
-}
-.nav .nav-link.active { font-weight: 600; }
-
-/* 移动端：抽屉盖在上面，主区正常滚动 */
-@media (max-width: 768px) {
-  .sidebar { top: 44px; height: calc(100vh - 44px); }
-}
-
-/* 保险：确保主日历不把抽屉盖掉 */
-#mainCalendar, .fc, .fc-view-harness { position: relative; z-index: 1; }

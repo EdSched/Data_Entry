@@ -146,60 +146,46 @@ html, body{height:auto;min-height:100%;overflow-y:auto}
   .wrap{height:auto;}                       /* 外层容器不锁高 */
   main{overflow:visible;}                   /* 让 body 承担滚动 */
 }
-/* 横向拉手条样式 */
-.pull-down{
-  display:flex; align-items:center; justify-content:center;
-  gap:10px; height:32px; margin:8px 0 10px 0;
-  border:1px solid var(--border); border-radius:10px;
-  background:#f8f9fa; user-select:none; -webkit-user-select:none;
-  touch-action:none;      /* 允许我们接管拖拽手势 */
-}
-.pull-down .grip{
-  width:40px; height:4px; border-radius:99px; background:#d1d5db;
-}
-.pull-down .pull-text{ font-size:12px; color:#666; }
-.pull-down:active{ background:#eef0f2; }
-
-/* 手机端更贴近屏幕边，字号再小一点 */
+/* ===== 手机端：把侧栏（今日概览+导航）变成抽屉 ===== */
 @media (max-width:768px){
-  .pull-down{ height:30px; margin:6px 0 8px 0; }
-  .pull-down .pull-text{ font-size:11px; }
-}
-@media (min-width:769px){ .pull-down{ display:none; } }
-
-/* ===== 手机端顶栏简化版 ===== */
-@media (max-width: 768px){
-  .topbar{
-    flex-direction: column;
-    align-items: flex-start;
-    height: auto;
-    padding: 8px 12px;
-    gap: 4px;
+  aside{ display:none; }                           /* 默认隐藏 */
+  body.mobile-menu-open aside{                     /* 点击横条后显示 */
+    display:block;
+    margin-bottom:8px;
   }
-  .topbar .brand{
-    font-size: 18px;
-    font-weight: 700;
-  }
-  .topbar .user-line{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    font-size: 13px;
-    color: var(--muted);
-  }
-  .status-dot{
-    display:inline-block;
-    width:8px; height:8px;
-    border-radius:50%;
-    margin-right:6px;
-    background:#4caf50; /* 绿色 */
-  }
-  .logout-btn{
-    font-size: 12px;
-    height: 26px;
-    padding: 0 8px;
-    margin-left: 8px;
-  }
+  .wrap{ height:auto; }                            /* 交给 body 滚动，避免“卡住” */
+  main{ overflow:visible; }
 }
 
+/* 抽屉开关：与卡片同宽的窄横条 */
+.pull-strip{
+  display:flex; align-items:center; justify-content:center; gap:10px;
+  height:26px; margin:6px 0 8px 0;
+  border:1px solid var(--border); border-radius:10px;
+  background:#f7f8fa; color:#666; cursor:pointer;
+  user-select:none; -webkit-user-select:none; touch-action:manipulation;
+}
+.pull-strip .grip{ width:44px; height:4px; border-radius:99px; background:#d1d5db; }
+.pull-strip .label{ font-size:12px; }
+.pull-strip:hover{ background:#f2f4f6; }
+
+/* ===== 登录输入框“外凸”修正 + iOS 输入不再放大 ===== */
+.login-container .login-box input,
+.login-container .login-box button{
+  width:100%; box-sizing:border-box; display:block; /* 关键：不再鼓出卡片边界 */
+}
+@media (max-width:768px){
+  input, select, textarea, button{ font-size:16px; } /* 关键：>=16px iOS 不会自动放大 */
+}
+html, body{ overflow-x:hidden; }
+
+/* ===== 手机端顶栏：API 绿点在“欢迎”前；第二行右对齐 ===== */
+@media (max-width:768px){
+  .topbar{ flex-wrap:wrap; gap:8px; height:auto; padding:8px 12px; }
+  .brand{ order:1; font-size:18px; }   /* 第一行左侧 */
+  .spacer{ display:none; }
+  .api-badge{ order:2; border:none; padding:0 4px; } /* 绿点 */
+  #apiTextTop{ display:none; }          /* 只保留绿点，不显示文字 */
+  .api-dot{ width:10px; height:10px; }
+  .user-info{ order:3; width:100%; justify-content:flex-end; } /* 第二行右侧：欢迎… 退出 */
+}

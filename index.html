@@ -4,156 +4,95 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>师生管理平台</title>
-
-  <!-- FullCalendar（与你现有版本一致） -->
+  <!-- FullCalendar -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
-
-  <!-- 你自己的样式与脚本 -->
+  <!-- 样式 -->
   <link rel="stylesheet" href="appV2.css"/>
 </head>
 <body>
-
-  <!-- ========== 登录界面（登录前唯一可见） ========== -->
-  <main id="loginContainer" class="login-container">
-    <div class="login-box">
-      <h1>师生管理平台</h1>
-
-      <!-- 登录表单（只保留“用户ID”） -->
-      <div id="loginForm">
-        <input type="text" id="loginUsername" placeholder="用户ID（由老师分配）" />
-        <button type="button" id="loginBtn">登录</button>
-        <div class="link-text" id="showRegisterBtn">还没有账号？登记信息</div>
-        <div id="loginError" class="error-message"></div>
-      </div>
-
-      <!-- 注册表单（隐藏，按你原先逻辑切换显示） -->
-      <div id="registerForm" style="display:none;">
-        <input type="text" id="registerName" placeholder="姓名" />
-        <input type="email" id="registerEmail" placeholder="邮箱（用于区分同名，不对外公开）" />
-        <select id="registerDepartment">
-          <option value="">选择所属部门</option>
-          <option value="文科大学院">文科大学院</option>
-          <option value="理科大学院">理科大学院</option>
-          <option value="其他">其他</option>
-        </select>
-        <input type="text" id="registerMajor" placeholder="专业" />
-        <select id="registerRole">
-          <option value="">选择身份</option>
-          <option value="学生">学生</option>
-          <option value="老师">老师</option>
-        </select>
-        <button type="button" id="registerBtn">登记</button>
-        <div class="link-text" id="showLoginBtn">已有账号？返回登录</div>
-        <div id="registerError" class="error-message"></div>
-      </div>
+  <!-- 顶栏 -->
+  <header class="topbar">
+    <!-- 登录前不显示汉堡 -->
+    <button id="hamburger" aria-label="打开菜单" style="display:none;">☰</button>
+    <div class="brand">师生管理平台</div>
+    <div class="spacer"></div>
+    <div id="userBadge" class="user-badge" style="display:none;">
+      <span id="greeting"></span>
+      <button id="logoutBtn" class="btn btn-outline">退出</button>
     </div>
-  </main>
+  </header>
 
-  <!-- ========== 主应用（登录后显示） ========== -->
-  <main id="mainApp" class="main-app" style="display:none;">
-
-    <!-- 顶栏（含汉堡按钮） -->
-    <header class="topbar">
-      <button id="hamburger" class="hamburger" aria-label="打开菜单" aria-controls="sidebar" aria-expanded="false">☰</button>
-      <div class="brand">师生管理平台</div>
-      <div class="spacer"></div>
-      <div class="user-info">
-        <span id="userGreeting">欢迎，</span>
-        <span id="userRole"></span>
-        <button class="logout-btn" id="logoutBtn">退出</button>
+  <!-- 登录容器（仅用户ID） -->
+  <main id="loginContainer" class="center-wrap">
+    <section class="card card-narrow">
+      <h1 class="title">登录</h1>
+      <div class="form-row">
+        <label for="loginUsername" class="label">用户ID</label>
+        <input id="loginUsername" class="input" placeholder="例如：S001 / T001 / A001" />
       </div>
-    </header>
+      <button id="loginBtn" class="btn btn-solid btn-full">登录</button>
+      <div id="loginError" class="error"></div>
 
-    <!-- 侧栏抽屉（仅登录后存在于 DOM 中） -->
-    <aside id="sidebar" class="sidebar" aria-hidden="true">
-      <nav class="menu">
-        <!-- 这里放你要跳的子页面链接或占位 -->
-        <a class="menu-item" href="javascript:void(0)" id="menuCalendar">日历视图</a>
-        <a class="menu-item" href="analysis.html">数据分析（子页）</a>
-        <a class="menu-item" href="schedule.html">课程安排（子页）</a>
-        <a class="menu-item" href="my-agenda.html">我的日程（子页）</a>
-        <a class="menu-item" href="profile.html">个人信息（子页）</a>
-      </nav>
-    </aside>
-    <div id="backdrop" class="backdrop" aria-hidden="true"></div>
-
-    <!-- 主内容：日历页（保留你现有的 ID 供 app.js 初始化） -->
-    <section class="content">
-      <!-- 上方可以放切换按钮/标题等（保持黑白简洁） -->
-      <div class="calendar-head">
-        <div id="miniCalendar" class="mini-calendar" style="display:none;"></div>
-        <div class="calendar-title" id="calendarTitle"></div>
-      </div>
-
-      <div id="mainCalendar" class="calendar-root"></div>
-
-      <!-- 可选：老师发布（如果你脚本里会控制显示就保留） -->
-      <div id="publishPanel" class="publish-panel" style="display:none;">
-        <h3>老师登记</h3>
-        <div class="filter-item">
-          <label>课程属性</label>
-          <select id="pubAttr">
-            <option value="大课">大课（只读）</option>
-            <option value="VIP">VIP（可约）</option>
-            <option value="面谈">面谈（可约）</option>
+      <details class="mt-16">
+        <summary class="small">没有账号？登记信息</summary>
+        <div class="grid2 mt-8">
+          <input id="registerName" class="input" placeholder="姓名"/>
+          <input id="registerEmail" class="input" placeholder="邮箱"/>
+          <select id="registerDepartment" class="input">
+            <option value="">所属</option><option>文科大学院</option><option>理科大学院</option><option>其他</option>
+          </select>
+          <input id="registerMajor" class="input" placeholder="专业"/>
+          <select id="registerRole" class="input">
+            <option value="">身份</option><option>学生</option><option>老师</option>
           </select>
         </div>
-        <div class="filter-item">
-          <label>课程名（大课必填）</label>
-          <input type="text" id="pubCourseName" />
-        </div>
-        <div class="filter-item">
-          <label>模式</label>
-          <select id="pubMode">
-            <option value="single">单次</option>
-            <option value="range">区间+周几</option>
-          </select>
-        </div>
-        <div class="filter-item" id="singleDateRow">
-          <label>日期</label>
-          <input type="date" id="pubDate" />
-        </div>
-        <div class="filter-item" id="rangeRows" style="display:none;">
-          <label>起止日期</label>
-          <div style="display:flex;gap:6px;">
-            <input type="date" id="pubStartDate" />
-            <input type="date" id="pubEndDate" />
-          </div>
-          <label style="margin-top:6px;">周几（可多选）</label>
-          <div>
-            <label><input type="checkbox" class="wd" value="1">周一</label>
-            <label><input type="checkbox" class="wd" value="2">周二</label>
-            <label><input type="checkbox" class="wd" value="3">周三</label>
-            <label><input type="checkbox" class="wd" value="4">周四</label>
-            <label><input type="checkbox" class="wd" value="5">周五</label>
-            <label><input type="checkbox" class="wd" value="6">周六</label>
-            <label><input type="checkbox" class="wd" value="0">周日</label>
-          </div>
-          <label style="margin-top:6px;">回数（可选）</label>
-          <input type="number" id="pubCount" min="1" placeholder="不填则按区间+周几全部展开" />
-        </div>
-        <div class="filter-item">
-          <label>时间（开始-结束）</label>
-          <div style="display:flex;gap:6px;">
-            <input type="time" id="pubStartTime" value="09:00" />
-            <input type="time" id="pubEndTime" value="10:00" />
-          </div>
-          <div style="font-size:11px;color:#666;">仅允许整点或半点（:00 / :30）</div>
-        </div>
-        <div class="filter-item">
-          <label>面向专业（逗号分隔；空=全专业）</label>
-          <input type="text" id="pubMajors" placeholder="例：文科研究科,工学研究科" />
-        </div>
-        <div class="filter-item">
-          <label>可见学生IDs（逗号分隔；VIP/面谈用）</label>
-          <input type="text" id="pubVisibleIds" placeholder="例：S001,S015" />
-        </div>
-        <button class="btn btn-primary" id="pubSubmitBtn">发布</button>
-      </div>
+        <button id="registerBtn" class="btn btn-outline mt-8">提交登记</button>
+        <div id="registerError" class="error"></div>
+      </details>
+      <div id="apiStatusTip" class="muted small mt-12">正在检测 API…</div>
     </section>
   </main>
 
-  <!-- 你的主脚本（负责：登录成功后隐藏 loginContainer、显示 mainApp、初始化 FullCalendar、抽屉开合等） -->
+  <!-- 主页面：只有一个主日历 -->
+  <main id="appContainer" class="app" style="display:none;">
+
+    <!-- ✅ 抽屉和遮罩被移到登录之后（主应用内部） -->
+    <aside id="sidebar" class="sidebar">
+      <div class="sidebar-header">导航</div>
+      <nav class="nav">
+        <a class="nav-link active" href="index.html">日历</a>
+        <a class="nav-link" id="linkArrange" href="arrange.html">课程安排（子页）</a>
+        <a class="nav-link" href="analysis.html">数据分析（子页）</a>
+        <a class="nav-link" href="myschedule.html">我的日程（子页）</a>
+        <a class="nav-link" href="profile.html">个人信息（子页）</a>
+      </nav>
+      <div class="sidebar-footer">
+        <button id="refreshBtn" class="btn btn-outline btn-full">刷新日历</button>
+        <div id="apiPing" class="muted small">API: —</div>
+      </div>
+    </aside>
+    <div id="backdrop" class="backdrop"></div>
+    <!-- ✅ 以上两块原本在登录前，已移动到此处 -->
+
+    <section class="card">
+      <div class="calendar-head">
+        <div class="calendar-title" id="calendarTitle">—</div>
+        <div class="calendar-ctrl">
+          <button id="prevBtn" class="btn btn-outline">‹</button>
+          <button id="todayBtn" class="btn btn-outline">今天</button>
+          <button id="nextBtn" class="btn btn-outline">›</button>
+          <div class="seg">
+            <button id="dayBtn" class="seg-btn active">日</button>
+            <button id="weekBtn" class="seg-btn">周</button>
+            <button id="monthBtn" class="seg-btn">月</button>
+          </div>
+        </div>
+      </div>
+      <div id="mainCalendar"></div>
+    </section>
+  </main>
+
+  <!-- 逻辑 -->
   <script src="appV2.js" defer></script>
 </body>
 </html>

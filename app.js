@@ -475,119 +475,69 @@ document.addEventListener('DOMContentLoaded', async () => {
     const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
   }
 });
-(function(){
+document.addEventListener('DOMContentLoaded', () => {
+  const puller = document.getElementById('drawerPuller');
+  const aside  = document.querySelector('aside');
+  const bd     = document.getElementById('drawerBackdrop');
   const isMobile = () => window.matchMedia('(max-width:768px)').matches;
-  const aside = document.querySelector('aside');
-  const backdrop = document.getElementById('drawerBackdrop');
-  const hotzoneTop = document.getElementById('edgeHotzoneTop');
-  if (!aside || !hotzoneTop) return;
+  if (!puller || !aside) return;
 
-  let startY = 0, lastY = 0, lastT = 0, dragging = false, startOffset = 0;
-
-  const h = () => aside.getBoundingClientRect().height;
-
-  // 读取当前 translateY（px）：打开=0，关闭=-h（向上藏）
-  const currentOffset = () => {
-    const m = (getComputedStyle(aside).transform || '').match(/matrix.*\((.+)\)/);
-    if (m && m[1]){
-      const vals = m[1].split(',').map(parseFloat);
-      const ty = vals.length === 6 ? vals[5] : 0;
-      return ty; // 0..-h
-    }
-    return aside.classList.contains('open') ? 0 : -h();
-  };
-
-  function disableScroll(disable){
-    document.documentElement.style.overflow = disable ? 'hidden' : '';
-    document.body.style.overflow = disable ? 'hidden' : '';
-    document.body.style.touchAction = disable ? 'none' : '';
-  }
-  function setTranslateY(y){ // 限制在 [-h, 0]
-    const hh = h();
-    aside.style.transform = `translateY(${Math.max(-hh, Math.min(y, 0))}px)`;
-  }
-
-  function onStart(y){
-    if (!isMobile()) return;
-    dragging = true;
-    aside.classList.add('dragging');
-    startY = lastY = y;
-    lastT = performance.now();
-    startOffset = currentOffset();      // 0..-h
-    backdrop && backdrop.classList.add('show');
-    disableScroll(true);
-  }
-  function onMove(y){
-    if (!dragging) return;
-    const dy = y - startY;              // 向下为正 = 打开
-    const target = startOffset + dy;    // 0 打开；-h 关闭
-    setTranslateY(target);
-    lastY = y; lastT = performance.now();
-  }
-  function onEnd(){
-    if (!dragging) return;
-    dragging = false;
-    aside.classList.remove('dragging');
-
-    const dy = lastY - startY;
-    const dt = Math.max(1, performance.now() - lastT);
-    const v = dy / dt;                  // 向下为正（打开方向）
-
-    const off = currentOffset();        // 0..-h
-    const hh = h();
-
-    // 阈值：打开≥高度的 80%，关闭≤65%；快速滑也触发
-    const openedEnough = off > -hh * 0.20;        // 越接近 0 越打开
-    const closedEnough = off < -hh * 0.35;
-    const fastOpen  = v > 1.0;                    // 快速下拉
-    const fastClose = v < -0.8;                   // 快速上推
-
-    aside.style.transform = ''; // 交还给 class 控制
-    if (fastOpen || openedEnough) {
-      openDrawer();
-    } else if (fastClose || closedEnough) {
-      closeDrawer();
-    } else {
-      // 就近原则
-      (Math.abs(off) < hh*0.5) ? openDrawer() : closeDrawer();
-    }
-    disableScroll(false);
-  }
-
-  // 顶部热区：下拉打开
-  hotzoneTop.addEventListener('touchstart', e=>{
-    if (!isMobile()) return;
-    if (aside.classList.contains('open')) return; // 已打开不处理
-    onStart(e.touches[0].clientY);
-    startOffset = -h(); // 从关闭位置开始
-  }, {passive:true});
-  hotzoneTop.addEventListener('touchmove', e=>{
-    if (!isMobile() || !dragging) return;
-    onMove(e.touches[0].clientY);
-    e.preventDefault();
-  }, {passive:false});
-  hotzoneTop.addEventListener('touchend', onEnd, {passive:true});
-  hotzoneTop.addEventListener('touchcancel', onEnd, {passive:true});
-
-  // 在抽屉本体/把手上拖拽（打开后可上推关闭/继续拉开）
-  [aside, aside.querySelector('.drawer-handle')].filter(Boolean).forEach(el=>{
-    el.addEventListener('touchstart', e=>{
-      if (!isMobile()) return;
-      if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
-      onStart(e.touches[0].clientY);
-      startOffset = currentOffset();
-    }, {passive:true});
-    el.addEventListener('touchmove', e=>{
-      if (!isMobile() || !dragging) return;
-      onMove(e.touches[0].clientY);
-      e.preventDefault();
-    }, {passive:false});
-    el.addEventListener('touchend', onEnd, {passive:true});
-    el.addEventListener('touchcancel', onEnd, {passive:true});
+  // 点击横条：开启/关闭
+  puller.addEventListener('click', () => {
+    if (!isMobile()) return;                    // 主要给手机
+    if (aside.classList.contains('open')) closeDrawer();
+    else openDrawer();
   });
 
-  // 方向变化时矫正
-  window.addEventListener('orientationchange', ()=>{
-    setTimeout(()=>{ aside.style.transform=''; if(aside.classList.contains('open')) openDrawer(); }, 300);
-  }, {passive:true});
-})();
+  // 下拉手势：跟手打开/关闭
+  let dragging=false, startY=0, startOff=0;
+
+  const H = () => aside.getBoundingClientRect().height; // 抽屉高度
+  // 读取当前 translateY（打开=0，关闭=-H）
+  const getOff = ()=>{
+    const m = getComputedStyle(aside).transform.match(/matrix.*\((.+)\)/);
+    if (m && m[1]) {
+      const v = m[1].split(',').map(parseFloat);
+      return v.length===6 ? v[5] : 0;
+    }
+    return aside.classList.contains('open') ? 0 : -H();
+  };
+  const setY = y => { aside.style.transform = `translateY(${Math.max(-H(), Math.min(y,0))}px)`; };
+
+  function dragStart(y){
+    if(!isMobile()) return;
+    dragging = true;
+    startY = y;
+    startOff = getOff();                  // 0..-H
+    aside.classList.add('dragging');      // 去掉过渡更跟手
+    if (bd) bd.classList.add('show');     // 显示遮罩
+    document.documentElement.style.overflow = 'hidden';
+    document.body.style.overflow = 'hidden';
+  }
+  function dragMove(y){
+    if(!dragging) return;
+    const target = startOff + (y - startY);  // 向下为正 => 打开
+    setY(target);
+  }
+  function dragEnd(){
+    if(!dragging) return;
+    dragging = false;
+    aside.classList.remove('dragging');
+    aside.style.transform = '';  // 交还给 class 控制
+    // 阈值：展开到 80% 视为打开，否则关闭（取最近状态）
+    if (getOff() > -H()*0.2) openDrawer(); else closeDrawer();
+    document.documentElement.style.overflow = '';
+    document.body.style.overflow = '';
+  }
+
+  // 绑定触摸拖拽
+  puller.addEventListener('touchstart', e => dragStart(e.touches[0].clientY), {passive:true});
+  puller.addEventListener('touchmove',  e => { dragMove(e.touches[0].clientY); e.preventDefault(); }, {passive:false});
+  puller.addEventListener('touchend',   dragEnd, {passive:true});
+  puller.addEventListener('touchcancel',dragEnd, {passive:true});
+
+  // 可选：鼠标拖拽（桌面调试方便）
+  puller.addEventListener('mousedown', e => dragStart(e.clientY));
+  window.addEventListener('mousemove', e => { if(dragging) dragMove(e.clientY); });
+  window.addEventListener('mouseup', dragEnd);
+});

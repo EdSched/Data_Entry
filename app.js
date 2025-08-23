@@ -475,69 +475,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
   }
 });
-document.addEventListener('DOMContentLoaded', () => {
-  const puller = document.getElementById('drawerPuller');
-  const aside  = document.querySelector('aside');
-  const bd     = document.getElementById('drawerBackdrop');
-  const isMobile = () => window.matchMedia('(max-width:768px)').matches;
-  if (!puller || !aside) return;
+  /* ===== 手机端抽屉：点击横条展开/收起侧栏；点空白收起 ===== */
+  (function(){
+    const strip = document.getElementById('menuStrip');
+    const aside = document.querySelector('aside');
+    const main  = document.querySelector('main');
+    if (!strip || !aside || !main) return;
 
-  // 点击横条：开启/关闭
-  puller.addEventListener('click', () => {
-    if (!isMobile()) return;                    // 主要给手机
-    if (aside.classList.contains('open')) closeDrawer();
-    else openDrawer();
-  });
+    const isOpen = () => document.body.classList.contains('mobile-menu-open');
+    const refreshCal = () => {
+      try {
+        const cal = window.calendar || window.mainCalendar;
+        if (cal && typeof cal.updateSize === 'function') setTimeout(()=> cal.updateSize(), 80);
+      } catch(_) {}
+    };
+    const open  = ()=>{ document.body.classList.add('mobile-menu-open'); strip.setAttribute('aria-expanded','true');  strip.querySelector('.label').textContent='收起菜单'; refreshCal(); };
+    const close = ()=>{ document.body.classList.remove('mobile-menu-open'); strip.setAttribute('aria-expanded','false'); strip.querySelector('.label').textContent='展开菜单'; refreshCal(); };
 
-  // 下拉手势：跟手打开/关闭
-  let dragging=false, startY=0, startOff=0;
+    strip.addEventListener('click', ()=>{ isOpen() ? close() : open(); });
 
-  const H = () => aside.getBoundingClientRect().height; // 抽屉高度
-  // 读取当前 translateY（打开=0，关闭=-H）
-  const getOff = ()=>{
-    const m = getComputedStyle(aside).transform.match(/matrix.*\((.+)\)/);
-    if (m && m[1]) {
-      const v = m[1].split(',').map(parseFloat);
-      return v.length===6 ? v[5] : 0;
-    }
-    return aside.classList.contains('open') ? 0 : -H();
-  };
-  const setY = y => { aside.style.transform = `translateY(${Math.max(-H(), Math.min(y,0))}px)`; };
-
-  function dragStart(y){
-    if(!isMobile()) return;
-    dragging = true;
-    startY = y;
-    startOff = getOff();                  // 0..-H
-    aside.classList.add('dragging');      // 去掉过渡更跟手
-    if (bd) bd.classList.add('show');     // 显示遮罩
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-  }
-  function dragMove(y){
-    if(!dragging) return;
-    const target = startOff + (y - startY);  // 向下为正 => 打开
-    setY(target);
-  }
-  function dragEnd(){
-    if(!dragging) return;
-    dragging = false;
-    aside.classList.remove('dragging');
-    aside.style.transform = '';  // 交还给 class 控制
-    // 阈值：展开到 80% 视为打开，否则关闭（取最近状态）
-    if (getOff() > -H()*0.2) openDrawer(); else closeDrawer();
-    document.documentElement.style.overflow = '';
-    document.body.style.overflow = '';
-  }
-
-  // 绑定触摸拖拽
-  puller.addEventListener('touchstart', e => dragStart(e.touches[0].clientY), {passive:true});
-  puller.addEventListener('touchmove',  e => { dragMove(e.touches[0].clientY); e.preventDefault(); }, {passive:false});
-  puller.addEventListener('touchend',   dragEnd, {passive:true});
-  puller.addEventListener('touchcancel',dragEnd, {passive:true});
-
-  // 可选：鼠标拖拽（桌面调试方便）
-  puller.addEventListener('mousedown', e => dragStart(e.clientY));
-  window.addEventListener('mousemove', e => { if(dragging) dragMove(e.clientY); });
-  window.addEventListener('mouseup', dragEnd);
-});
+    // 点击页面其它区域：若已展开则收起（点侧栏或横条本身不收）
+    main.addEventListener('click', (e)=>{
+      if (!isOpen()) return;
+      const t = e.target;
+      if (aside.contains(t) || strip.contains(t)) return;
+      close();
+    });
+  })();

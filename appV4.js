@@ -307,3 +307,23 @@ refreshBtn?.addEventListener('click', () => loadCalendarEvents());
     }
   } catch (_) {}
 })();
+/* ========== 抽屉：手机可开合，Esc/遮罩均可关闭 ========== */
+(function () {
+  const ham = document.getElementById('hamburger');
+  const sidebar = document.getElementById('sidebar');
+  const backdrop = document.getElementById('backdrop');
+
+  function toggleSidebar(show) {
+    const on = (typeof show === 'boolean') ? show : !sidebar.classList.contains('open');
+    sidebar.classList.toggle('open', on);
+    backdrop.classList.toggle('show', on);
+  }
+  // 覆盖全局引用（供其他地方调用）
+  window.toggleSidebar = toggleSidebar;
+
+  ham && ham.addEventListener('click', () => toggleSidebar());
+  backdrop && backdrop.addEventListener('click', () => toggleSidebar(false));
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') toggleSidebar(false);
+  });
+})();

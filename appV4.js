@@ -1,37 +1,37 @@
-// ========================== 配置区 ==========================
+// ========== 配置 ==========
 const API_URL = 'https://script.google.com/macros/s/AKfycbwJYf3jeNAF37vgVXTiWnEgYS5dlh9l9UChkiEhThh4OwV3TVEvP3ZtIS8bpm5G3HLf/exec';
 
-// ========================== 工具函数 ==========================
-const $  = (s) => document.querySelector(s);
-const $$ = (s) => document.querySelectorAll(s);
+// ========== 小工具 ==========
+const $  = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
 
 async function callAPI(action, params = {}, timeout = 15000) {
   const controller = new AbortController();
-  const to = setTimeout(() => controller.abort(), timeout);
+  const t = setTimeout(() => controller.abort(), timeout);
   try {
-    const body = new URLSearchParams();
-    body.append('action', action);
-    body.append('params', JSON.stringify(params || {}));
+    const fd = new URLSearchParams();
+    fd.append('action', action);
+    fd.append('params', JSON.stringify(params));
     const res = await fetch(API_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body,
+      body: fd,
       mode: 'cors',
       signal: controller.signal
     });
     const text = await res.text();
-    let raw = text.trim();
-    const s = raw.indexOf('{'), e = raw.lastIndexOf('}');
-    if (s !== -1 && e !== -1 && e > s) raw = raw.slice(s, e + 1);
-    return JSON.parse(raw);
+    let clean = text.trim();
+    const s = clean.indexOf('{'), e = clean.lastIndexOf('}');
+    if (s !== -1 && e !== -1 && e > s) clean = clean.slice(s, e + 1);
+    return JSON.parse(clean);
   } catch (err) {
-    return { success:false, message:String(err && err.message || err) };
+    return { success: false, message: String(err?.message || err) };
   } finally {
-    clearTimeout(to);
+    clearTimeout(t);
   }
 }
 
-// ========================== DOM 引用 ==========================
+// ========== 节点 ==========
 const loginContainer = $('#loginContainer');
 const appContainer   = $('#appContainer');
 
@@ -62,40 +62,70 @@ const titleEl    = $('#calendarTitle');
 
 const refreshBtn = $('#refreshBtn');
 
+const calendarCard = $('#calendarCard');
+const pageHost     = $('#pageHost');
+const subPage      = $('#subPage');
+
 let calendar = null;
 let currentUser = null;
 
-// ========================== 侧栏抽屉（仅移动端会看到） ==========================
+// ========== 抽屉（仅移动端实际可见） ==========
 function toggleSidebar(show) {
-  if (!sidebar || !backdrop) return;
   const willShow = (typeof show === 'boolean') ? show : !sidebar.classList.contains('open');
   sidebar.classList.toggle('open', willShow);
   backdrop.classList.toggle('show', willShow);
 }
-hamburger?.addEventListener('click', () => toggleSidebar());
-backdrop?.addEventListener('click', () => toggleSidebar(false));
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') toggleSidebar(false); });
+hamburger.addEventListener('click', () => toggleSidebar());
+backdrop.addEventListener('click', () => toggleSidebar(false));
+document.addEventListener('keydown', e => { if (e.key === 'Escape') toggleSidebar(false); });
 
-// 当前页链接：只收起抽屉不刷新
-function bindSidebarLinksForCurrentPage(){
+// ========== 主内容：日历/子页面切换 ==========
+function showCalendar() {
+  if (!calendarCard || !pageHost) return;
+  pageHost.style.display     = 'none';
+  calendarCard.style.display = '';
+}
+function showSubpage(url) {
+  if (!calendarCard || !pageHost || !subPage) return;
+  calendarCard.style.display = 'none';
+  pageHost.style.display     = 'block';
+  const abs = new URL(url, location.href).href;
+  if (subPage.src !== abs) subPage.src = abs;
+}
+
+// 接管侧栏点击：日历 → showCalendar；其它 .html → iframe 打开
+function bindSidebarLinks() {
   $$('#sidebar .nav-link').forEach(a => {
-    const href = a.getAttribute('href') || '';
-    if (href && location.pathname.endsWith(href)) {
-      a.classList.add('active');
-      a.addEventListener('click', (e) => {
+    a.addEventListener('click', e => {
+      const href = a.getAttribute('href') || '';
+      const isCalendar =
+        href === '#' ||
+        href === '#calendar' ||
+        /index\.html$/i.test(href) ||
+        /#?calendar/i.test(href);
+
+      if (isCalendar) {
         e.preventDefault();
+        showCalendar();
         toggleSidebar(false);
-      });
-    }
+        return;
+      }
+      if (/\.html($|\?)/i.test(href)) {
+        e.preventDefault();
+        showSubpage(href);
+        toggleSidebar(false);
+      }
+    }, { passive: false });
   });
 }
 
-// ========================== 日历 ==========================
+// ========== 日历 ==========
 function initCalendar() {
   if (calendar) calendar.destroy();
 
-  const isMobile = window.matchMedia('(max-width: 768px)').matches;
-  const initialView = isMobile ? 'timeGridDay' : 'timeGridWeek';
+  const initialView = window.matchMedia('(max-width: 768px)').matches
+    ? 'timeGridDay'
+    : 'timeGridWeek';
 
   calendar = new FullCalendar.Calendar($('#mainCalendar'), {
     initialView,
@@ -113,36 +143,34 @@ function initCalendar() {
     eventClick: (info) => {
       const ev = info.event;
       const ext = ev.extendedProps || {};
-      const isStudent = currentUser && (currentUser.role === '学生' || String(currentUser.id||'').startsWith('S'));
+      const isStudent = currentUser && (currentUser.role === '学生' || String(currentUser.id).startsWith('S'));
       if (isStudent && ext.canBook && ext.status === '可约') {
         const note = prompt(`预约备注：\n${ev.title}  ${ev.start.toLocaleString('zh-CN')}`) || '';
-        bookSlot(ev.id, note);
-      } else {
-        const lines = [
-          `标题：${ev.title}`,
-          `时间：${ev.start.toLocaleString('zh-CN')}${ev.end ? ' - ' + ev.end.toLocaleString('zh-CN') : ''}`,
-          ext.attr ? `类型：${ext.attr}` : '',
-          ext.status ? `状态：${ext.status}` : ''
-        ].filter(Boolean);
-        alert(lines.join('\n'));
+        return bookSlot(ev.id, note);
       }
+      const lines = [
+        `标题：${ev.title}`,
+        `时间：${ev.start.toLocaleString('zh-CN')}${ev.end ? ' - ' + ev.end.toLocaleString('zh-CN') : ''}`,
+        ext.attr ? `类型：${ext.attr}` : '',
+        ext.status ? `状态：${ext.status}` : ''
+      ].filter(Boolean);
+      alert(lines.join('\n'));
     }
   });
 
-  // 顶部控制
   prevBtn.onclick  = () => calendar.prev();
   nextBtn.onclick  = () => calendar.next();
   todayBtn.onclick = () => calendar.today();
 
-  bindViewSwitch(dayBtn,   'timeGridDay');
-  bindViewSwitch(weekBtn,  'timeGridWeek');
-  bindViewSwitch(monthBtn, 'dayGridMonth');
+  bindView(dayBtn,   'timeGridDay');
+  bindView(weekBtn,  'timeGridWeek');
+  bindView(monthBtn, 'dayGridMonth');
 
   calendar.render();
   updateCalendarTitle();
 }
 
-function bindViewSwitch(btn, viewName) {
+function bindView(btn, viewName) {
   btn.onclick = () => {
     calendar.changeView(viewName);
     $$('.seg-btn').forEach(b => b.classList.remove('active'));
@@ -169,7 +197,6 @@ function updateCalendarTitle() {
     const sD = String(start.getDate()).padStart(2, '0');
     const eM = String(end.getMonth() + 1).padStart(2, '0');
     const eD = String(end.getDate()).padStart(2, '0');
-    // 样式：2025/08/17 – 08/23
     titleEl.textContent = `${Y}/${sM}/${sD} – ${eM}/${eD}`;
     weekBtn.classList.add('active'); dayBtn.classList.remove('active'); monthBtn.classList.remove('active');
   } else {
@@ -181,7 +208,7 @@ function updateCalendarTitle() {
 async function loadCalendarEvents() {
   if (!currentUser) return;
   const res = await callAPI('listVisibleSlots', { userId: currentUser.id });
-  const events = (res && Array.isArray(res)) ? res : (res && res.events) || [];
+  const events = Array.isArray(res) ? res : (res && res.events) || [];
   if (calendar) {
     calendar.removeAllEvents();
     events.forEach(ev => calendar.addEvent(ev));
@@ -197,32 +224,30 @@ async function bookSlot(slotId, note) {
     note: note || ''
   };
   const res = await callAPI('bookSlot', payload);
-  alert(res && res.success ? '预约成功' : (res && res.message) || '预约失败');
-  if (res && res.success) loadCalendarEvents();
+  alert(res?.success ? '预约成功' : (res?.message || '预约失败'));
+  if (res?.success) loadCalendarEvents();
 }
 
-// ========================== 登录流 ==========================
+// ========== 登录流 ==========
 window.onLoginSuccess = function(user) {
   currentUser = user || {};
 
-  // 显示主应用，隐藏登录
+  // 切换可见
   loginContainer.style.display = 'none';
   appContainer.style.display   = '';
   userBadge.style.display      = '';
-  hamburger.style.display      = '';   // 移动端需要，桌面被 CSS 隐藏
+  hamburger.style.display      = '';   // 登录后才出汉堡
 
   greetingEl.textContent = `欢迎，${currentUser.name || currentUser.id || '用户'}`;
 
-  // 初始化
   initCalendar();
   loadCalendarEvents();
-  bindSidebarLinksForCurrentPage();
+  bindSidebarLinks();
+  showCalendar(); // 登录后回主日历
 
-  // 持久化
   try { localStorage.setItem('eds:user', JSON.stringify(currentUser)); } catch(_) {}
 };
 
-// 退出
 logoutBtn.addEventListener('click', () => {
   toggleSidebar(false);
   hamburger.style.display = 'none';
@@ -233,143 +258,62 @@ logoutBtn.addEventListener('click', () => {
   currentUser = null;
 });
 
-// 登录
 loginBtn.addEventListener('click', async () => {
-  const userId = (loginInput.value || '').trim();
+  const userId = loginInput.value.trim();
   if (!userId) { loginErr.textContent = '请输入用户ID'; return; }
   loginErr.textContent = '';
 
-  // 先走真实后端
+  // 先走后端
   const apiRes = await callAPI('loginByUsername', { username: userId });
-  if (apiRes && apiRes.success && apiRes.user) {
+  if (apiRes?.success && apiRes.user) {
     const u = apiRes.user;
-    window.onLoginSuccess({
+    return window.onLoginSuccess({
       id: u.username || userId,
       name: u.name || u.username || userId,
-      role: u.role || (String(userId).startsWith('T') ? '老师'
-            : String(userId).startsWith('S') ? '学生'
-            : String(userId).startsWith('A') ? '管理员' : '用户')
+      role: u.role || (String(userId).startsWith('T') ? '老师' : (String(userId).startsWith('S') ? '学生' : (String(userId).startsWith('A') ? '管理员' : '用户')))
     });
-    return;
   }
 
-  // 后端不可用：本地假登录（便于你先调样式）
+  // 后端不通：本地假登录
   const role = String(userId).startsWith('T') ? '老师'
-             : String(userId).startsWith('S') ? '学生'
-             : String(userId).startsWith('A') ? '管理员'
-             : '用户';
-  window.onLoginSuccess({ id:userId, name:userId, role });
+           : String(userId).startsWith('S') ? '学生'
+           : String(userId).startsWith('A') ? '管理员'
+           : '用户';
+  window.onLoginSuccess({ id: userId, name: userId, role });
 });
 
-loginInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') loginBtn.click(); });
+loginInput.addEventListener('keydown', e => { if (e.key === 'Enter') loginBtn.click(); });
 
-// 登记
 regBtn.addEventListener('click', async () => {
-  const name = ($('#registerName').value || '').trim();
-  const email = ($('#registerEmail').value || '').trim();
+  const name = $('#registerName').value.trim();
+  const email = $('#registerEmail').value.trim();
   const department = $('#registerDepartment').value;
-  const major = ($('#registerMajor').value || '').trim();
+  const major = $('#registerMajor').value.trim();
   const role = $('#registerRole').value;
   regErr.textContent = '';
-
-  if (!name || !email || !department || !major || !role) {
-    regErr.textContent = '请填写完整信息'; return;
-  }
-
+  if (!name || !email || !department || !major || !role) { regErr.textContent = '请填写完整信息'; return; }
   const res = await callAPI('registerByProfile', { name, email, department, major, role });
-  if (res && res.success) {
-    regErr.style.color = 'green';
-    regErr.textContent = '登记成功！请联系老师获取用户ID后登录。';
-  } else {
-    regErr.style.color = 'red';
-    regErr.textContent = (res && res.message) || '登记失败';
-  }
+  regErr.style.color = res?.success ? 'green' : 'red';
+  regErr.textContent = res?.success ? '登记成功！请联系老师获取用户ID后登录。' : (res?.message || '登记失败');
 });
 
 // 刷新日历
-refreshBtn?.addEventListener('click', () => loadCalendarEvents());
+if (refreshBtn) refreshBtn.addEventListener('click', () => loadCalendarEvents());
 
-// ========================== 启动：API自检 + 自动登录 ==========================
+// ========== 启动 ==========
 (async function boot() {
-  // API 自检
   if (apiStatusTip) {
     apiStatusTip.textContent = '正在检测 API…';
     const ping = await callAPI('testConnection', {});
-    apiStatusTip.textContent = (ping && ping.success) ? 'API 已连接' : 'API 不可用，已启用本地登录（可先调样式）';
+    apiStatusTip.textContent = ping?.success ? 'API 已连接' : 'API 不可用，已启用本地登录（可先调样式）';
+    const apiPing = $('#apiPing'); if (apiPing) apiPing.textContent = ping?.success ? 'API: 在线' : 'API: 离线';
   }
-
-  // 自动登录（如果有缓存）
+  // 自动登录（上次用户）
   try {
     const saved = localStorage.getItem('eds:user');
     if (saved) {
       const u = JSON.parse(saved);
-      if (u && u.id) window.onLoginSuccess(u);
+      if (u?.id) window.onLoginSuccess(u);
     }
-  } catch (_) {}
-})();
-/* ========== 抽屉：手机可开合，Esc/遮罩均可关闭 ========== */
-(function () {
-  const ham = document.getElementById('hamburger');
-  const sidebar = document.getElementById('sidebar');
-  const backdrop = document.getElementById('backdrop');
-
-  function toggleSidebar(show) {
-    const on = (typeof show === 'boolean') ? show : !sidebar.classList.contains('open');
-    sidebar.classList.toggle('open', on);
-    backdrop.classList.toggle('show', on);
-  }
-  // 覆盖全局引用（供其他地方调用）
-  window.toggleSidebar = toggleSidebar;
-
-  ham && ham.addEventListener('click', () => toggleSidebar());
-  backdrop && backdrop.addEventListener('click', () => toggleSidebar(false));
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') toggleSidebar(false);
-  });
-})();
-/* ========== 侧栏导航：主日历/子页面切换 ========== */
-(function () {
-  const pageHost = document.getElementById('pageHost');
-  const subFrame = document.getElementById('subPage');
-  const calendarCard = document.querySelector('#appContainer > .card'); // 主日历那张卡片
-  const links = document.querySelectorAll('#sidebar .nav .nav-link');
-
-  function isMobile() { return window.matchMedia('(max-width: 1023px)').matches; }
-
-  function showCalendar() {
-    // 显示主日历，隐藏子页
-    calendarCard.style.display = '';
-    pageHost.classList.remove('show');
-    // 侧栏“日历”激活态
-    links.forEach(a => a.classList.toggle('active', (a.textContent || '').trim() === '日历'));
-    if (isMobile()) window.toggleSidebar(false);
-  }
-
-  function openSubpage(url, linkEl) {
-    if (!url) return;
-    // 隐藏主日历、显示子页（iframe 载入）
-    calendarCard.style.display = 'none';
-    pageHost.classList.add('show');
-    if (subFrame.getAttribute('src') !== url) subFrame.setAttribute('src', url);
-    links.forEach(a => a.classList.toggle('active', a === linkEl));
-    if (isMobile()) window.toggleSidebar(false);
-  }
-
-  links.forEach(a => {
-    a.addEventListener('click', (e) => {
-      const href = a.getAttribute('href') || '';
-      // 阻止默认整页跳转（避免回到登录页）
-      e.preventDefault();
-      // “日历”项（href 指向 index.html 或文案为“日历”）
-      const text = (a.textContent || '').trim();
-      if (text === '日历' || /index\.html$/i.test(href) || href === '#calendar') {
-        showCalendar();
-      } else {
-        openSubpage(href, a);
-      }
-    });
-  });
-
-  // 可选：首次进入默认显示主日历
-  showCalendar();
+  } catch(_) {}
 })();

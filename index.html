@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
   <title>大学院管理平台</title>
   <!-- FullCalendar -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
@@ -47,17 +47,16 @@
   <!-- 主应用包裹（登录后显示） -->
   <div id="mainApp" style="display:none;">
     <header class="topbar">
-  <div class="brand">大学院管理平台</div>
-  <div class="user-line">
-    <div class="left">
-      <span class="status-dot"></span>
-      <span id="userGreeting">欢迎，momo</span>
-      <span id="userRole">(老师)</span>
-    </div>
-    <button class="logout-btn" id="logoutBtn">退出</button>
-  </div>
-</header>
-
+      <div class="brand">大学院管理平台</div>
+      <div class="spacer"></div>
+      <span id="apiStatusTop" class="api-badge" title="API连接状态">
+        <span id="apiDotTop" class="api-dot wait"></span><span id="apiTextTop">API 检测中</span>
+      </span>
+      <div class="user-info">
+        <span id="userGreeting">欢迎，</span>
+        <span id="userRole"></span>
+        <button class="logout-btn" id="logoutBtn">退出</button>
+      </div>
     </header>
 
     <div class="app">
@@ -80,15 +79,14 @@
             <a href="#" class="nav-link" data-page="profile"><span>个人信息</span></a>
           </nav>
         </aside>
+<!-- 手机端抽屉开关（点击展开/收起侧栏=今日概览+导航） -->
+<div id="menuStrip" class="pull-strip" role="button" aria-expanded="false">
+  <span class="grip"></span><span class="label">展开菜单</span>
+</div>
 
         <main>
           <!-- 日历页面 -->
           <div id="calendarPage" class="page-content active">
-            <!-- 顶部抽屉拉手（仅手机用，桌面也能显示但主要为手机交互） -->
-<div id="drawerPuller" class="pull-down">
-  <span class="grip"></span>
-  <span class="pull-text">下拉展开菜单</span>
-</div>
             <section class="card">
               <div class="calendar-head">
                 <div class="calendar-title" id="calendarTitle">我的日历</div>

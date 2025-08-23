@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
@@ -11,75 +10,90 @@
 :root{
   --border:#e6e6e6;
   --text:#111;
-  --muted:#777;
+  --muted:#666;
   --bg:#fff;
   --topbar:56px;
-  --sidebar:264px;
+  --sidebar:300px;
 }
 
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:#fafafa;color:var(–text);font:14px/1.5 -apple-system,BlinkMacSystemFont,“Segoe UI”,Roboto,Helvetica,Arial,“PingFang SC”,“Hiragino Sans GB”,“Microsoft YaHei”,“Noto Sans CJK SC”,sans-serif}
+html,body{height:100%;margin:0;background:#fafafa;color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
 
 /* 顶栏 */
 .topbar{
-position:sticky;top:0;z-index:1000;display:flex;align-items:center;gap:12px;
-height:var(–topbar);background:var(–bg);border-bottom:1px solid var(–border);padding:0 12px;
+  position:sticky;top:0;z-index:1000;display:flex;align-items:center;gap:12px;
+  height:var(--topbar);background:var(--bg);border-bottom:1px solid var(--border);padding:0 12px;
 }
-.brand{font-weight:700}
+.brand{font-weight:700;color:var(--text)}
 .spacer{flex:1}
 .user-badge{display:flex;align-items:center;gap:8px}
 .user-badge .btn{height:30px}
 
 /* 汉堡（只在移动端显示） */
 #hamburger{
-display:none;width:36px;height:36px;border:1px solid var(–border);border-radius:8px;background:#fff;
-font-size:18px;line-height:34px;text-align:center;cursor:pointer;user-select:none;
+  display:none;width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:#fff;
+  font-size:18px;line-height:34px;text-align:center;cursor:pointer;user-select:none;color:var(--text);
 }
 
 /* 主容器与卡片 */
-.app{height:calc(100vh - var(–topbar));display:flex}
-.center-wrap{display:flex;justify-content:center;align-items:flex-start;padding:24px;width:100%;height:100vh}
-.card{background:#fff;border:1px solid var(–border);border-radius:12px;padding:16px}
+.app{height:calc(100vh - var(--topbar));display:flex}
+.center-wrap{display:flex;justify-content:center;align-items:flex-start;padding:40px;width:100%;height:100vh;background:#fafafa}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px}
 .card-narrow{width:100%;max-width:520px}
 
-/* 表单/按钮（黑白） */
-.label{display:block;margin-bottom:6px;color:var(–muted)}
+/* 表单/按钮（黑灰色系） */
+.title{margin:0 0 24px 0;font-size:24px;font-weight:600;color:var(--text)}
+.label{display:block;margin-bottom:6px;color:var(--muted);font-weight:500}
 .input{
-width:100%;height:36px;border:1px solid var(–border);border-radius:8px;padding:0 10px;background:#fff;color:var(–text);
+  width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;background:#fff;color:var(--text);
+  font-size:14px;transition:border-color 0.2s;
 }
-.form-row{margin-bottom:12px}
-.btn{height:34px;padding:0 12px;border-radius:8px;border:1px solid var(–border);background:#fff;cursor:pointer}
+.input:focus{outline:none;border-color:#999}
+.input::placeholder{color:#aaa}
+.form-row{margin-bottom:16px}
+.btn{height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s}
 .btn:active{transform:translateY(1px)}
-.btn-solid{border-color:#000;background:#000;color:#fff}
-.btn-outline{border-color:#000;background:#fff;color:#000}
+.btn:hover{background:#f8f8f8}
+.btn-solid{border-color:#333;background:#333;color:#fff}
+.btn-solid:hover{background:#555;border-color:#555}
+.btn-outline{border-color:#333;background:#fff;color:#333}
+.btn-outline:hover{background:#f5f5f5}
 .btn-full{width:100%}
 .mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
-.small{font-size:12px}.muted{color:var(–muted)}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-.error{color:red;font-size:12px;margin-top:8px}
+.small{font-size:12px}.muted{color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.error{color:#d32f2f;font-size:12px;margin-top:8px}
+
+/* 详情展开 */
+details{margin-top:16px}
+summary{cursor:pointer;color:var(--muted);font-size:12px;padding:8px 0}
+summary:hover{color:var(--text)}
 
 /* ===== 桌面端：固定侧栏布局 ===== */
-.app-layout{display:flex;height:100%}
+.app-layout{display:flex;height:100%;min-height:calc(100vh - var(--topbar))}
 
-/* 侧栏：桌面端固定显示 */
+/* 侧栏：桌面端固定显示，全高度 */
 .sidebar{
-width:var(–sidebar);
-background:#fff;border-right:1px solid var(–border);
-display:flex;flex-direction:column;overflow:auto;
+  width:var(--sidebar);
+  background:#fff;border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  min-height:100%;
 }
-.sidebar-header{padding:16px;border-bottom:1px solid var(–border);font-weight:600}
-.nav{display:flex;flex-direction:column;padding:8px;flex:1}
-.nav-link{display:block;padding:12px 16px;border-radius:8px;text-decoration:none;color:var(–text);border:1px solid transparent;margin-bottom:4px}
-.nav-link:hover{border-color:var(–border);background:#fafafa}
-.nav-link.active{border-color:#000;background:#f5f5f5}
-.sidebar-footer{margin-top:auto;padding:16px;border-top:1px solid var(–border);color:var(–muted);font-size:12px}
+.sidebar-header{padding:20px 24px;border-bottom:1px solid var(--border);font-weight:600;font-size:16px;color:var(--text)}
+.nav{display:flex;flex-direction:column;padding:16px;flex:1}
+.nav-link{display:block;padding:14px 20px;border-radius:8px;text-decoration:none;color:var(--text);border:1px solid transparent;margin-bottom:6px;font-weight:500;transition:all 0.2s}
+.nav-link:hover{border-color:var(--border);background:#f8f8f8}
+.nav-link.active{border-color:#333;background:#f5f5f5;color:#333}
+.sidebar-footer{margin-top:auto;padding:20px 24px;border-top:1px solid var(--border)}
+.sidebar-footer .btn{margin-bottom:12px}
 
 /* 主内容区域 */
 .main-content{
-flex:1;
-padding:16px;
-overflow:auto;
-background:#fafafa;
+  flex:1;
+  padding:20px;
+  overflow:auto;
+  background:#fafafa;
+  min-height:100%;
 }
 
 /* 遮罩（仅移动端使用） */
@@ -87,73 +101,87 @@ background:#fafafa;
 
 /* 移动端：侧栏改为抽屉 */
 @media (max-width: 1023px) {
-#hamburger{display:inline-flex;align-items:center;justify-content:center}
-
-.app-layout{position:relative}
-
-.sidebar{
-position:fixed;
-left:-var(–sidebar);
-top:var(–topbar);
-height:calc(100vh - var(–topbar));
-z-index:1200;
-transition:left .3s ease;
-box-shadow:2px 0 10px rgba(0,0,0,0.1);
-}
-.sidebar.open{left:0}
-
-.main-content{padding:12px}
-
-.backdrop{
-display:block;position:fixed;inset:0;background:rgba(0,0,0,.3);
-opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:1100;
-}
-.backdrop.show{opacity:1;pointer-events:auto}
+  #hamburger{display:inline-flex;align-items:center;justify-content:center}
+  
+  .app-layout{position:relative}
+  
+  .sidebar{
+    position:fixed;
+    left:-var(--sidebar);
+    top:var(--topbar);
+    height:calc(100vh - var(--topbar));
+    z-index:1200;
+    transition:left .3s ease;
+    box-shadow:2px 0 10px rgba(0,0,0,0.15);
+    overflow-y:auto;
+  }
+  .sidebar.open{left:0}
+  
+  .main-content{padding:16px;width:100%}
+  
+  .backdrop{
+    display:block;position:fixed;inset:0;background:rgba(0,0,0,.4);
+    opacity:0;pointer-events:none;transition:opacity .3s ease;z-index:1100;
+  }
+  .backdrop.show{opacity:1;pointer-events:auto}
 }
 
 /* 日历相关样式 */
-.calendar-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:16px}
-.calendar-title{font-weight:700;font-size:18px}
+.calendar-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+.calendar-title{font-weight:700;font-size:20px;color:var(--text)}
 .calendar-ctrl{margin-left:auto;display:flex;gap:8px;align-items:center}
-.seg{display:flex;border:1px solid var(–border);border-radius:8px;overflow:hidden}
-.seg-btn{border:0;background:#fff;padding:8px 16px;cursor:pointer;border-right:1px solid var(–border);font-size:14px}
+.seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg-btn{border:0;background:#fff;padding:8px 16px;cursor:pointer;border-right:1px solid var(--border);font-size:14px;color:var(--text);transition:all 0.2s}
 .seg-btn:last-child{border-right:0}
-.seg-btn.active{background:#000;color:#fff}
+.seg-btn:hover{background:#f8f8f8}
+.seg-btn.active{background:#333;color:#fff}
 
-/* FullCalendar 样式调整 */
+/* FullCalendar 黑灰色系 */
 .fc{
-–fc-border-color: var(–border);
-–fc-now-indicator-color:#000;
-–fc-button-bg:#fff;
-–fc-button-border-color:#000;
-–fc-button-text-color:#000;
-–fc-button-active-bg:#000;
-–fc-button-active-border-color:#000;
-–fc-button-active-text-color:#fff;
+  --fc-border-color: var(--border);
+  --fc-now-indicator-color:#333;
+  --fc-button-bg:#fff;
+  --fc-button-border-color:#333;
+  --fc-button-text-color:#333;
+  --fc-button-active-bg:#333;
+  --fc-button-active-border-color:#333;
+  --fc-button-active-text-color:#fff;
+  --fc-event-bg-color:#f5f5f5;
+  --fc-event-border-color:#333;
+  --fc-event-text-color:#333;
 }
-.fc .fc-toolbar-title{font-size:16px}
+.fc .fc-toolbar-title{font-size:16px;color:var(--text)}
 .fc .fc-button{border-radius:8px !important}
+.fc .fc-button:hover{background:#f8f8f8 !important}
 
 /* 子页面内容样式 */
 .subpage-content{
-background:#fff;
-border:1px solid var(–border);
-border-radius:12px;
-padding:24px;
-height:100%;
+  background:#fff;
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:32px;
+  height:fit-content;
+  min-height:400px;
 }
 .subpage-content h2{
-margin:0 0 16px 0;
-color:var(–text);
-font-size:24px;
-font-weight:600;
+  margin:0 0 20px 0;
+  color:var(--text);
+  font-size:28px;
+  font-weight:600;
 }
 .subpage-content p{
-color:var(–muted);
-line-height:1.6;
+  color:var(--muted);
+  line-height:1.6;
+  margin-bottom:16px;
 }
-</style>
 
+/* 移除所有蓝色相关样式 */
+a{color:var(--text)}
+a:visited{color:var(--muted)}
+select{color:var(--text)}
+select option{color:var(--text)}
+input[type="text"], input[type="email"]{color:var(--text)}
+  </style>
 </head>
 <body>
   <!-- 顶栏 -->
@@ -168,7 +196,6 @@ line-height:1.6;
   </header>
 
   <!-- 登录页面 -->
-
   <main id="loginContainer" class="center-wrap">
     <section class="card card-narrow">
       <h1 class="title">登录</h1>
@@ -179,31 +206,27 @@ line-height:1.6;
       <button id="loginBtn" class="btn btn-solid btn-full">登录</button>
       <div id="loginError" class="error"></div>
 
-```
-  <details class="mt-16">
-    <summary class="small">没有账号？登记信息</summary>
-    <div class="grid2 mt-8">
-      <input id="registerName" class="input" placeholder="姓名"/>
-      <input id="registerEmail" class="input" placeholder="邮箱"/>
-      <select id="registerDepartment" class="input">
-        <option value="">所属</option><option>文科大学院</option><option>理科大学院</option><option>其他</option>
-      </select>
-      <input id="registerMajor" class="input" placeholder="专业"/>
-      <select id="registerRole" class="input">
-        <option value="">身份</option><option>学生</option><option>老师</option>
-      </select>
-    </div>
-    <button id="registerBtn" class="btn btn-outline mt-8">提交登记</button>
-    <div id="registerError" class="error"></div>
-  </details>
-  <div id="apiStatusTip" class="muted small mt-12">正在检测 API…</div>
-</section>
-```
-
+      <details class="mt-16">
+        <summary class="small">没有账号？登记信息</summary>
+        <div class="grid2 mt-8">
+          <input id="registerName" class="input" placeholder="姓名"/>
+          <input id="registerEmail" class="input" placeholder="邮箱"/>
+          <select id="registerDepartment" class="input">
+            <option value="">所属</option><option>文科大学院</option><option>理科大学院</option><option>其他</option>
+          </select>
+          <input id="registerMajor" class="input" placeholder="专业"/>
+          <select id="registerRole" class="input">
+            <option value="">身份</option><option>学生</option><option>老师</option>
+          </select>
+        </div>
+        <button id="registerBtn" class="btn btn-outline mt-8">提交登记</button>
+        <div id="registerError" class="error"></div>
+      </details>
+      <div id="apiStatusTip" class="muted small mt-12">正在检测 API</div>
+    </section>
   </main>
 
   <!-- 主应用页面：登录后显示 -->
-
   <main id="appContainer" class="app" style="display:none;">
     <div class="app-layout">
       <!-- 侧栏：桌面固定，移动抽屉 -->
@@ -218,75 +241,72 @@ line-height:1.6;
         </nav>
         <div class="sidebar-footer">
           <button id="refreshBtn" class="btn btn-outline btn-full">刷新日历</button>
-          <div id="apiPing" class="muted small mt-8">API: —</div>
+          <div id="apiPing" class="muted small mt-8">API: 检测中</div>
         </div>
       </aside>
 
-```
-  <!-- 主内容区域 -->
-  <section class="main-content">
-    <!-- 日历页面 -->
-    <div id="calendarPage" class="page-content">
-      <section class="card">
-        <div class="calendar-head">
-          <div class="calendar-title" id="calendarTitle">—</div>
-          <div class="calendar-ctrl">
-            <button id="prevBtn" class="btn btn-outline">‹</button>
-            <button id="todayBtn" class="btn btn-outline">今天</button>
-            <button id="nextBtn" class="btn btn-outline">›</button>
-            <div class="seg">
-              <button id="dayBtn" class="seg-btn active">日</button>
-              <button id="weekBtn" class="seg-btn">周</button>
-              <button id="monthBtn" class="seg-btn">月</button>
+      <!-- 主内容区域 -->
+      <section class="main-content">
+        <!-- 日历页面 -->
+        <div id="calendarPage" class="page-content">
+          <section class="card">
+            <div class="calendar-head">
+              <div class="calendar-title" id="calendarTitle">加载中</div>
+              <div class="calendar-ctrl">
+                <button id="prevBtn" class="btn btn-outline">‹</button>
+                <button id="todayBtn" class="btn btn-outline">今天</button>
+                <button id="nextBtn" class="btn btn-outline">›</button>
+                <div class="seg">
+                  <button id="dayBtn" class="seg-btn active">日</button>
+                  <button id="weekBtn" class="seg-btn">周</button>
+                  <button id="monthBtn" class="seg-btn">月</button>
+                </div>
+              </div>
             </div>
+            <div id="mainCalendar"></div>
+          </section>
+        </div>
+
+        <!-- 课程安排页面 -->
+        <div id="arrangePage" class="page-content" style="display:none;">
+          <div class="subpage-content">
+            <h2>课程安排</h2>
+            <p>这里是课程安排页面，可以查看和管理课程安排信息。</p>
+            <p>教师可以在此页面创建和编辑课程时间段，学生可以查看可预约的时间段。</p>
           </div>
         </div>
-        <div id="mainCalendar"></div>
+
+        <!-- 数据分析页面 -->
+        <div id="analysisPage" class="page-content" style="display:none;">
+          <div class="subpage-content">
+            <h2>数据分析</h2>
+            <p>这里是数据分析页面，可以查看各类统计图表和数据报告。</p>
+            <p>包括预约统计、课程利用率分析、学生活跃度等数据可视化内容。</p>
+          </div>
+        </div>
+
+        <!-- 我的日程页面 -->
+        <div id="myschedulePage" class="page-content" style="display:none;">
+          <div class="subpage-content">
+            <h2>我的日程</h2>
+            <p>这里是个人日程页面，可以查看和管理个人的预约和安排。</p>
+            <p>学生可以查看已预约的课程，教师可以查看教学安排和预约情况。</p>
+          </div>
+        </div>
+
+        <!-- 个人信息页面 -->
+        <div id="profilePage" class="page-content" style="display:none;">
+          <div class="subpage-content">
+            <h2>个人信息</h2>
+            <p>这里是个人信息页面，可以查看和修改个人资料。</p>
+            <p>包括基本信息、联系方式、所属院系等信息的查看和编辑。</p>
+          </div>
+        </div>
       </section>
     </div>
 
-    <!-- 课程安排页面 -->
-    <div id="arrangePage" class="page-content" style="display:none;">
-      <div class="subpage-content">
-        <h2>课程安排</h2>
-        <p>这里是课程安排页面，可以查看和管理课程安排信息。</p>
-        <p>教师可以在此页面创建和编辑课程时间段，学生可以查看可预约的时间段。</p>
-      </div>
-    </div>
-
-    <!-- 数据分析页面 -->
-    <div id="analysisPage" class="page-content" style="display:none;">
-      <div class="subpage-content">
-        <h2>数据分析</h2>
-        <p>这里是数据分析页面，可以查看各类统计图表和数据报告。</p>
-        <p>包括预约统计、课程利用率分析、学生活跃度等数据可视化内容。</p>
-      </div>
-    </div>
-
-    <!-- 我的日程页面 -->
-    <div id="myschedulePage" class="page-content" style="display:none;">
-      <div class="subpage-content">
-        <h2>我的日程</h2>
-        <p>这里是个人日程页面，可以查看和管理个人的预约和安排。</p>
-        <p>学生可以查看已预约的课程，教师可以查看教学安排和预约情况。</p>
-      </div>
-    </div>
-
-    <!-- 个人信息页面 -->
-    <div id="profilePage" class="page-content" style="display:none;">
-      <div class="subpage-content">
-        <h2>个人信息</h2>
-        <p>这里是个人信息页面，可以查看和修改个人资料。</p>
-        <p>包括基本信息、联系方式、所属院系等信息的查看和编辑。</p>
-      </div>
-    </div>
-  </section>
-</div>
-
-<!-- 移动端遮罩 -->
-<div id="backdrop" class="backdrop"></div>
-```
-
+    <!-- 移动端遮罩 -->
+    <div id="backdrop" class="backdrop"></div>
   </main>
 
   <script>
@@ -622,7 +642,7 @@ regBtn.addEventListener('click', async () => {
 // 刷新日历按钮
 if (refreshBtn) {
   refreshBtn.addEventListener('click', () => {
-    showPage('calendar');  // 确保回到日历页面
+    showPage('calendar');
     loadCalendarEvents();
   });
 }
@@ -630,9 +650,9 @@ if (refreshBtn) {
 // ========== 初始化 ==========
 (async function boot() {
   if (apiStatusTip) {
-    apiStatusTip.textContent = '正在检测 API…';
+    apiStatusTip.textContent = '正在检测 API';
     const ping = await callAPI('testConnection', {});
-    apiStatusTip.textContent = ping?.success ? 'API 已连接' : 'API 不可用，已启用本地登录（可先调样式）';
+    apiStatusTip.textContent = ping?.success ? 'API 已连接' : 'API 不可用，已启用本地登录';
     const apiPing = $('#apiPing'); 
     if (apiPing) apiPing.textContent = ping?.success ? 'API: 在线' : 'API: 离线';
   }
@@ -650,6 +670,5 @@ if (refreshBtn) {
   updateMobileLayout();
 })();
   </script>
-
 </body>
 </html>

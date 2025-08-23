@@ -189,3 +189,23 @@ html, body{ overflow-x:hidden; }
   .api-dot{ width:10px; height:10px; }
   .user-info{ order:3; width:100%; justify-content:flex-end; } /* 第二行右侧：欢迎… 退出 */
 }
+/* 默认隐藏横条与抽屉 */
+.pull-strip{ display:none !important; }
+aside{ display:flex; }                 /* 桌面/iPad 正常显示侧栏 */
+
+/* 仅 ≤600px 显示横条，并把侧栏当抽屉用 */
+@media (max-width:600px){
+  .wrap{ display:flex; flex-direction:column; }
+  .pull-strip{
+    display:flex !important; align-items:center; justify-content:center; gap:10px;
+    height:26px; margin:6px 20px 8px 20px;
+    border:1px solid var(--border); border-radius:10px;
+    background:#f7f8fa; color:#666; cursor:pointer;
+  }
+  aside{ display:none !important; }
+  body.mobile-menu-open aside{
+    display:block !important; margin:0 20px 8px 20px;
+  }
+}
+
+

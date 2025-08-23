@@ -3,51 +3,28 @@
   --text:#111;
   --muted:#777;
   --bg:#fff;
-  --topbar-h:56px;
-  --sidebar-w:264px;
+  --topbar:56px;
+  --sidebar:264px;
 }
 
 *{box-sizing:border-box}
-html,body{height:100%;margin:0;background:#fafafa;color:var(--text);
-  font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
+html,body{height:100%;margin:0;background:#fafafa;color:var(--text);font:14px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif}
 
 /* 顶栏 */
 .topbar{
   position:sticky;top:0;z-index:1000;display:flex;align-items:center;gap:12px;
-  height:var(--topbar-h);background:var(--bg);border-bottom:1px solid var(--border);padding:0 12px;
+  height:var(--topbar);background:var(--bg);border-bottom:1px solid var(--border);padding:0 12px;
 }
 .brand{font-weight:700}
 .spacer{flex:1}
 .user-badge{display:flex;align-items:center;gap:8px}
 .user-badge .btn{height:30px}
 
-/* 汉堡按钮（登录后显示，桌面隐藏） */
+/* 汉堡（登录后显示） */
 #hamburger{
   display:none;width:36px;height:36px;border:1px solid var(--border);border-radius:8px;background:#fff;
   font-size:18px;line-height:34px;text-align:center;cursor:pointer;user-select:none;
 }
-
-/* 侧栏 + 抽屉遮罩（默认按“移动端抽屉”写法） */
-.sidebar{
-  position:fixed;left:0;top:var(--topbar-h);width:var(--sidebar-w);
-  height:calc(100vh - var(--topbar-h));background:#fff;border-right:1px solid var(--border);
-  transform:translateX(-100%);transition:transform .25s ease;z-index:1100;
-  display:flex;flex-direction:column;overflow:auto;
-}
-.sidebar.open{ transform:translateX(0); }
-.sidebar-header{padding:14px 16px;border-bottom:1px solid var(--border);font-weight:600}
-.nav{display:flex;flex-direction:column;padding:8px}
-.nav-link{
-  display:block;padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--text);border:1px solid transparent;
-}
-.nav-link:hover{border-color:var(--border);background:#fafafa}
-.nav-link.active{border-color:#000}
-.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
-
-.backdrop{
-  position:fixed;inset:0;background:rgba(0,0,0,.25);opacity:0;pointer-events:none;transition:opacity .2s;z-index:1090;
-}
-.backdrop.show{opacity:1;pointer-events:auto}
 
 /* 主容器与卡片 */
 .app{padding:16px}
@@ -68,6 +45,44 @@ html,body{height:100%;margin:0;background:#fafafa;color:var(--text);
 .btn-full{width:100%}
 .mt-8{margin-top:8px}.mt-12{margin-top:12px}.mt-16{margin-top:16px}
 .small{font-size:12px}.muted{color:var(--muted)}
+
+/* ===== 布局：桌面固定侧栏；移动抽屉 ===== */
+.app-layout{display:grid;grid-template-columns:var(--sidebar) 1fr;gap:16px;align-items:start}
+
+/* 侧栏：桌面固定 */
+.sidebar{
+  position:sticky;top:var(--topbar);height:calc(100vh - var(--topbar));
+  background:#fff;border:1px solid var(--border);border-left:0;border-radius:12px;padding:8px;overflow:auto;
+}
+.sidebar-header{padding:10px 8px;border-bottom:1px solid var(--border);font-weight:600}
+.nav{display:flex;flex-direction:column;padding:8px}
+.nav-link{display:block;padding:10px 12px;border-radius:8px;text-decoration:none;color:var(--text);border:1px solid transparent}
+.nav-link:hover{border-color:var(--border);background:#fafafa}
+.nav-link.active{border-color:#000}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid var(--border);color:var(--muted);font-size:12px}
+
+/* 遮罩（仅移动） */
+.backdrop{display:none}
+
+/* 移动端：侧栏改为抽屉，主内容占满 */
+@media (max-width: 1023px) {
+  .app{padding:12px}
+  .app-layout{display:block}
+  #hamburger{display:inline-flex;align-items:center;justify-content:center}
+  .sidebar{
+    position:fixed;left:-280px;top:var(--topbar);width:var(--sidebar);height:calc(100vh - var(--topbar));
+    border-radius:0;border-left:1px solid var(--border);border-right:1px solid var(--border);
+    transition:left .25s ease;z-index:1200;box-shadow:0 2px 12px rgba(0,0,0,.06);
+  }
+  .sidebar.open{left:0}
+  .backdrop{
+    display:block;position:fixed;inset:0;background:rgba(0,0,0,.15);
+    opacity:0;pointer-events:none;transition:opacity .2s ease;z-index:1190;
+  }
+  .backdrop.show{opacity:1;pointer-events:auto}
+  /* 防止 FullCalendar 盖抽屉 */
+  #mainCalendar, .fc, .fc-view-harness{position:relative;z-index:1}
+}
 
 /* 日历头 */
 .calendar-head{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:8px}
@@ -92,53 +107,14 @@ html,body{height:100%;margin:0;background:#fafafa;color:var(--text);
 .fc .fc-toolbar-title{font-size:16px}
 .fc .fc-button{border-radius:8px !important}
 
-/* ================== 桌面布局：侧栏常驻，不用抽屉 ================== */
-@media (min-width: 769px){
-  /* 桌面：侧栏固定可见 */
-  .sidebar{
-    transform:none;                 /* 可见 */
-    left:0;
-  }
-  /* 桌面：不显示抽屉遮罩与汉堡 */
-  #hamburger{ display:none !important; }
-  .backdrop{ display:none !important; }
-
-  /* 主区给侧栏让出空间，防止被盖住 */
-  #appContainer{ padding-left: calc(var(--sidebar-w) + 16px); }
+/* ===== 子页面容器 ===== */
+#pageHost { padding: 0; }
+#subPage {
+  display:block;
+  width:100%;
+  height: calc(100vh - var(--topbar) - 140px); /* 预留头/外边距 */
+  border:0;
 }
-
-/* ================== 移动端：抽屉在上，主区正常滚动 ================== */
-@media (max-width: 768px){
-  #hamburger{ display:inline-block; }  /* 登录后由 JS 显示，这里只允许布局 */
-  #appContainer{ padding-left: 16px; } /* 不预留侧栏空间 */
-}
-
-/* 保险：日历不把抽屉盖掉 */
-#mainCalendar, .fc, .fc-view-harness { position: relative; z-index: 1; }
-
-/* ===== Desktop 常驻侧栏，主内容右移 ===== */
-@media (min-width: 1024px) {
-  /* 电脑端不使用抽屉：侧栏固定在左边 */
-  #hamburger { display: none !important; }
-  .backdrop  { display: none !important; }
-  .sidebar {
-    left: 0 !important;
-    transform: none !important;
-    top: 56px;
-    width: 240px;
-    height: calc(100vh - 56px);
-    box-shadow: none;
-  }
-  /* 主区域给出侧栏宽度的内边距，避免被挡住 */
-  .app { padding-left: 256px; }
-}
-
-/* 子页承载区（iframe） */
-#pageHost { display: none; }
-#pageHost.show { display: block; }
-#pageHost iframe {
-  width: 100%;
-  height: 70vh;               /* 需要更高就改这里 */
-  border: 0;
-  display: block;
+@media (max-width: 1023px){
+  #subPage { height: calc(100vh - var(--topbar) - 120px); }
 }

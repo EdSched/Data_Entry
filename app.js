@@ -475,24 +475,46 @@ document.addEventListener('DOMContentLoaded', async () => {
     const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
   }
 });
-  /* ===== 手机端抽屉：点击横条展开/收起侧栏；点空白收起 ===== */
-  (function(){
-    const strip = document.getElementById('menuStrip');
-    const aside = document.querySelector('aside');
-    const main  = document.querySelector('main');
-    if (!strip || !aside || !main) return;
 
-    const isOpen = () => document.body.classList.contains('mobile-menu-open');
-    const refreshCal = () => {
-      try {
-        const cal = window.calendar || window.mainCalendar;
-        if (cal && typeof cal.updateSize === 'function') setTimeout(()=> cal.updateSize(), 80);
-      } catch(_) {}
-    };
-    const open  = ()=>{ document.body.classList.add('mobile-menu-open'); strip.setAttribute('aria-expanded','true');  strip.querySelector('.label').textContent='收起菜单'; refreshCal(); };
-    const close = ()=>{ document.body.classList.remove('mobile-menu-open'); strip.setAttribute('aria-expanded','false'); strip.querySelector('.label').textContent='展开菜单'; refreshCal(); };
+(function(){
+  const strip = document.getElementById('menuStrip');
+  const aside = document.querySelector('aside');
+  const main  = document.querySelector('main');
+  if (!strip || !aside || !main) return;
 
-    strip.addEventListener('click', ()=>{ isOpen() ? close() : open(); });
+  // 只把“手机断点”定义在这里：≤600px
+  const mq = window.matchMedia('(max-width:600px)');
+  const isMobile = () => mq.matches;
+
+  const isOpen = () => document.body.classList.contains('mobile-menu-open');
+  const refreshCal = () => {
+    try {
+      const cal = window.calendar || window.mainCalendar;
+      if (cal && typeof cal.updateSize === 'function') setTimeout(()=> cal.updateSize(), 80);
+    } catch(_) {}
+  };
+  const open  = ()=>{ document.body.classList.add('mobile-menu-open'); strip.setAttribute('aria-expanded','true');  strip.querySelector('.label').textContent='收起菜单'; refreshCal(); };
+  const close = ()=>{ document.body.classList.remove('mobile-menu-open'); strip.setAttribute('aria-expanded','false'); strip.querySelector('.label').textContent='展开菜单'; refreshCal(); };
+
+  // 仅在“手机断点”下响应点击
+  strip.addEventListener('click', (e)=>{
+    if (!isMobile()) return;
+    e.stopPropagation();                 // 避免冒泡被 main 的关闭逻辑马上盖掉
+    isOpen() ? close() : open();
+  });
+
+  // 点击 main 空白处收起（在手机断点且已展开时）
+  main.addEventListener('click', (e)=>{
+    if (!isMobile() || !isOpen()) return;
+    const t = e.target;
+    if (aside.contains(t) || strip.contains(t)) return;
+    close();
+  });
+
+  // 断点变化：一旦离开手机断点（>600px），强制收起，避免桌面/iPad 残留状态
+  const onChange = () => { if (!mq.matches) close(); };
+  mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
+})();
 
     // 点击页面其它区域：若已展开则收起（点侧栏或横条本身不收）
     main.addEventListener('click', (e)=>{

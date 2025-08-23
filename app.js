@@ -503,14 +503,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     isOpen() ? close() : open();
   });
 
-  // 点击 main 空白处收起（在手机断点且已展开时）
-  main.addEventListener('click', (e)=>{
-    if (!isMobile() || !isOpen()) return;
-    const t = e.target;
-    if (aside.contains(t) || strip.contains(t)) return;
-    close();
-  });
-
   // 断点变化：一旦离开手机断点（>600px），强制收起，避免桌面/iPad 残留状态
   const onChange = () => { if (!mq.matches) close(); };
   mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);

@@ -47,16 +47,17 @@
   <!-- 主应用包裹（登录后显示） -->
   <div id="mainApp" style="display:none;">
     <header class="topbar">
-      <div class="brand">大学院管理平台</div>
-      <div class="spacer"></div>
-      <span id="apiStatusTop" class="api-badge" title="API连接状态">
-        <span id="apiDotTop" class="api-dot wait"></span><span id="apiTextTop">API 检测中</span>
-      </span>
-      <div class="user-info">
-        <span id="userGreeting">欢迎，</span>
-        <span id="userRole"></span>
-        <button class="logout-btn" id="logoutBtn">退出</button>
-      </div>
+  <div class="brand">大学院管理平台</div>
+  <div class="user-line">
+    <div class="left">
+      <span class="status-dot"></span>
+      <span id="userGreeting">欢迎，momo</span>
+      <span id="userRole">(老师)</span>
+    </div>
+    <button class="logout-btn" id="logoutBtn">退出</button>
+  </div>
+</header>
+
     </header>
 
     <div class="app">

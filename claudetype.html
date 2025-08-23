@@ -27,7 +27,6 @@
 .api-dot.wait{background:#f59e0b}
 
 /* 主容器与卡片 */
-/* 使用自定义 --vh，避免 iOS 100vh 被地址栏压缩；并允许内容溢出时自然增高 */
 .app{min-height:calc(var(--vh, 1vh)*100 - var(--topbar));height:auto;display:flex}
 .card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px}
 
@@ -102,22 +101,22 @@ main{flex:1;overflow-y:auto;padding:20px;}
 .page-content{display:none;}
 .page-content.active{display:block;}
 
-/* 登录样式（沿用你原来的简洁布局） */
+/* 登录样式 */
 .login-container{display:flex;align-items:center;justify-content:center;height:100vh;background:#fafafa;}
 .login-box{width:320px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:0 4px 16px rgba(0,0,0,0.04);}
-.login-box h1{font-size:20px;margin:0 0 12px 0;text-align:center;} /* 修复：标题居中 */
-.login-box input, .login-box select{width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-top:8px;font-size:16px;} /* 修复：防止手机端自动缩放 */
+.login-box h1{font-size:20px;margin:0 0 12px 0;text-align:center;}
+.login-box input, .login-box select{width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-top:8px;font-size:16px;}
 .login-box button{width:100%;height:40px;margin-top:12px;}
 .link-text{margin-top:8px;color:#555;cursor:pointer;font-size:12px;text-align:center;}
 .error-message{margin-top:8px;color:#c00;font-size:12px;}
-.api-inline{margin-top:8px;font-size:12px;color:#666;text-align:center;} /* 修复：API状态居中 */
+.api-inline{margin-top:8px;font-size:12px;color:#666;text-align:center;}
 
-/* 表单样式（分析页等） */
+/* 表单样式 */
 .filter-item{margin-bottom:16px;}
 .filter-item label{display:block;margin-bottom:6px;color:var(--muted);font-weight:500;font-size:14px;}
 .filter-item input, .filter-item select{
   width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;
-  background:#fff;color:var(--text);font-size:16px; /* 修复：防止手机端自动缩放 */
+  background:#fff;color:var(--text);font-size:16px;
 }
 .filter-item input:focus, .filter-item select:focus{outline:none;border-color:#999;}
 
@@ -191,7 +190,7 @@ main{flex:1;overflow-y:auto;padding:20px;}
 
 /* 响应式 */
 @media (max-width: 768px) {
-  /* 修复：防止输入框自动缩放 */
+  /* 防止输入框自动缩放 */
   input, select, textarea {
     font-size:16px !important;
   }
@@ -214,7 +213,7 @@ main{flex:1;overflow-y:auto;padding:20px;}
   }
   
   main{
-    padding:120px 12px 12px 12px; /* 为抽屉按钮留出空间 */
+    padding:120px 12px 12px 12px;
   }
   
   .calendar-ctrl{margin-left:0;width:100%;justify-content:space-between;}
@@ -259,18 +258,18 @@ main{flex:1;overflow-y:auto;padding:20px;}
   }
 }
 
-/* 让整个页面而不是内部容器滚动，修复"不能下拉"的问题 */
+/* 让整个页面而不是内部容器滚动 */
 html, body{height:auto;min-height:100%;overflow-y:auto}
 
-/* 手机端：隐藏"今日概览"，并让内部容器不再强制内部滚动 */
+/* 手机端优化 */
 @media (max-width: 768px){
-  .wrap{height:auto;}                       /* 外层容器不锁高 */
-  main{overflow:visible;}                   /* 让 body 承担滚动 */
+  .wrap{height:auto;}
+  main{overflow:visible;}
 }
   </style>
 </head>
 <body>
-  <!-- 登录界面（保持你原有布局） -->
+  <!-- 登录界面 -->
   <div id="loginContainer" class="login-container">
     <div class="login-box">
       <h1>大学院管理平台</h1>
@@ -279,7 +278,6 @@ html, body{height:auto;min-height:100%;overflow-y:auto}
         <button type="button" id="loginBtn">登录</button>
         <div class="link-text" id="showRegisterBtn">还没有账号？登记信息</div>
         <div id="loginError" class="error-message"></div>
-        <!-- 新增：登录框里的 API 状态提示（更直观） -->
         <div id="apiStatusInline" class="api-inline"><span class="api-dot wait" style="display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;"></span>正在检测 API 连接…</div>
       </div>
 
@@ -305,7 +303,7 @@ html, body{height:auto;min-height:100%;overflow-y:auto}
     </div>
   </div>
 
-  <!-- 主应用包裹（登录后显示） -->
+  <!-- 主应用 -->
   <div id="mainApp" style="display:none;">
     <header class="topbar">
       <div class="brand">大学院管理平台</div>
@@ -429,7 +427,7 @@ html, body{height:auto;min-height:100%;overflow-y:auto}
             </section>
           </div>
 
-          <!-- 我的任务页面（静态示例） -->
+          <!-- 我的任务页面 -->
           <div id="schedulePage" class="page-content">
             <section class="card">
               <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">我的任务</h2>
@@ -550,7 +548,7 @@ html, body{height:auto;min-height:100%;overflow-y:auto}
             </section>
           </div>
 
-          <!-- 个人信息（只读示例） -->
+          <!-- 个人信息 -->
           <div id="profilePage" class="page-content">
             <section class="card">
               <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">个人信息</h2>
@@ -578,17 +576,6 @@ function setApiStatus({ok, text}) {
   const dotTop = $('apiDotTop'), txtTop = $('apiTextTop');
   const inline = $('apiStatusInline');
   
-  // 手机端：更新userInfo前的绿点
-  const userInfo = document.querySelector('.user-info');
-  if (window.matchMedia('(max-width: 768px)').matches && userInfo) {
-    const before = userInfo.querySelector('::before') || userInfo;
-    if (before && before.style) {
-      before.style.setProperty('--api-status-color', 
-        ok === true ? '#22c55e' : ok === false ? '#ef4444' : '#f59e0b'
-      );
-    }
-  }
-  
   if (dotTop) dotTop.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
   if (txtTop) txtTop.textContent = text || (ok ? 'API 正常' : (ok===false ? 'API 连接失败' : 'API 检测中'));
   if (inline) {
@@ -608,7 +595,6 @@ async function callAPI(action, params = {}) {
     formData.append('action', action);
     formData.append('params', JSON.stringify(params));
 
-    // 加一个 8 秒超时，避免长时间无响应
     const controller = new AbortController();
     const t = setTimeout(()=>controller.abort(), 8000);
 
@@ -636,22 +622,18 @@ async function callAPI(action, params = {}) {
 function initMobileDrawer() {
   if (!window.matchMedia('(max-width: 768px)').matches) return;
   
-  // 创建抽屉按钮
   const toggleBtn = document.createElement('button');
   toggleBtn.className = 'mobile-drawer-toggle';
   toggleBtn.textContent = '☰ 菜单';
   toggleBtn.id = 'mobileDrawerToggle';
   
-  // 创建抽屉容器
   const drawer = document.createElement('div');
   drawer.className = 'mobile-drawer';
   drawer.id = 'mobileDrawer';
   
-  // 创建抽屉内容
   const drawerContent = document.createElement('div');
   drawerContent.className = 'mobile-drawer-content';
   
-  // 复制侧边栏内容到抽屉
   const originalAside = document.querySelector('aside');
   if (originalAside) {
     drawerContent.innerHTML = originalAside.innerHTML;
@@ -661,7 +643,6 @@ function initMobileDrawer() {
   document.body.appendChild(toggleBtn);
   document.body.appendChild(drawer);
   
-  // 绑定事件
   toggleBtn.addEventListener('click', () => {
     drawer.classList.add('open');
   });
@@ -672,14 +653,13 @@ function initMobileDrawer() {
     }
   });
   
-  // 重新绑定导航链接
   drawerContent.querySelectorAll('.nav-link').forEach(link => {
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const pageId = link.dataset.page;
       if (pageId) {
         showPage(pageId);
-        drawer.classList.remove('open'); // 选择后关闭抽屉
+        drawer.classList.remove('open');
       }
     });
   });
@@ -697,14 +677,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
   });
   
-  // 初始化手机端抽屉
   initMobileDrawer();
   
-  // 监听屏幕尺寸变化
   window.addEventListener('resize', () => {
     const isMobile = window.matchMedia('(max-width: 768px)').matches;
     const drawer = $('mobileDrawer');
-    const toggleBtn = $('mobileDrawerToggle');
     
     if (!isMobile && drawer) {
       drawer.classList.remove('open');
@@ -720,7 +697,6 @@ function showPage(pageId) {
   const active = document.querySelector('.nav-link[data-page="'+pageId+'"]');
   if (active) active.classList.add('active');
   
-  // 也要更新抽屉中的导航状态
   if (window.matchMedia('(max-width: 768px)').matches) {
     const drawerNavLinks = document.querySelectorAll('.mobile-drawer .nav-link');
     drawerNavLinks.forEach(a => a.classList.remove('active'));
@@ -740,6 +716,7 @@ function showRegisterForm() {
   $('loginError').textContent = '';
   $('registerError').textContent = '';
 }
+
 function showLoginForm() {
   $('registerForm').style.display = 'none';
   $('loginForm').style.display = 'block';
@@ -757,18 +734,16 @@ async function login() {
     currentUser = result.user || {};
     currentUser.userId = currentUser.username || username;
 
-    // 显示主应用
     $('loginContainer').style.display = 'none';
     $('mainApp').style.display = 'block';
     try { window.location.hash = '#app'; } catch {}
 
     updateUserInterface();
-    initCalendar();         // 创建日历
-    bindArrangePanel();     // 课程发布
-    bindAnalysisHandlers(); // 数据分析
+    initCalendar();
+    bindArrangePanel();
+    bindAnalysisHandlers();
     loadUserData();
     
-    // 重新初始化手机端抽屉（因为用户信息已更新）
     if (window.matchMedia('(max-width: 768px)').matches) {
       initMobileDrawer();
     }
@@ -803,9 +778,8 @@ function logout() {
   $('loginContainer').style.display = 'flex';
   $('loginUsername').value = '';
   $('loginError').textContent = '';
-  setApiStatus({ok:null, text:'API 检测中'}); // 回到检测中
+  setApiStatus({ok:null, text:'API 检测中'});
   
-  // 移除手机端抽屉
   const drawer = $('mobileDrawer');
   const toggleBtn = $('mobileDrawerToggle');
   if (drawer) drawer.remove();
@@ -814,7 +788,7 @@ function logout() {
   try { window.location.hash = '#login'; } catch {}
 }
 
-// 修复移动端 100vh：用 window.innerHeight 动态计算 --vh
+// 修复移动端 100vh
 (function(){
   function setVh(){
     document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
@@ -823,7 +797,6 @@ function logout() {
   window.addEventListener('resize', setVh, {passive:true});
   window.addEventListener('orientationchange', function(){
     setTimeout(setVh, 150);
-    // FullCalendar 在尺寸变化后需要刷新
     setTimeout(()=>{ try{ window.calendar && window.calendar.updateSize(); }catch(e){} }, 300);
   }, {passive:true});
 })();
@@ -857,3 +830,295 @@ function initCalendar() {
     eventClick: handleEventClick
   });
   $('prevBtn').onclick = () => calendar.prev();
+  $('nextBtn').onclick = () => calendar.next();
+  $('todayBtn').onclick = () => calendar.today();
+  $('dayBtn').onclick = () => changeView('timeGridDay', $('dayBtn'));
+  $('weekBtn').onclick = () => changeView('timeGridWeek', $('weekBtn'));
+  $('monthBtn').onclick = () => changeView('dayGridMonth', $('monthBtn'));
+  $('refreshDataBtn').onclick = refreshData;
+
+  calendar.render();
+  updateCalendarTitle();
+  loadCalendarEvents();
+}
+
+function changeView(viewName, activeBtn) {
+  if (!calendar) return;
+  calendar.changeView(viewName);
+  ['dayBtn','weekBtn','monthBtn'].forEach(id => { const b=$(id); if(b) b.classList.remove('active'); });
+  if (activeBtn) activeBtn.classList.add('active');
+  updateCalendarTitle();
+}
+
+function updateCalendarTitle() {
+  if (!calendar) return;
+  const view = calendar.view, date = calendar.getDate();
+  const y = date.getFullYear(), m = String(date.getMonth()+1).padStart(2,'0'), d = String(date.getDate()).padStart(2,'0');
+  if (view.type === 'timeGridDay') $('calendarTitle').textContent = `${y}/${m}/${d}`;
+  else if (view.type === 'timeGridWeek') {
+    const s = new Date(view.currentStart), e = new Date(view.currentEnd); e.setDate(e.getDate()-1);
+    $('calendarTitle').textContent = `${y}/${String(s.getMonth()+1).padStart(2,'0')}/${String(s.getDate()).padStart(2,'0')} — ${String(e.getMonth()+1).padStart(2,'0')}/${String(e.getDate()).padStart(2,'0')}`;
+  } else $('calendarTitle').textContent = `${y}/${m}`;
+}
+
+async function loadCalendarEvents() {
+  if (!currentUser || !calendar) return;
+  try {
+    const events = await callAPI('listVisibleSlots', { userId: currentUser.userId });
+    calendar.removeAllEvents();
+    if (Array.isArray(events)) events.forEach(ev => calendar.addEvent(ev));
+    updateTodayStats();
+  } catch (e) { console.error('加载槽位失败:', e); }
+}
+
+async function handleEventClick(info) {
+  const ev = info.event, ext = ev.extendedProps || {};
+  if (!currentUser) return;
+  const isStudent = (String(currentUser.role) === '学生' || String(currentUser.userId || '').startsWith('S'));
+  if (isStudent && ext.canBook && ext.status === '可约') {
+    const note = prompt(`预约备注（可填具体到达时间等）：\n${ev.title}  ${ev.start.toLocaleString('zh-CN')}`);
+    const res = await callAPI('bookSlot', { slotId: ev.id, studentId: currentUser.userId, studentName: currentUser.name || '', note: note || '' });
+    if (res && res.success) { alert('预约成功'); loadCalendarEvents(); } else { alert((res && res.message) || '预约失败'); }
+  } else {
+    const details = [`标题: ${ev.title}`, `时间: ${ev.start.toLocaleString('zh-CN')}`];
+    if (ev.end) details.push(`结束: ${ev.end.toLocaleString('zh-CN')}`);
+    if (ext && ext.description) details.push(`描述: ${ext.description}`);
+    alert(details.join('\n'));
+  }
+}
+
+function refreshData(){ loadCalendarEvents(); }
+function updateTodayStats(){
+  $('todayCourses').textContent = $('todayCourses').textContent || '0';
+  $('todayConsultations').textContent = $('todayConsultations').textContent || '0';
+  $('todayReminders').textContent = $('todayReminders').textContent || '0';
+  $('attendanceRate').textContent = $('attendanceRate').textContent || '—';
+}
+
+// ================== 课程发布 ==================
+function bindArrangePanel() {
+  const pubMode = $('pubMode'), singleDateRow = $('singleDateRow'), rangeRows = $('rangeRows');
+  if (pubMode) pubMode.addEventListener('change', function(){
+    const isRange = this.value === 'range'; singleDateRow.style.display = isRange ? 'none' : 'block'; rangeRows.style.display = isRange ? 'block' : 'none';
+  });
+  const pubSubmitBtn = $('pubSubmitBtn');
+  if (pubSubmitBtn) pubSubmitBtn.addEventListener('click', async function(){
+    if (!currentUser) return;
+    const isTeacher = (String(currentUser.role) === '老师' || String(currentUser.userId || '').startsWith('T'));
+    const isAdmin   = String(currentUser.userId || '').startsWith('A');
+    if (!isTeacher && !isAdmin) { alert('只有老师/管理员可以发布'); return; }
+
+    const attr = $('pubAttr').value;
+    const courseName = ($('pubCourseName').value || '').trim();
+    const mode = $('pubMode').value;
+    const startTime = $('pubStartTime').value;
+    const endTime = $('pubEndTime').value;
+    const majors = ($('pubMajors').value || '').trim();
+    const visibleStudentIds = ($('pubVisibleIds').value || '').trim();
+
+    if (attr === '大课' && !courseName) { alert('大课需填写课程名'); return; }
+    if (!startTime || !endTime) { alert('请填写时间'); return; }
+
+    const params = { teacherId: currentUser.userId, attr, courseName, mode, startTime, endTime, majors, visibleStudentIds };
+
+    if (mode === 'single') {
+      const date = $('pubDate').value; if (!date) { alert('请选择日期'); return; }
+      params.date = date;
+    } else {
+      const sd = $('pubStartDate').value, ed = $('pubEndDate').value;
+      if (!sd || !ed) { alert('请选择起止日期'); return; }
+      const wds = Array.from(document.querySelectorAll('.wd:checked')).map(cb => Number(cb.value));
+      if (wds.length === 0) { alert('请选择周几'); return; }
+      params.startDate = sd; params.endDate = ed; params.weekdays = wds;
+      const c = $('pubCount').value; if (c) params.count = Number(c);
+    }
+
+    const res = await callAPI('publishSlots', params);
+    if (res && res.success) { alert(res.message || '发布成功'); loadCalendarEvents(); } else { alert((res && res.message) || '发布失败'); }
+  });
+}
+
+// ================== 数据分析 ==================
+let allStudents = []; let selectedStudents = [];
+
+function bindAnalysisHandlers() {
+  $('departmentSelect')?.addEventListener('change', loadDepartmentStudents);
+  $('majorSelect')?.addEventListener('change', loadMajorStudents);
+  $('selectAllBtn')?.addEventListener('click', selectAllStudents);
+  $('clearAllBtn')?.addEventListener('click', clearAllStudents);
+  $('generateReportBtn')?.addEventListener('click', generateReport);
+  $('exportBtn')?.addEventListener('click', exportReport);
+  $('resetFiltersBtn')?.addEventListener('click', resetFilters);
+
+  const now = new Date();
+  $('startMonth').value = now.toISOString().slice(0,7);
+  $('endMonth').value = now.toISOString().slice(0,7);
+}
+
+function loadDepartmentsList() {
+  const departments = ['文科大学院', '理科大学院'];
+  const sel = $('departmentSelect'); if (!sel) return;
+  sel.innerHTML = '<option value="">请选择所属部门</option>';
+  departments.forEach(d => { const o = document.createElement('option'); o.value = d; o.textContent = d; sel.appendChild(o); });
+}
+
+async function loadDepartmentStudents() {
+  const department = $('departmentSelect')?.value; if (!department) return;
+  try {
+    const students = await callAPI('getStudentsByClass', { department });
+    allStudents = Array.isArray(students) ? students : [];
+    displayStudentList(allStudents);
+    const majors = [...new Set(allStudents.map(s => s.major))];
+    const majorSelect = $('majorSelect');
+    if (majorSelect) {
+      majorSelect.innerHTML = '<option value="">所有专业</option>';
+      majors.forEach(m => { const o = document.createElement('option'); o.value = m; o.textContent = m; majorSelect.appendChild(o); });
+    }
+    $('studentListArea').style.display = 'block';
+  } catch (e) { console.error('加载学生失败:', e); }
+}
+
+function loadMajorStudents() {
+  const major = $('majorSelect')?.value;
+  const list = major ? allStudents.filter(s => s.major === major) : allStudents;
+  displayStudentList(list);
+}
+
+function displayStudentList(students) {
+  const box = $('studentList'); if (!box) return;
+  box.innerHTML='';
+  (students || []).forEach(stu => {
+    const isSelected = selectedStudents.some(s => s.id === stu.id);
+    const div = document.createElement('div');
+    div.className = 'student-item';
+    div.innerHTML = `
+      <input type="checkbox" id="student_${stu.id}" ${isSelected ? 'checked' : ''}>
+      <label for="student_${stu.id}">${stu.name} (${stu.id}) - ${stu.major}</label>
+    `;
+    div.querySelector('input').addEventListener('change', () => toggleStudent(stu.id));
+    box.appendChild(div);
+  });
+  updateSelectedCount();
+}
+
+function toggleStudent(studentId) {
+  const stu = allStudents.find(s => s.id === studentId); if (!stu) return;
+  const idx = selectedStudents.findIndex(s => s.id === studentId);
+  if (idx === -1) selectedStudents.push(stu); else selectedStudents.splice(idx, 1);
+  updateSelectedCount(); loadMajorStudents();
+}
+
+function selectAllStudents() {
+  const major = $('majorSelect')?.value;
+  const list = major ? allStudents.filter(s => s.major === major) : allStudents;
+  list.forEach(stu => { if (!selectedStudents.some(s => s.id === stu.id)) selectedStudents.push(stu); });
+  updateSelectedCount(); displayStudentList(list);
+}
+
+function clearAllStudents() { selectedStudents=[]; updateSelectedCount(); loadMajorStudents(); }
+function updateSelectedCount() { $('selectedCount').textContent = selectedStudents.length; }
+
+async function generateReport() {
+  if (selectedStudents.length === 0) { alert('请先选择学生'); return; }
+  const startMonth = $('startMonth').value || '';
+  const endMonth   = $('endMonth').value || '';
+  const dataTypes = [];
+  if ($('attendance').checked) dataTypes.push('出席');
+  if ($('homework').checked) dataTypes.push('作业');
+  if ($('consultation').checked) dataTypes.push('面谈');
+  if ($('progress').checked) dataTypes.push('进度');
+
+  $('resultsPanel').style.display = 'block';
+  $('loadingIndicator').style.display = 'flex';
+  $('resultsData').style.display = 'none';
+
+  const studentIds = selectedStudents.map(s => s.id);
+  try {
+    const data = await callAPI('generateStudentReport', { studentIds, startMonth, endMonth, dataTypes });
+    displayReportResults(Array.isArray(data) ? data : []);
+    $('loadingIndicator').style.display = 'none';
+    $('resultsData').style.display = 'block';
+    $('exportBtn').style.display = 'inline-block';
+  } catch (e) {
+    alert('生成报告失败：' + e.message);
+    $('loadingIndicator').style.display = 'none';
+  }
+}
+
+function displayReportResults(data) {
+  $('resultCount').textContent = '共 ' + data.length + ' 条记录';
+  const tbody = $('tableBody'); tbody.innerHTML = '';
+  data.forEach(item => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${item.student}</td><td>${item.type}</td><td>${item.value}</td><td>${item.note || ''}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  generateCopyableReport(data);
+}
+
+function generateCopyableReport(data) {
+  let report = '学生数据分析报告\n\n';
+  const names = [...new Set(data.map(i => i.student))];
+  names.forEach(n => {
+    const rows = data.filter(i => i.student === n);
+    report += n + ':\n';
+    rows.forEach(r => { report += '- ' + r.type + ': ' + r.value + ' (' + (r.note || '') + ')\n'; });
+    report += '\n';
+  });
+  report += '请基于以上数据分析学生表现。';
+  $('copyArea').textContent = report;
+}
+
+function exportReport() {
+  const text = $('copyArea').textContent || '';
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = $('exportBtn'); const t = btn.textContent;
+    btn.textContent = '已复制!'; setTimeout(() => { btn.textContent = t; }, 1500);
+  }).catch(() => { alert('复制失败，请手动选择文本'); });
+}
+
+function resetFilters() {
+  $('departmentSelect').value = ''; $('majorSelect').value = '';
+  selectedStudents = []; allStudents = []; $('studentListArea').style.display = 'none';
+  const now = new Date(); $('startMonth').value = now.toISOString().slice(0,7); $('endMonth').value = now.toISOString().slice(0,7);
+  ['attendance','homework','consultation','progress'].forEach(id => { const cb=$(id); if(cb) cb.checked = true; });
+  $('resultsPanel').style.display = 'none'; $('exportBtn').style.display = 'none';
+}
+
+// ================== 用户数据加载 ==================
+function loadUserData() {
+  const roleLower = String(currentUser?.role || '').toLowerCase();
+  if (roleLower === '老师' || roleLower === 'teacher') loadDepartmentsList();
+}
+
+// ================== 初始化 + API 连接状态检测 ==================
+document.addEventListener('DOMContentLoaded', async () => {
+  $('loginBtn')?.addEventListener('click', login);
+  $('registerBtn')?.addEventListener('click', registerUser);
+  $('logoutBtn')?.addEventListener('click', logout);
+  $('showRegisterBtn')?.addEventListener('click', showRegisterForm);
+  $('showLoginBtn')?.addEventListener('click', showLoginForm);
+  $('loginUsername')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
+
+  setApiStatus({ok:null, text:'API 检测中'});
+
+  try {
+    const [r1, r2] = await Promise.allSettled([
+      callAPI('testConnection'),
+      callAPI('ping', {t: Date.now()})
+    ]);
+    const ok = (r1.value && r1.value.success) || (r2.value && r2.value.success);
+    setApiStatus({ok, text: ok ? 'API 连接成功' : 'API 连接异常'});
+    if (!ok) {
+      const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
+    }
+  } catch (e) {
+    setApiStatus({ok:false, text:'API 连接失败'});
+    const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
+  }
+});
+  </script>
+</body>
+</html>

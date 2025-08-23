@@ -77,3 +77,64 @@ html,body{height:100%;margin:0;background:#fafafa;color:var(--text);font:14px/1.
 .fc{--fc-border-color: var(--border);--fc-now-indicator-color:#000;--fc-button-bg:#fff;--fc-button-border-color:#000;--fc-button-text-color:#000;--fc-button-active-bg:#000;--fc-button-active-border-color:#000;--fc-button-active-text-color:#fff}
 .fc .fc-toolbar-title{font-size:16px}
 .fc .fc-button{border-radius:8px !important}
+
+/* === Drawer 最小样式补丁（放在文件最后，覆盖一切冲突） === */
+.topbar { position: sticky; top: 0; z-index: 1000; }
+
+#hamburger {
+  display: none;                 /* 登录前隐藏，登录后由 JS 打开 */
+  border: 1px solid #999;
+  background: #fff;
+  padding: 6px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+/* 抽屉容器：默认隐藏在左侧，open 时滑出 */
+.sidebar {
+  position: fixed;
+  top: 48px;                     /* 顶栏高度，如果你的顶栏更高，请同步改 */
+  left: -280px;                  /* 藏到屏外 */
+  width: 260px;
+  height: calc(100vh - 48px);
+  background: #fff;
+  border-right: 1px solid #ddd;
+  box-shadow: 0 2px 12px rgba(0,0,0,.06);
+  transition: left 0.25s ease;
+  z-index: 1100;                 /* 高于日历 */
+  overflow: auto;
+}
+.sidebar.open { left: 0; }
+
+/* 遮罩 */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.15);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 1090;
+}
+.backdrop.show {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* 抽屉内链接样式（可保留你原来的） */
+.nav .nav-link {
+  display: block;
+  padding: 10px 14px;
+  border-bottom: 1px solid #f0f0f0;
+  text-decoration: none;
+  color: #111;
+}
+.nav .nav-link.active { font-weight: 600; }
+
+/* 移动端：抽屉盖在上面，主区正常滚动 */
+@media (max-width: 768px) {
+  .sidebar { top: 44px; height: calc(100vh - 44px); }
+}
+
+/* 保险：确保主日历不把抽屉盖掉 */
+#mainCalendar, .fc, .fc-view-harness { position: relative; z-index: 1; }

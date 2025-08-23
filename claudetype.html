@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"/>
+  <title>大学院管理平台</title>
+  <!-- FullCalendar -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
+  <style>
+:root{
+  --border:#e6e6e6; --text:#111; --muted:#666; --bg:#fff; --topbar:56px; --sidebar:300px;
+}
+/* 顶栏 */
+.topbar{
+  position:sticky;top:0;z-index:1000;display:flex;align-items:center;gap:12px;
+  height:var(--topbar);background:var(--bg);border-bottom:1px solid var(--border);padding:0 12px;
+}
+.brand{font-weight:700;color:var(--text)}
+.spacer{flex:1}
+.user-info{display:flex;align-items:center;gap:8px;}
+.logout-btn{height:30px;padding:0 12px;border:1px solid var(--border);border-radius:6px;background:#fff;color:var(--text);cursor:pointer;font-size:12px;}
+.logout-btn:hover{background:#f8f8f8;}
+.api-badge{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#666;padding:2px 8px;border:1px solid var(--border);border-radius:999px}
+.api-dot{width:8px;height:8px;border-radius:50%;}
+.api-dot.ok{background:#22c55e}
+.api-dot.err{background:#ef4444}
+.api-dot.wait{background:#f59e0b}
+
+/* 主容器与卡片 */
+/* 使用自定义 --vh，避免 iOS 100vh 被地址栏压缩；并允许内容溢出时自然增高 */
+.app{min-height:calc(var(--vh, 1vh)*100 - var(--topbar));height:auto;display:flex}
+.card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px}
+
+/* 侧边栏样式 */
+.wrap{display:flex;width:100%;height:100%;}
+aside{
+  width:var(--sidebar);background:var(--bg);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;overflow-y:auto;padding:20px 0;
+}
+.sidebar-section{padding:0 20px 24px 20px;}
+.sidebar-section h3{margin:0 0 16px 0;font-size:16px;font-weight:600;color:var(--text);}
+
+/* 统计网格 */
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.stat-item{text-align:center;padding:12px;background:#f8f9fa;border-radius:8px;}
+.stat-number{font-size:18px;font-weight:700;color:var(--text);margin-bottom:4px;}
+.stat-label{font-size:12px;color:var(--muted);}
+
+/* 导航 */
+nav{padding:0;}
+nav a{
+  display:flex;align-items:center;gap:12px;padding:12px 20px;color:var(--text);
+  text-decoration:none;border-bottom:1px solid var(--border);transition:all 0.2s;
+}
+nav a:hover{background:#f8f9fa;}
+nav a.active{background:#333;color:#fff;}
+
+/* 主内容区 */
+main{flex:1;overflow-y:auto;padding:20px;}
+
+/* 表单/按钮 */
+.btn{
+  height:40px;padding:0 16px;border-radius:8px;border:1px solid var(--border);
+  background:#fff;cursor:pointer;font-size:14px;font-weight:500;transition:all 0.2s;
+  display:inline-flex;align-items:center;justify-content:center;text-decoration:none;
+}
+.btn:active{transform:translateY(1px)}
+.btn:hover{background:#f8f8f8}
+.btn-solid{border-color:#333;background:#333;color:#fff}
+.btn-solid:hover{background:#555;border-color:#555}
+.btn-outline{border-color:#333;background:#fff;color:#333}
+.btn-outline:hover{background:#f5f5f5}
+.btn-primary{border-color:#e6b56c;background:#fab041;color:#fff}
+.btn-primary:hover{background:#fab041;border-color:#fab041}
+
+/* 日历样式 */
+.calendar-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+.calendar-title{font-weight:700;font-size:20px;color:var(--text)}
+.calendar-ctrl{margin-left:auto;display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
+.seg{display:flex;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.seg-btn{
+  border:0;background:#fff;padding:8px 16px;cursor:pointer;border-right:1px solid var(--border);
+  font-size:14px;color:var(--text);transition:all 0.2s;
+}
+.seg-btn:last-child{border-right:0}
+.seg-btn:hover{background:#f8f8f8}
+.seg-btn.active{background:#333;color:#fff}
+
+#mainCalendar{margin-top:20px;}
+
+/* FullCalendar 自定义 */
+.fc{font-size:14px;}
+.fc-toolbar{margin-bottom:16px;}
+.fc-button{
+  background:#fff;border:1px solid var(--border);color:var(--text);
+  border-radius:6px;padding:6px 12px;transition:all 0.2s;
+}
+.fc-button:hover{background:#f8f8f8;}
+.fc-button-active{background:#333 !important;color:#fff !important;}
+
+/* 页面内容 */
+.page-content{display:none;}
+.page-content.active{display:block;}
+
+/* 登录样式（沿用你原来的简洁布局） */
+.login-container{display:flex;align-items:center;justify-content:center;height:100vh;background:#fafafa;}
+.login-box{width:320px;background:#fff;border:1px solid var(--border);border-radius:12px;padding:24px;box-shadow:0 4px 16px rgba(0,0,0,0.04);}
+.login-box h1{font-size:20px;margin:0 0 12px 0;text-align:center;} /* 修复：标题居中 */
+.login-box input, .login-box select{width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;margin-top:8px;font-size:16px;} /* 修复：防止手机端自动缩放 */
+.login-box button{width:100%;height:40px;margin-top:12px;}
+.link-text{margin-top:8px;color:#555;cursor:pointer;font-size:12px;text-align:center;}
+.error-message{margin-top:8px;color:#c00;font-size:12px;}
+.api-inline{margin-top:8px;font-size:12px;color:#666;text-align:center;} /* 修复：API状态居中 */
+
+/* 表单样式（分析页等） */
+.filter-item{margin-bottom:16px;}
+.filter-item label{display:block;margin-bottom:6px;color:var(--muted);font-weight:500;font-size:14px;}
+.filter-item input, .filter-item select{
+  width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;
+  background:#fff;color:var(--text);font-size:16px; /* 修复：防止手机端自动缩放 */
+}
+.filter-item input:focus, .filter-item select:focus{outline:none;border-color:#999;}
+
+/* 数据分析页面样式 */
+.filter-panel{margin-bottom:24px;}
+.filter-section{margin-bottom:20px;padding:16px;background:#f8f9fa;border-radius:8px;}
+.filter-section h3{margin:0 0 12px 0;font-size:16px;font-weight:600;color:var(--text);}
+.filter-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.student-list{max-height:150px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;padding:8px;}
+.action-buttons{display:flex;gap:12px;margin-top:16px;}
+.results-panel{margin-top:24px;padding:16px;border:1px solid var(--border);border-radius:8px;}
+.results-header{font-size:16px;font-weight:600;margin-bottom:12px;color:var(--text);}
+.data-table{width:100%;border-collapse:collapse;margin-top:12px;}
+.data-table th, .data-table td{padding:8px;text-align:left;border-bottom:1px solid var(--border);font-size:14px;}
+.data-table th{background:#f8f9fa;font-weight:600;}
+.loading{display:flex;align-items:center;gap:8px;color:var(--muted);}
+.spinner{width:16px;height:16px;border:2px solid var(--border);border-top:2px solid var(--text);border-radius:50%;animation:spin 1s linear infinite;}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+
+/* 手机端抽屉样式 */
+.mobile-drawer-toggle{
+  display:none;
+  position:fixed;
+  top:70px;
+  left:12px;
+  z-index:999;
+  width:calc(var(--sidebar) - 40px);
+  height:36px;
+  background:var(--bg);
+  border:1px solid var(--border);
+  border-radius:8px;
+  font-size:12px;
+  color:var(--text);
+  cursor:pointer;
+  align-items:center;
+  justify-content:center;
+  transition:all 0.3s ease;
+}
+
+.mobile-drawer-toggle:hover{
+  background:#f8f8f8;
+}
+
+.mobile-drawer{
+  display:none;
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  height:100%;
+  background:rgba(0,0,0,0.3);
+  z-index:1001;
+}
+
+.mobile-drawer-content{
+  position:absolute;
+  top:var(--topbar);
+  left:0;
+  width:var(--sidebar);
+  height:calc(100% - var(--topbar));
+  background:var(--bg);
+  border-right:1px solid var(--border);
+  transform:translateX(-100%);
+  transition:transform 0.3s ease;
+  overflow-y:auto;
+}
+
+.mobile-drawer.open .mobile-drawer-content{
+  transform:translateX(0);
+}
+
+/* 响应式 */
+@media (max-width: 768px) {
+  /* 修复：防止输入框自动缩放 */
+  input, select, textarea {
+    font-size:16px !important;
+  }
+  
+  .wrap{flex-direction:column;}
+  
+  /* 隐藏原侧边栏 */
+  aside{
+    display:none;
+  }
+  
+  /* 显示抽屉按钮 */
+  .mobile-drawer-toggle{
+    display:flex;
+  }
+  
+  /* 显示抽屉 */
+  .mobile-drawer{
+    display:block;
+  }
+  
+  main{
+    padding:120px 12px 12px 12px; /* 为抽屉按钮留出空间 */
+  }
+  
+  .calendar-ctrl{margin-left:0;width:100%;justify-content:space-between;}
+  .seg{flex:1;}
+  .seg-btn{flex:1;font-size:12px;padding:6px 8px;}
+  
+  /* 手机端顶栏重新布局 */
+  .topbar{
+    flex-direction:column;
+    height:auto;
+    min-height:var(--topbar);
+    padding:8px 12px;
+    gap:8px;
+  }
+  
+  .topbar .brand{
+    align-self:flex-start;
+  }
+  
+  .topbar .spacer{
+    display:none;
+  }
+  
+  .topbar .user-info{
+    align-self:flex-end;
+    gap:6px;
+    align-items:center;
+  }
+  
+  /* API状态绿点 */
+  .topbar #apiStatusTop{
+    display:none;
+  }
+  
+  .topbar .user-info::before{
+    content:'';
+    width:8px;
+    height:8px;
+    border-radius:50%;
+    background:#22c55e;
+    margin-right:4px;
+  }
+}
+
+/* 让整个页面而不是内部容器滚动，修复"不能下拉"的问题 */
+html, body{height:auto;min-height:100%;overflow-y:auto}
+
+/* 手机端：隐藏"今日概览"，并让内部容器不再强制内部滚动 */
+@media (max-width: 768px){
+  .wrap{height:auto;}                       /* 外层容器不锁高 */
+  main{overflow:visible;}                   /* 让 body 承担滚动 */
+}
+  </style>
+</head>
+<body>
+  <!-- 登录界面（保持你原有布局） -->
+  <div id="loginContainer" class="login-container">
+    <div class="login-box">
+      <h1>大学院管理平台</h1>
+      <div id="loginForm">
+        <input type="text" id="loginUsername" placeholder="用户ID（由老师分配）" />
+        <button type="button" id="loginBtn">登录</button>
+        <div class="link-text" id="showRegisterBtn">还没有账号？登记信息</div>
+        <div id="loginError" class="error-message"></div>
+        <!-- 新增：登录框里的 API 状态提示（更直观） -->
+        <div id="apiStatusInline" class="api-inline"><span class="api-dot wait" style="display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;"></span>正在检测 API 连接…</div>
+      </div>
+
+      <div id="registerForm" style="display: none;">
+        <input type="text" id="registerName" placeholder="姓名" />
+        <input type="email" id="registerEmail" placeholder="邮箱（用于区分同名，不对外公开）" />
+        <select id="registerDepartment">
+          <option value="">选择所属部门</option>
+          <option value="文科大学院">文科大学院</option>
+          <option value="理科大学院">理科大学院</option>
+          <option value="其他">其他</option>
+        </select>
+        <input type="text" id="registerMajor" placeholder="专业" />
+        <select id="registerRole">
+          <option value="">选择身份</option>
+          <option value="学生">学生</option>
+          <option value="老师">老师</option>
+        </select>
+        <button type="button" id="registerBtn">登记</button>
+        <div class="link-text" id="showLoginBtn">已有账号？返回登录</div>
+        <div id="registerError" class="error-message"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 主应用包裹（登录后显示） -->
+  <div id="mainApp" style="display:none;">
+    <header class="topbar">
+      <div class="brand">大学院管理平台</div>
+      <div class="spacer"></div>
+      <span id="apiStatusTop" class="api-badge" title="API连接状态">
+        <span id="apiDotTop" class="api-dot wait"></span><span id="apiTextTop">API 检测中</span>
+      </span>
+      <div class="user-info">
+        <span id="userGreeting">欢迎，</span>
+        <span id="userRole"></span>
+        <button class="logout-btn" id="logoutBtn">退出</button>
+      </div>
+    </header>
+
+    <div class="app">
+      <div class="wrap">
+        <aside>
+          <div class="sidebar-section">
+            <h3>今日概览</h3>
+            <div class="stats-grid">
+              <div class="stat-item"><div class="stat-number" id="todayCourses">0</div><div class="stat-label">课程</div></div>
+              <div class="stat-item"><div class="stat-number" id="todayConsultations">0</div><div class="stat-label">面谈</div></div>
+              <div class="stat-item"><div class="stat-number" id="todayReminders">0</div><div class="stat-label">作业</div></div>
+              <div class="stat-item"><div class="stat-number" id="attendanceRate">—</div><div class="stat-label">出勤率</div></div>
+            </div>
+          </div>
+          <nav>
+            <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
+            <a href="#" class="nav-link" data-page="arrange"><span>课程安排</span></a>
+            <a href="#" class="nav-link" data-page="schedule"><span>我的任务</span></a>
+            <a href="#" class="nav-link" data-page="analysis"><span>数据分析</span></a>
+            <a href="#" class="nav-link" data-page="profile"><span>个人信息</span></a>
+          </nav>
+        </aside>
+
+        <main>
+          <!-- 日历页面 -->
+          <div id="calendarPage" class="page-content active">
+            <section class="card">
+              <div class="calendar-head">
+                <div class="calendar-title" id="calendarTitle">我的日历</div>
+                <div class="calendar-ctrl">
+                  <button id="prevBtn" class="btn btn-outline">‹</button>
+                  <button id="todayBtn" class="btn btn-outline">今天</button>
+                  <button id="nextBtn" class="btn btn-outline">›</button>
+                  <div class="seg">
+                    <button id="dayBtn" class="seg-btn">日</button>
+                    <button id="weekBtn" class="seg-btn active">周</button>
+                    <button id="monthBtn" class="seg-btn">月</button>
+                  </div>
+                  <button class="btn btn-outline" id="refreshDataBtn">刷新</button>
+                </div>
+              </div>
+              <div id="mainCalendar"></div>
+            </section>
+          </div>
+
+          <!-- 课程安排页面 -->
+          <div id="arrangePage" class="page-content">
+            <section class="card">
+              <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">课程安排</h2>
+              <div class="filter-item">
+                <label>课程属性</label>
+                <select id="pubAttr">
+                  <option value="大课">大课（只读）</option>
+                  <option value="VIP">VIP（可约）</option>
+                  <option value="面谈">面谈（可约）</option>
+                </select>
+              </div>
+              <div class="filter-item">
+                <label>课程名（大课必填）</label>
+                <input type="text" id="pubCourseName" />
+              </div>
+              <div class="filter-item">
+                <label>模式</label>
+                <select id="pubMode">
+                  <option value="single">单次</option>
+                  <option value="range">区间+周几</option>
+                </select>
+              </div>
+              <div class="filter-item" id="singleDateRow">
+                <label>日期</label>
+                <input type="date" id="pubDate" />
+              </div>
+              <div class="filter-item" id="rangeRows" style="display:none;">
+                <label>起止日期</label>
+                <div style="display:flex;gap:6px;">
+                  <input type="date" id="pubStartDate" />
+                  <input type="date" id="pubEndDate" />
+                </div>
+                <label style="margin-top:6px;">周几（可多选）</label>
+                <div>
+                  <label><input type="checkbox" class="wd" value="1">周一</label>
+                  <label><input type="checkbox" class="wd" value="2">周二</label>
+                  <label><input type="checkbox" class="wd" value="3">周三</label>
+                  <label><input type="checkbox" class="wd" value="4">周四</label>
+                  <label><input type="checkbox" class="wd" value="5">周五</label>
+                  <label><input type="checkbox" class="wd" value="6">周六</label>
+                  <label><input type="checkbox" class="wd" value="0">周日</label>
+                </div>
+                <label style="margin-top:6px;">回数（可选）</label>
+                <input type="number" id="pubCount" min="1" placeholder="不填则按区间+周几全部展开" />
+              </div>
+              <div class="filter-item">
+                <label>时间（开始-结束）</label>
+                <div style="display:flex;gap:6px;">
+                  <input type="time" id="pubStartTime" value="09:00" />
+                  <input type="time" id="pubEndTime" value="10:00" />
+                </div>
+                <div style="font-size:11px;color:#666;">仅允许整点或半点（:00 / :30）</div>
+              </div>
+              <div class="filter-item">
+                <label>面向专业（逗号分隔；空=全专业）</label>
+                <input type="text" id="pubMajors" placeholder="例：文科研究科,工学研究科" />
+              </div>
+              <div class="filter-item">
+                <label>可见学生IDs（逗号分隔；VIP/面谈用）</label>
+                <input type="text" id="pubVisibleIds" placeholder="例：S001,S015" />
+              </div>
+              <button class="btn btn-primary" id="pubSubmitBtn">发布</button>
+            </section>
+          </div>
+
+          <!-- 我的任务页面（静态示例） -->
+          <div id="schedulePage" class="page-content">
+            <section class="card">
+              <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">我的任务</h2>
+              <div style="display:grid;gap:12px;">
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+                  <input type="checkbox" checked>
+                  <span>批改期中考试试卷</span>
+                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">今天截止</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+                  <input type="checkbox">
+                  <span>准备下周课程材料</span>
+                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">明天截止</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
+                  <input type="checkbox">
+                  <span>学生面谈记录整理</span>
+                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">周五截止</span>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- 数据分析页面 -->
+          <div id="analysisPage" class="page-content">
+            <section class="card">
+              <div class="filter-panel">
+                <div class="filter-section">
+                  <h3>学生选择</h3>
+                  <div class="filter-grid">
+                    <div class="filter-item">
+                      <label for="departmentSelect">选择所属</label>
+                      <select id="departmentSelect">
+                        <option value="">请选择所属部门</option>
+                      </select>
+                    </div>
+                    <div class="filter-item">
+                      <label for="majorSelect">选择专业</label>
+                      <select id="majorSelect">
+                        <option value="">请选择专业</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div id="studentListArea" style="display: none; margin-top: 10px;">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+                      <span style="font-size: 12px;">已选: <span id="selectedCount">0</span></span>
+                      <div>
+                        <button class="btn" style="padding: 3px 6px; font-size: 10px;" id="selectAllBtn">全选</button>
+                        <button class="btn" style="padding: 3px 6px; font-size: 10px;" id="clearAllBtn">清空</button>
+                      </div>
+                    </div>
+                    <div class="student-list" id="studentList"></div>
+                  </div>
+                </div>
+                <div class="filter-section">
+                  <h3>时间范围</h3>
+                  <div class="filter-grid">
+                    <div class="filter-item">
+                      <label for="startMonth">开始月份</label>
+                      <input type="month" id="startMonth">
+                    </div>
+                    <div class="filter-item">
+                      <label for="endMonth">结束月份</label>
+                      <input type="month" id="endMonth">
+                    </div>
+                  </div>
+                </div>
+                <div class="filter-section">
+                  <h3>数据类型</h3>
+                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 5px;">
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" id="attendance" checked>
+                      <span style="font-size: 12px;">出勤情况</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" id="homework" checked>
+                      <span style="font-size: 12px;">作业情况</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" id="consultation" checked>
+                      <span style="font-size: 12px;">面谈记录</span>
+                    </label>
+                    <label style="display: flex; align-items: center; gap: 5px;">
+                      <input type="checkbox" id="progress" checked>
+                      <span style="font-size: 12px;">学习进度</span>
+                    </label>
+                  </div>
+                </div>
+                <div class="action-buttons">
+                  <button class="btn" id="resetFiltersBtn">重置</button>
+                  <button class="btn btn-primary" id="generateReportBtn">生成报告</button>
+                  <button class="btn" style="display: none;" id="exportBtn">复制报告</button>
+                </div>
+              </div>
+              <div class="results-panel" id="resultsPanel" style="display:none;">
+                <div class="results-header">
+                  <strong>分析结果</strong>
+                  <span id="resultCount"></span>
+                </div>
+                <div class="results-content">
+                  <div class="loading" id="loadingIndicator" style="display:none;">
+                    <div class="spinner"></div>
+                    正在查询数据...
+                  </div>
+                  <div id="resultsData" style="display: none;">
+                    <table class="data-table" id="dataTable">
+                      <thead>
+                        <tr>
+                          <th>学生</th><th>数据类型</th><th>数值</th><th>备注</th>
+                        </tr>
+                      </thead>
+                      <tbody id="tableBody"></tbody>
+                    </table>
+                    <div class="copy-area" id="copyArea" style="white-space:pre-wrap;margin-top:12px;"></div>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <!-- 个人信息（只读示例） -->
+          <div id="profilePage" class="page-content">
+            <section class="card">
+              <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">个人信息</h2>
+              <div style="display:grid;gap:16px;max-width:400px;">
+                <div><label style="display:block;margin-bottom:6px;color:var(--muted);font-weight:500;">姓名</label><input id="profileName" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;" value="" readonly></div>
+                <div><label style="display:block;margin-bottom:6px;color:var(--muted);font-weight:500;">工号/学号</label><input id="profileId" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;" value="" readonly></div>
+                <div><label style="display:block;margin-bottom:6px;color:var(--muted);font-weight:500;">所属院系</label><input id="profileDept" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;" value="" readonly></div>
+                <div><label style="display:block;margin-bottom:6px;color:var(--muted);font-weight:500;">身份</label><input id="profileRole" style="width:100%;height:40px;border:1px solid var(--border);border-radius:8px;padding:0 12px;" value="" readonly></div>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+// ================== 配置 ==================
+const API_URL = 'https://script.google.com/macros/s/AKfycbwJYf3jeNAF37vgVXTiWnEgYS5dlh9l9UChkiEhThh4OwV3TVEvP3ZtIS8bpm5G3HLf/exec';
+
+// ================== 工具 ==================
+const $ = (id) => document.getElementById(id);
+const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+function setApiStatus({ok, text}) {
+  const dotTop = $('apiDotTop'), txtTop = $('apiTextTop');
+  const inline = $('apiStatusInline');
+  
+  // 手机端：更新userInfo前的绿点
+  const userInfo = document.querySelector('.user-info');
+  if (window.matchMedia('(max-width: 768px)').matches && userInfo) {
+    const before = userInfo.querySelector('::before') || userInfo;
+    if (before && before.style) {
+      before.style.setProperty('--api-status-color', 
+        ok === true ? '#22c55e' : ok === false ? '#ef4444' : '#f59e0b'
+      );
+    }
+  }
+  
+  if (dotTop) dotTop.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
+  if (txtTop) txtTop.textContent = text || (ok ? 'API 正常' : (ok===false ? 'API 连接失败' : 'API 检测中'));
+  if (inline) {
+    const dot = inline.querySelector('.api-dot') || document.createElement('span');
+    dot.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
+    dot.style.cssText = 'display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;';
+    if (!inline.querySelector('.api-dot')) inline.prepend(dot);
+    inline.lastChild && (inline.lastChild.nodeType===3 ? inline.lastChild.textContent=' ' : null);
+    inline.append(text ? (' ' + text) : (ok ? ' API连接成功' : (ok===false ? ' API连接失败' : ' 正在检测 API 连接…')));
+  }
+}
+
+// ================== API 调用 ==================
+async function callAPI(action, params = {}) {
+  try {
+    const formData = new URLSearchParams();
+    formData.append('action', action);
+    formData.append('params', JSON.stringify(params));
+
+    // 加一个 8 秒超时，避免长时间无响应
+    const controller = new AbortController();
+    const t = setTimeout(()=>controller.abort(), 8000);
+
+    const res = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: formData,
+      mode: 'cors',
+      signal: controller.signal
+    });
+    clearTimeout(t);
+
+    const text = await res.text();
+    let cleanText = text.trim();
+    const s = cleanText.indexOf('{');
+    const e = cleanText.lastIndexOf('}');
+    if (s !== -1 && e !== -1 && e > s) cleanText = cleanText.substring(s, e + 1);
+    return JSON.parse(cleanText);
+  } catch (err) {
+    return { success:false, message: '网络请求失败: ' + err.message };
+  }
+}
+
+// ================== 手机端抽屉功能 ==================
+function initMobileDrawer() {
+  if (!window.matchMedia('(max-width: 768px)').matches) return;
+  
+  // 创建抽屉按钮
+  const toggleBtn = document.createElement('button');
+  toggleBtn.className = 'mobile-drawer-toggle';
+  toggleBtn.textContent = '☰ 菜单';
+  toggleBtn.id = 'mobileDrawerToggle';
+  
+  // 创建抽屉容器
+  const drawer = document.createElement('div');
+  drawer.className = 'mobile-drawer';
+  drawer.id = 'mobileDrawer';
+  
+  // 创建抽屉内容
+  const drawerContent = document.createElement('div');
+  drawerContent.className = 'mobile-drawer-content';
+  
+  // 复制侧边栏内容到抽屉
+  const originalAside = document.querySelector('aside');
+  if (originalAside) {
+    drawerContent.innerHTML = originalAside.innerHTML;
+  }
+  
+  drawer.appendChild(drawerContent);
+  document.body.appendChild(toggleBtn);
+  document.body.appendChild(drawer);
+  
+  // 绑定事件
+  toggleBtn.addEventListener('click', () => {
+    drawer.classList.add('open');
+  });
+  
+  drawer.addEventListener('click', (e) => {
+    if (e.target === drawer) {
+      drawer.classList.remove('open');
+    }
+  });
+  
+  // 重新绑定导航链接
+  drawerContent.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pageId = link.dataset.page;
+      if (pageId) {
+        showPage(pageId);
+        drawer.classList.remove('open'); // 选择后关闭抽屉
+      }
+    });
+  });
+}
+
+// ================== 侧边导航与页面切换 ==================
+const navLinks = [];
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.nav-link').forEach(link => {
+    navLinks.push(link);
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const pageId = link.dataset.page;
+      if (pageId) showPage(pageId);
+    });
+  });
+  
+  // 初始化手机端抽屉
+  initMobileDrawer();
+  
+  // 监听屏幕尺寸变化
+  window.addEventListener('resize', () => {
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    const drawer = $('mobileDrawer');
+    const toggleBtn = $('mobileDrawerToggle');
+    
+    if (!isMobile && drawer) {
+      drawer.classList.remove('open');
+    }
+  });
+});
+
+function showPage(pageId) {
+  document.querySelectorAll('.page-content').forEach(p => { p.classList.remove('active'); p.style.display = 'none'; });
+  const page = document.getElementById(pageId + 'Page');
+  if (page) { page.style.display = 'block'; page.classList.add('active'); }
+  navLinks.forEach(a => a.classList.remove('active'));
+  const active = document.querySelector('.nav-link[data-page="'+pageId+'"]');
+  if (active) active.classList.add('active');
+  
+  // 也要更新抽屉中的导航状态
+  if (window.matchMedia('(max-width: 768px)').matches) {
+    const drawerNavLinks = document.querySelectorAll('.mobile-drawer .nav-link');
+    drawerNavLinks.forEach(a => a.classList.remove('active'));
+    const drawerActive = document.querySelector('.mobile-drawer .nav-link[data-page="'+pageId+'"]');
+    if (drawerActive) drawerActive.classList.add('active');
+  }
+  
+  if (pageId === 'calendar' && window.calendar) setTimeout(() => window.calendar.updateSize(), 50);
+}
+
+// ================== 登录/注册/登出 ==================
+let currentUser = null;
+
+function showRegisterForm() {
+  $('loginForm').style.display = 'none';
+  $('registerForm').style.display = 'block';
+  $('loginError').textContent = '';
+  $('registerError').textContent = '';
+}
+function showLoginForm() {
+  $('registerForm').style.display = 'none';
+  $('loginForm').style.display = 'block';
+  $('loginError').textContent = '';
+  $('registerError').textContent = '';
+}
+
+async function login() {
+  const username = ($('loginUsername').value || '').trim();
+  const err = $('loginError');
+  if (!username) { err.textContent = '请输入用户ID'; return; }
+  err.style.color = ''; err.textContent = '正在登录…';
+  const result = await callAPI('loginByUsername', { username });
+  if (result && result.success) {
+    currentUser = result.user || {};
+    currentUser.userId = currentUser.username || username;
+
+    // 显示主应用
+    $('loginContainer').style.display = 'none';
+    $('mainApp').style.display = 'block';
+    try { window.location.hash = '#app'; } catch {}
+
+    updateUserInterface();
+    initCalendar();         // 创建日历
+    bindArrangePanel();     // 课程发布
+    bindAnalysisHandlers(); // 数据分析
+    loadUserData();
+    
+    // 重新初始化手机端抽屉（因为用户信息已更新）
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      initMobileDrawer();
+    }
+  } else {
+    err.style.color = '#c00';
+    err.textContent = (result && result.message) || '登录失败：用户ID不存在';
+  }
+}
+
+async function registerUser() {
+  const name = ($('registerName').value || '').trim();
+  const email = ($('registerEmail').value || '').trim();
+  const department = $('registerDepartment').value;
+  const major = ($('registerMajor').value || '').trim();
+  const role = $('registerRole').value;
+  const err = $('registerError');
+  if (!name || !email || !department || !major || !role) { err.textContent = '请填写姓名、邮箱、所属、专业、身份'; return; }
+  err.style.color=''; err.textContent = '正在登记…';
+  const result = await callAPI('registerByProfile', { name, email, department, major, role });
+  if (result && result.success) {
+    err.style.color='green'; err.textContent='登记成功！请联系老师获取"用户ID"，之后使用用户ID登录。';
+    $('registerName').value=''; $('registerEmail').value=''; $('registerDepartment').value=''; $('registerMajor').value=''; $('registerRole').value='';
+    setTimeout(showLoginForm, 1200);
+  } else {
+    err.style.color='#c00'; err.textContent=(result && result.message) || '登记失败';
+  }
+}
+
+function logout() {
+  currentUser = null;
+  $('mainApp').style.display = 'none';
+  $('loginContainer').style.display = 'flex';
+  $('loginUsername').value = '';
+  $('loginError').textContent = '';
+  setApiStatus({ok:null, text:'API 检测中'}); // 回到检测中
+  
+  // 移除手机端抽屉
+  const drawer = $('mobileDrawer');
+  const toggleBtn = $('mobileDrawerToggle');
+  if (drawer) drawer.remove();
+  if (toggleBtn) toggleBtn.remove();
+  
+  try { window.location.hash = '#login'; } catch {}
+}
+
+// 修复移动端 100vh：用 window.innerHeight 动态计算 --vh
+(function(){
+  function setVh(){
+    document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+  }
+  setVh();
+  window.addEventListener('resize', setVh, {passive:true});
+  window.addEventListener('orientationchange', function(){
+    setTimeout(setVh, 150);
+    // FullCalendar 在尺寸变化后需要刷新
+    setTimeout(()=>{ try{ window.calendar && window.calendar.updateSize(); }catch(e){} }, 300);
+  }, {passive:true});
+})();
+
+// ================== 用户界面填充 ==================
+function updateUserInterface() {
+  if (!currentUser) return;
+  $('userGreeting').textContent = '欢迎，' + (currentUser.name || currentUser.userId);
+  $('userRole').textContent = '(' + (currentUser.role || '') + ')';
+  $('profileName').value = currentUser.name || '';
+  $('profileId').value   = currentUser.userId || '';
+  $('profileDept').value = currentUser.department || '';
+  $('profileRole').value = currentUser.role || '';
+
+  const isTeacher = (String(currentUser.role) === '老师' || String(currentUser.userId || '').startsWith('T'));
+  const isAdmin   = String(currentUser.userId || '').startsWith('A');
+  const analysisNav = document.querySelector('.nav-link[data-page="analysis"]');
+  if (analysisNav) analysisNav.style.display = (isTeacher || isAdmin) ? '' : 'none';
+}
+
+// ================== 日历 ==================
+let calendar = null;
+
+function initCalendar() {
+  const el = $('mainCalendar'); if (!el) return;
+  const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
+  calendar = new FullCalendar.Calendar(el, {
+    initialView, locale: 'zh-cn', firstDay: 1, height: 'auto',
+    headerToolbar: false, allDaySlot: false, slotMinTime:'08:00:00', slotMaxTime:'22:00:00', slotDuration:'00:30:00', expandRows:true,
+    datesSet: updateCalendarTitle,
+    eventClick: handleEventClick
+  });
+  $('prevBtn').onclick = () => calendar.prev();

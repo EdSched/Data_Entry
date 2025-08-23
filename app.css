@@ -142,7 +142,49 @@ html, body{height:auto;min-height:100%;overflow-y:auto}
 
 /* 手机端：隐藏“今日概览”，并让内部容器不再强制内部滚动 */
 @media (max-width: 768px){
-  .sidebar-section.overview{display:none;}  /* 今日概览隐藏 */
   .wrap{height:auto;}                       /* 外层容器不锁高 */
   main{overflow:visible;}                   /* 让 body 承担滚动 */
 }
+/* ===== 手机端：侧栏变底部抽屉（含今日概览 + 导航） ===== */
+@media (max-width: 768px){
+  aside{
+    position: fixed;
+    z-index: 1100;
+    left: 0; right: 0; bottom: 0;
+    width: 100%;
+    height: 65vh;                 /* 抽屉高度，可调 50~80vh */
+    max-height: 80vh;
+    border-right: none;
+    border-top: 1px solid var(--border);
+    border-radius: 12px 12px 0 0;
+    box-shadow: 0 -8px 24px rgba(0,0,0,.08);
+    background: var(--bg);
+    transform: translateY(100%);  /* 默认收起 */
+    transition: transform .28s ease, opacity .2s ease;
+    opacity: 0;
+    overflow-y: auto;
+    padding: 16px 0;              /* 和你原本差不多 */
+  }
+  aside.open{
+    transform: translateY(0);
+    opacity: 1;
+  }
+
+  /* 遮罩层 */
+  .backdrop{
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,.28);
+    z-index: 1090;
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s ease;
+  }
+  .backdrop.show{ opacity: 1; pointer-events: auto; }
+
+  /* 主区不再被侧栏占宽，页面可自然下拉 */
+  .wrap{ flex-direction: column; height:auto; }
+  main{ overflow: visible; padding-bottom: 16px; }
+
+  /* 只在手机上显示“菜单”按钮 */
+  #drawerToggle{ display: inline-flex !important; }
+}
+

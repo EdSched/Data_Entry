@@ -4,17 +4,14 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>师生管理平台</title>
-
-  <!-- FullCalendar（与你现有版本一致） -->
+  <!-- FullCalendar -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
-
-  <!-- 只挂你现有样式，不改路径、不增删文件 -->
-  <link rel="stylesheet" href="appV4.css"/>
+  <!-- 样式 -->
+  <link rel="stylesheet" href="appV3.css"/>
 </head>
 <body>
   <!-- 顶栏 -->
   <header class="topbar">
-    <!-- 登录前隐藏；登录成功后由 appV3.js 显示 -->
     <button id="hamburger" aria-label="打开菜单" style="display:none;">☰</button>
     <div class="brand">师生管理平台</div>
     <div class="spacer"></div>
@@ -24,7 +21,7 @@
     </div>
   </header>
 
-  <!-- 登录页面（仅用户ID） -->
+  <!-- 登录 -->
   <main id="loginContainer" class="center-wrap">
     <section class="card card-narrow">
       <h1 class="title">登录</h1>
@@ -41,72 +38,70 @@
           <input id="registerName" class="input" placeholder="姓名"/>
           <input id="registerEmail" class="input" placeholder="邮箱"/>
           <select id="registerDepartment" class="input">
-            <option value="">所属</option>
-            <option>文科大学院</option>
-            <option>理科大学院</option>
-            <option>其他</option>
+            <option value="">所属</option><option>文科大学院</option><option>理科大学院</option><option>其他</option>
           </select>
           <input id="registerMajor" class="input" placeholder="专业"/>
           <select id="registerRole" class="input">
-            <option value="">身份</option>
-            <option>学生</option>
-            <option>老师</option>
+            <option value="">身份</option><option>学生</option><option>老师</option>
           </select>
         </div>
         <button id="registerBtn" class="btn btn-outline mt-8">提交登记</button>
         <div id="registerError" class="error"></div>
       </details>
-
       <div id="apiStatusTip" class="muted small mt-12">正在检测 API…</div>
     </section>
   </main>
 
-  <!-- 主应用：登录后显示（桌面=固定侧栏，手机=抽屉；逻辑都交给你现有的 appV3.css / appV3.js） -->
+  <!-- 主页面：登录后显示 -->
   <main id="appContainer" class="app" style="display:none;">
-
-    <!-- 侧栏（**放在主应用内部**；桌面常驻，移动端抽屉） -->
-    <aside id="sidebar" class="sidebar" aria-label="侧栏导航">
-      <div class="sidebar-header">导航</div>
-      <nav class="nav">
-        <!-- 当前页保持 index.html；点击当前页只收起抽屉（appV3.js 已处理） -->
-        <a class="nav-link active" href="index.html">日历</a>
-        <a class="nav-link" id="linkArrange" href="arrange.html">课程安排（子页）</a>
-        <a class="nav-link" href="analysis.html">数据分析（子页）</a>
-        <a class="nav-link" href="myschedule.html">我的日程（子页）</a>
-        <a class="nav-link" href="profile.html">个人信息（子页）</a>
-      </nav>
-      <div class="sidebar-footer">
-        <button id="refreshBtn" class="btn btn-outline btn-full">刷新日历</button>
-        <div id="apiPing" class="muted small">API: —</div>
-      </div>
-    </aside>
-    <div id="backdrop" class="backdrop" aria-hidden="true"></div>
-
-    <!-- 主卡片：只有一个主日历 -->
-    <section class="card">
-      <div class="calendar-head">
-        <div class="calendar-title" id="calendarTitle">—</div>
-        <div class="calendar-ctrl">
-          <button id="prevBtn" class="btn btn-outline" aria-label="上一段">‹</button>
-          <button id="todayBtn" class="btn btn-outline">今天</button>
-          <button id="nextBtn" class="btn btn-outline" aria-label="下一段">›</button>
-          <div class="seg" role="tablist" aria-label="视图切换">
-            <button id="dayBtn"   class="seg-btn active" role="tab" aria-selected="true">日</button>
-            <button id="weekBtn"  class="seg-btn"        role="tab" aria-selected="false">周</button>
-            <button id="monthBtn" class="seg-btn"        role="tab" aria-selected="false">月</button>
-          </div>
+    <div class="app-layout">
+      <!-- 侧栏（登录后常驻；桌面固定，移动抽屉） -->
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-header">导航</div>
+        <nav class="nav">
+          <a class="nav-link active" href="#calendar">日历</a>
+          <a class="nav-link" href="arrange.html">课程安排（子页）</a>
+          <a class="nav-link" href="analysis.html">数据分析（子页）</a>
+          <a class="nav-link" href="myschedule.html">我的日程（子页）</a>
+          <a class="nav-link" href="profile.html">个人信息（子页）</a>
+        </nav>
+        <div class="sidebar-footer">
+          <button id="refreshBtn" class="btn btn-outline btn-full">刷新日历</button>
+          <div id="apiPing" class="muted small">API: —</div>
         </div>
-      </div>
+      </aside>
 
-      <div id="mainCalendar" aria-label="主日历"></div>
-    </section>
-    <!-- 放在  <div id="mainCalendar"></div> 那张卡片后面 -->
-<section id="pageHost" class="card">
-  <iframe id="subPage" title="子页面"></iframe>
-</section>
+      <!-- 主内容：默认显示主日历；子页面用 iframe 承载 -->
+      <section class="page">
+        <section id="calendarCard" class="card">
+          <div class="calendar-head">
+            <div class="calendar-title" id="calendarTitle">—</div>
+            <div class="calendar-ctrl">
+              <button id="prevBtn" class="btn btn-outline">‹</button>
+              <button id="todayBtn" class="btn btn-outline">今天</button>
+              <button id="nextBtn" class="btn btn-outline">›</button>
+              <div class="seg">
+                <button id="dayBtn" class="seg-btn active">日</button>
+                <button id="weekBtn" class="seg-btn">周</button>
+                <button id="monthBtn" class="seg-btn">月</button>
+              </div>
+            </div>
+          </div>
+          <div id="mainCalendar"></div>
+        </section>
+
+        <!-- 子页面容器（默认隐藏），用于 iframe 承载“课程安排/数据分析”等 -->
+        <section id="pageHost" class="card" style="display:none;">
+          <iframe id="subPage" title="子页面" frameborder="0"></iframe>
+        </section>
+      </section>
+    </div>
+
+    <!-- 移动端遮罩（桌面不会显示） -->
+    <div id="backdrop" class="backdrop"></div>
   </main>
 
-  <!-- 只挂你现有逻辑文件，不改路径 -->
-  <script src="appV4.js" defer></script>
+  <!-- 逻辑 -->
+  <script src="appV3.js" defer></script>
 </body>
 </html>

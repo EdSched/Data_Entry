@@ -166,3 +166,40 @@ html, body{height:auto;min-height:100%;overflow-y:auto}
   .pull-down .pull-text{ font-size:11px; }
 }
 @media (min-width:769px){ .pull-down{ display:none; } }
+
+/* ===== 手机端顶栏简化版 ===== */
+@media (max-width: 768px){
+  .topbar{
+    flex-direction: column;
+    align-items: flex-start;
+    height: auto;
+    padding: 8px 12px;
+    gap: 4px;
+  }
+  .topbar .brand{
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .topbar .user-line{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .status-dot{
+    display:inline-block;
+    width:8px; height:8px;
+    border-radius:50%;
+    margin-right:6px;
+    background:#4caf50; /* 绿色 */
+  }
+  .logout-btn{
+    font-size: 12px;
+    height: 26px;
+    padding: 0 8px;
+    margin-left: 8px;
+  }
+}
+

@@ -202,19 +202,32 @@ function logout() {
 })();
 
 /* ================== 用户界面填充 ================== */
+function normalizeRole(user){
+  const id = (user.userId||'').toString();
+  const r0 = (user.role||'').toString().toLowerCase();
+  if (r0.includes('admin') || r0.includes('管') || id.startsWith('A')) return 'admin';
+  if (r0.includes('teacher') || r0.includes('师') || id.startsWith('T')) return 'teacher';
+  return 'student';
+}
+
+const CAP = {
+  student: { calendar:true, output:false, input:false, task:true, datamanagement:false },
+  teacher: { calendar:true, output:true, input:true, task:true, datamanagement:true },
+  admin:   { calendar:true, output:true, input:true, task:true, datamanagement:true }
+};
+
 function updateUserInterface() {
   if (!currentUser) return;
+  currentUser.roleNorm = normalizeRole(currentUser);
+
   $('userGreeting').textContent = '欢迎，' + (currentUser.name || currentUser.userId);
   $('userRole').textContent = '(' + (currentUser.role || '') + ')';
-  $('profileName').value = currentUser.name || '';
-  $('profileId').value   = currentUser.userId || '';
-  $('profileDept').value = currentUser.department || '';
-  $('profileRole').value = currentUser.role || '';
 
-  const isTeacher = (String(currentUser.role) === '老师' || String(currentUser.userId || '').startsWith('T'));
-  const isAdmin   = String(currentUser.userId || '').startsWith('A');
-  const analysisNav = document.querySelector('.nav-link[data-page="datamanagement"]');
-  if (analysisNav) analysisNav.style.display = (isTeacher || isAdmin) ? '' : 'none';
+  // 控制导航显示
+  document.querySelectorAll('nav a').forEach(a=>{
+    const page = a.dataset.page;
+    a.style.display = CAP[currentUser.roleNorm]?.[page] ? '' : 'none';
+  });
 }
 
 /* ================== 日历 ================== */
@@ -223,25 +236,24 @@ let calendar = null;
 function initCalendar() {
   const el = $('mainCalendar'); if (!el) return;
   const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
-  calendar = new FullCalendar.Calendar(el, {
+  const cal = new FullCalendar.Calendar(el, {
     initialView, locale: 'zh-cn', firstDay: 1, height: 'auto',
-    headerToolbar: false, allDaySlot: false,
-    slotMinTime:'08:00:00', slotMaxTime:'22:00:00', slotDuration:'00:30:00', expandRows:true,
+    headerToolbar: false, allDaySlot: false, slotMinTime:'08:00:00', slotMaxTime:'22:00:00', slotDuration:'00:30:00', expandRows:true,
     datesSet: updateCalendarTitle,
     eventClick: handleEventClick
   });
-  $('prevBtn').onclick = () => calendar.prev();
-  $('nextBtn').onclick = () => calendar.next();
-  $('todayBtn').onclick = () => calendar.today();
-  $('dayBtn').onclick = () => changeView('timeGridDay', $('dayBtn'));
-  $('weekBtn').onclick = () => changeView('timeGridWeek', $('weekBtn'));
-  $('monthBtn').onclick = () => changeView('dayGridMonth', $('monthBtn'));
-  $('refreshDataBtn').onclick = refreshData;
-
-  calendar.render();
+  cal.render();
+  window.calendar = cal;          // ★ 关键：给其它地方用
+  calendar = cal;                 // 保持你原来的全局变量也可用
   updateCalendarTitle();
   loadCalendarEvents();
+  // 在 initCalendar() 末尾 cal.render() 之后加：
+setTimeout(() => { try { cal.updateSize(); } catch(e){} }, 60);
+
+// 在页面切换时你已有：
+if (pageId === 'calendar' && window.calendar) setTimeout(() => window.calendar.updateSize(), 50);
 }
+
 
 function changeView(viewName, activeBtn) {
   if (!calendar) return;
@@ -265,17 +277,18 @@ function updateCalendarTitle() {
 async function loadCalendarEvents() {
   if (!currentUser || !calendar) return;
   try {
-    const events = await callAPI('listVisibleSlots', { userId: currentUser.userId });
+    const res = await callAPI('listVisibleSlots', { userId: currentUser.userId });
+
+    // 兼容三种返回：数组 / {data:[]} / {events:[]}
+    const events = Array.isArray(res) ? res : (res?.data || res?.events || []);
     calendar.removeAllEvents();
-    if (Array.isArray(events)) {
-      const fcEvents = (events[0] && (events[0].start || events[0].startStr))
-        ? events
-        : adaptEvents(events);
-      fcEvents.forEach(ev => calendar.addEvent(ev));
-    }
+    (events || []).forEach(ev => calendar.addEvent(ev));
     updateTodayStats();
-  } catch (e) { console.error('加载槽位失败:', e); }
+  } catch (e) {
+    console.error('加载槽位失败:', e);
+  }
 }
+
 
 async function handleEventClick(info) {
   const ev = info.event, ext = ev.extendedProps || {};

@@ -213,7 +213,7 @@ function updateUserInterface() {
 
   const isTeacher = (String(currentUser.role) === '老师' || String(currentUser.userId || '').startsWith('T'));
   const isAdmin   = String(currentUser.userId || '').startsWith('A');
-  const analysisNav = document.querySelector('.nav-link[data-page="analysis"]');
+  const analysisNav = document.querySelector('.nav-link[data-page="datamanagement"]');
   if (analysisNav) analysisNav.style.display = (isTeacher || isAdmin) ? '' : 'none';
 }
 

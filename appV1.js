@@ -8,22 +8,25 @@ const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
 function setApiStatus({ok, text}) {
   const dotTop = $('apiDotTop'), txtTop = $('apiTextTop');
   const inline = $('apiStatusInline');
+
   if (dotTop) dotTop.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
   if (txtTop) txtTop.textContent = text || (ok ? 'API 正常' : (ok===false ? 'API 连接失败' : 'API 检测中'));
+
   if (inline) {
-    let dot = inline.querySelector('.api-dot');
-    if (!dot) { dot = document.createElement('span'); inline.prepend(dot); }
+    // ★ 每次更新前先清空旧内容
+    inline.textContent = '';
+
+    // 重新生成 dot
+    let dot = document.createElement('span');
     dot.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
     dot.style.cssText = 'display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;';
-    const tip = text ?? (ok ? 'API连接成功' : (ok===false ? 'API连接失败' : '正在检测 API 连接…'));
-    if (!inline.querySelector('.api-inline-text')) {
-      const span = document.createElement('span');
-      span.className = 'api-inline-text';
-      span.textContent = tip;
-      inline.appendChild(span);
-    } else {
-      inline.querySelector('.api-inline-text').textContent = tip;
-    }
+    inline.appendChild(dot);
+
+    // 生成/更新文字
+    const span = document.createElement('span');
+    span.className = 'api-inline-text';
+    span.textContent = text ?? (ok ? 'API连接成功' : (ok===false ? 'API连接失败' : '正在检测 API 连接…'));
+    inline.appendChild(span);
   }
 }
 

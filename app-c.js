@@ -72,17 +72,33 @@ function adaptEvents(rows) {
     const date = r.date || r.singleDate || r.day || '';
     const start = r.start || (date && r.startTime ? `${date}T${pad5(r.startTime)}` : null);
     const end   = r.end   || (date && r.endTime   ? `${date}T${pad5(r.endTime)}`   : null);
+    
+    // 根据课程属性设置颜色
+    let backgroundColor = r.backgroundColor || r.bgColor;
+    if (!backgroundColor) {
+      const attr = r.attr || r.extendedProps?.attr || '';
+      if (attr === '大课') backgroundColor = '#1976d2';
+      else if (attr === 'VIP') backgroundColor = '#d32f2f';
+      else if (attr === '面谈') backgroundColor = '#388e3c';
+      else backgroundColor = '#9c27b0'; // 默认颜色
+    }
+    
     return {
       id: r.id || r.slotId || r.slotID || r._id || `${date}-${r.startTime || ''}-${r.title || r.courseName || ''}`,
       title: r.title || r.courseName || r.attr || '未命名',
       start,
       end,
-      backgroundColor: r.bgColor || undefined,
-      textColor: r.textColor || undefined,
+      backgroundColor,
+      borderColor: backgroundColor,
+      textColor: '#fff',
       extendedProps: {
-        canBook: r.canBook === '是' || r.canBook === true,
-        status: r.status || r.scheduleStatus || '',
-        description: r.description || r.notes || r.note || ''
+        type: r.extendedProps?.type || 'course',
+        attr: r.attr || r.extendedProps?.attr || '',
+        canBook: r.canBook === '是' || r.canBook === true || r.extendedProps?.canBook === true,
+        status: r.status || r.scheduleStatus || r.extendedProps?.status || '',
+        description: r.description || r.notes || r.note || '',
+        teacherId: r.teacherId || r.extendedProps?.teacherId || '',
+        readOnly: r.readOnly || r.extendedProps?.readOnly || false
       }
     };
   }).filter(e => e.start);
@@ -355,16 +371,39 @@ function updateCalendarTitle() {
 async function loadCalendarEvents() {
   if (!currentUser || !calendar) return;
   try {
+    console.log('正在加载日历事件...', currentUser.userId);
     const events = await callAPI('listVisibleSlots', { userId: currentUser.userId });
+    
     calendar.removeAllEvents();
+    
     if (Array.isArray(events)) {
+      console.log('收到事件数据:', events.length, '条');
+      
+      // 检查事件格式并适配
       const fcEvents = (events[0] && (events[0].start || events[0].startStr))
-        ? events
-        : adaptEvents(events);
-      fcEvents.forEach(ev => calendar.addEvent(ev));
+        ? events  // 已经是FullCalendar格式
+        : adaptEvents(events); // 需要适配
+      
+      console.log('适配后事件:', fcEvents.length, '条');
+      
+      fcEvents.forEach((ev, index) => {
+        try {
+          calendar.addEvent(ev);
+          console.log(`添加事件 ${index + 1}:`, ev.title, ev.start);
+        } catch (e) {
+          console.error('添加事件失败:', e, ev);
+        }
+      });
+      
+      console.log('日历事件加载完成');
+    } else {
+      console.log('未收到有效事件数据:', events);
     }
+    
     updateTodayStats();
-  } catch (e) { console.error('加载槽位失败:', e); }
+  } catch (e) { 
+    console.error('加载槽位失败:', e); 
+  }
 }
 
 async function handleEventClick(info) {

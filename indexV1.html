@@ -1,177 +1,171 @@
+
 <!DOCTYPE html>
-<html lang="zh-CN" data-lang="zh-CN">
+<html lang="zh-CN">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>edsched • 框架版</title>
-  <link rel="stylesheet" href="app.css" />
-  <!-- FullCalendar（保留占位，后续你要用时即可） -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.css">
-  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.15/index.global.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
+  <title>大学院管理平台</title>
+  <!-- FullCalendar -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
+  <link rel="stylesheet" href="app.css"/>
 </head>
 <body>
-
-  <!-- 登录区 -->
+  <!-- 登录界面（保持你原有布局） -->
   <div id="loginContainer" class="login-container">
     <div class="login-box">
-      <h1>登录</h1>
+      <h1>大学院管理平台</h1>
       <div id="loginForm">
-        <input id="loginUsername" type="text" placeholder="输入用户ID（老师T.. 学生S.. 管理员A..）" />
-        <button class="btn btn-solid" id="loginBtn">登录</button>
+        <input type="text" id="loginUsername" placeholder="用户ID（由老师分配）" />
+        <button type="button" id="loginBtn">登录</button>
+        <div class="link-text" id="showRegisterBtn">还没有账号？登记信息</div>
         <div id="loginError" class="error-message"></div>
-        <div id="apiStatusInline" class="api-inline"></div>
-        <div class="link-text" id="showRegisterBtn">没有ID？去登记</div>
+        <!-- 新增：登录框里的 API 状态提示（更直观） -->
+        <div id="apiStatusInline" class="api-inline"><span class="api-dot wait" style="display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;"></span>正在检测 API 连接…</div>
       </div>
 
-      <div id="registerForm" style="display:none;">
-        <input id="registerName" type="text" placeholder="姓名" />
-        <input id="registerEmail" type="email" placeholder="邮箱" />
+      <div id="registerForm" style="display: none;">
+        <input type="text" id="registerName" placeholder="姓名" />
+        <input type="email" id="registerEmail" placeholder="邮箱（用于区分同名，不对外公开）" />
         <select id="registerDepartment">
-          <option value="">所属部门</option>
-          <option>文科大学院</option>
-          <option>理科大学院</option>
+          <option value="">选择所属部门</option>
+          <option value="文科大学院">文科大学院</option>
+          <option value="理科大学院">理科大学院</option>
+          <option value="其他">其他</option>
         </select>
-        <input id="registerMajor" type="text" placeholder="专业" />
+        <input type="text" id="registerMajor" placeholder="专业" />
         <select id="registerRole">
-          <option value="">身份</option>
-          <option>学生</option>
-          <option>老师</option>
-          <option>管理员</option>
+          <option value="">选择身份</option>
+          <option value="学生">学生</option>
+          <option value="老师">老师</option>
         </select>
-        <button class="btn btn-solid" id="registerBtn">登记</button>
+        <button type="button" id="registerBtn">登记</button>
+        <div class="link-text" id="showLoginBtn">已有账号？返回登录</div>
         <div id="registerError" class="error-message"></div>
-        <div class="link-text" id="showLoginBtn">返回登录</div>
       </div>
     </div>
   </div>
 
-  <!-- 应用主体 -->
+  <!-- 主应用包裹（登录后显示） -->
   <div id="mainApp" style="display:none;">
-
-    <!-- 顶栏 -->
-    <div class="topbar">
-      <div class="brand">edsched</div>
+    <header class="topbar">
+      <div class="brand">大学院管理平台</div>
       <div class="spacer"></div>
-      <div class="api-badge">
-        <span id="apiDotTop" class="api-dot wait"></span>
-        <span id="apiTextTop">API 检测中</span>
-      </div>
+      <span id="apiStatusTop" class="api-badge" title="API连接状态">
+        <span id="apiDotTop" class="api-dot wait"></span><span id="apiTextTop">API 检测中</span>
+      </span>
       <div class="user-info">
-        <span id="userGreeting">欢迎</span>
+        <span id="userGreeting">欢迎，</span>
         <span id="userRole"></span>
-        <button id="logoutBtn" class="logout-btn">退出</button>
+        <button class="logout-btn" id="logoutBtn">退出</button>
       </div>
-    </div>
-
-    <!-- 可折叠侧栏开关（移动端） -->
-    <div id="menuStrip" class="pull-strip" aria-expanded="false">
-      <div class="grip"></div><div class="label">展开菜单</div>
-    </div>
+    </header>
 
     <div class="app">
       <div class="wrap">
-        <!-- 侧栏 -->
         <aside>
-          <!-- 今日概览 -->
-          <div class="sidebar-section overview">
-            <h3>今日提醒</h3>
-            <div class="card">
-              <div class="stats-grid">
-                <div class="stat-item">
-                  <div id="todayCourses" class="stat-number">0</div>
-                  <div class="stat-label">课程</div>
-                </div>
-                <div class="stat-item">
-                  <div id="todayConsultations" class="stat-number">0</div>
-                  <div class="stat-label">面谈/预约</div>
-                </div>
-                <div class="stat-item">
-                  <div id="todayReminders" class="stat-number">0</div>
-                  <div class="stat-label">提醒</div>
-                </div>
-                <div class="stat-item">
-                  <div id="attendanceRate" class="stat-number">—</div>
-                  <div class="stat-label">出勤率</div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 导航（统一五个键，交给 CAP 按身份显隐） -->
           <div class="sidebar-section">
-            <h3>导航</h3>
-            <nav>
-              <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
-              <a href="#" class="nav-link" data-page="output"><span>我的发布</span></a>
-              <a href="#" class="nav-link" data-page="input"><span>我的录入</span></a>
-              <a href="#" class="nav-link" data-page="task"><span>我的任务</span></a>
-              <a href="#" class="nav-link" data-page="datamanagement"><span>数据管理</span></a>
-            </nav>
-            <div class="muted" style="margin-top:8px;">
-              学生：仅显示 日历 / 任务；管理员：后续把“发布/数据管理”的文案替换为“安排/查看”。
+            <h3>今日提醒</h3>
+            <div class="stats-grid">
+              <div class="stat-item"><div class="stat-number" id="todayCourses">0</div><div class="stat-label">课程</div></div>
+              <div class="stat-item"><div class="stat-number" id="todayConsultations">0</div><div class="stat-label">面谈</div></div>
+              <div class="stat-item"><div class="stat-number" id="todayReminders">0</div><div class="stat-label">作业</div></div>
+              <div class="stat-item"><div class="stat-number" id="attendanceRate">—</div><div class="stat-label">出勤率</div></div>
             </div>
           </div>
-        </aside>
+            <!-- 学生导航（默认先隐藏；下轮JS按角色显示） -->
+<nav id="nav-student" style="display:none;">
+  <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
+  <a href="#" class="nav-link" data-page="mycourses"><span>我的课程</span></a>
+  <a href="#" class="nav-link" data-page="myprogress"><span>我的进度</span></a>
+  <a href="#" class="nav-link" data-page="myprofile"><span>我的信息</span></a>
+</nav>
 
-        <!-- 主内容 -->
+<!-- 老师导航（默认显示，保持你原来的四项） -->
+<nav id="nav-teacher">
+  <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
+  <a href="#" class="nav-link" data-page="output"><span>我的发布</span></a>
+  <a href="#" class="nav-link" data-page="input"><span>我的录入</span></a>
+  <a href="#" class="nav-link" data-page="datamanagement"><span>数据管理</span></a>
+</nav>
+
+<!-- 管理员导航（默认先隐藏；下轮JS按角色显示） -->
+<nav id="nav-admin" style="display:none;">
+  <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
+  <!-- 这里用 data-page 复用现有页面键，文案用管理员语义 -->
+  <a href="#" class="nav-link" data-page="output"><span>我的安排</span></a>
+  <a href="#" class="nav-link" data-page="datamanagement"><span>我的查看</span></a>
+  <a href="#" class="nav-link" data-page="task"><span>我的任务</span></a>
+</nav>
+        </aside>
+       <!-- 手机端抽屉开关（点击展开/收起侧栏=今日概览+导航） -->
+<div id="menuStrip" class="pull-strip" role="button" aria-expanded="false">
+  <span class="grip"></span><span class="label">展开菜单</span>
+</div>
         <main>
-          <!-- 日历页（空壳） -->
+          <!-- 日历页面 -->
           <div id="calendarPage" class="page-content active">
             <section class="card">
               <div class="calendar-head">
-                <div id="calendarTitle" class="calendar-title">日历</div>
+                <div class="calendar-title" id="calendarTitle">我的日历</div>
                 <div class="calendar-ctrl">
+                  <button id="prevBtn" class="btn btn-outline">‹</button>
+                  <button id="todayBtn" class="btn btn-outline">今天</button>
+                  <button id="nextBtn" class="btn btn-outline">›</button>
                   <div class="seg">
-                    <button id="dayBtn"   class="seg-btn" onclick="changeView('timeGridDay', this)">日</button>
-                    <button id="weekBtn"  class="seg-btn active" onclick="changeView('timeGridWeek', this)">周</button>
-                    <button id="monthBtn" class="seg-btn" onclick="changeView('dayGridMonth', this)">月</button>
+                    <button id="dayBtn" class="seg-btn">日</button>
+                    <button id="weekBtn" class="seg-btn active">周</button>
+                    <button id="monthBtn" class="seg-btn">月</button>
                   </div>
-                  <button class="btn" onclick="calendar && calendar.prev()">上一页</button>
-                  <button class="btn" onclick="calendar && calendar.next()">下一页</button>
-                  <button class="btn btn-outline" onclick="calendar && calendar.today()">今天</button>
-                  <button class="btn btn-primary" onclick="refreshData()">刷新</button>
+                  <button class="btn btn-outline" id="refreshDataBtn">刷新</button>
                 </div>
               </div>
-              <div id="mainCalendar"></div>
+              <div id="mainCalendar" style="min-height:560px;"></div>
             </section>
           </div>
 
-          <!-- 我的发布（空壳，占位） -->
-          <div id="outputPage" class="page-content" style="display:none;">
-            <section class="card">
-              <h2 style="margin:0 0 12px 0;">我的发布（空页面）</h2>
-              <div class="muted">后续按你的新逻辑填：课程安排/通知/作业等，或在管理员身份下替换为“我的安排”。</div>
-            </section>
-          </div>
+          <!-- 学生：我的课程 -->
+<div id="mycoursesPage" class="page-content" style="display:none;">
+  <section class="card">
+    <h2 style="margin:0 0 12px 0;">我的课程</h2>
+    <div class="muted">占位：后续接 listVisibleSlots / 讲义链接 / 作业提交等。</div>
+  </section>
+</div>
 
-          <!-- 我的录入（空壳，占位） -->
-          <div id="inputPage" class="page-content" style="display:none;">
-            <section class="card">
-              <h2 style="margin:0 0 12px 0;">我的录入（空页面）</h2>
-              <div class="muted">后续填：出勤录入、作业记录、面谈记录、反馈记录等。</div>
-            </section>
-          </div>
+<!-- 学生：我的进度 -->
+<div id="myprogressPage" class="page-content" style="display:none;">
+  <section class="card">
+    <h2 style="margin:0 0 12px 0;">我的进度</h2>
+    <div class="muted">占位：总进度概览 / 当前任务列表 / 进度提醒。</div>
+  </section>
+</div>
 
-          <!-- 我的任务（空壳，占位） -->
-          <div id="taskPage" class="page-content" style="display:none;">
-            <section class="card">
-              <h2 style="margin:0 0 12px 0;">我的任务（空页面）</h2>
-              <div class="muted">后续填：个人待办与提醒。管理员在此填写“课程安排提醒”等。</div>
-            </section>
-          </div>
+<!-- 学生：我的信息 -->
+<div id="myprofilePage" class="page-content" style="display:none;">
+  <section class="card">
+    <h2 style="margin:0 0 12px 0;">我的信息</h2>
+    <div class="muted">占位：个人信息 / 面谈记录 / 讲师反馈。</div>
+  </section>
+</div>
 
-          <!-- 数据管理（空壳，占位） -->
-          <div id="datamanagementPage" class="page-content" style="display:none;">
-            <section class="card">
-              <h2 style="margin:0 0 12px 0;">数据管理（空页面）</h2>
-              <div class="muted">后续填：筛选面板 + 表格；管理员视图可命名为“我的查看”。</div>
-            </section>
-          </div>
+<!-- 管理员：我的安排（映射 nav: data-page="output"） -->
+<div id="arrangePage" class="page-content" style="display:none;">
+  <section class="card">
+    <h2 style="margin:0 0 12px 0;">我的安排（管理员 → 老师）</h2>
+    <div class="muted">占位：选择老师 / 任务类型 / 时间范围 / 备注。下轮接 API。</div>
+  </section>
+</div>
+
+<!-- 管理员：我的查看（映射 nav: data-page="datamanagement"） -->
+<div id="reviewPage" class="page-content" style="display:none;">
+  <section class="card">
+    <h2 style="margin:0 0 12px 0;">我的查看（教师/学生数据总览）</h2>
+    <div class="muted">占位：筛选（部门/老师/时间）+ 概览表。</div>
+  </section>
+</div>           
         </main>
       </div>
     </div>
   </div>
-
-  <script src="app.js"></script>
+ <script src="app.js" defer></script>
 </body>
 </html>

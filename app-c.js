@@ -251,8 +251,26 @@ function logout() {
   $('loginContainer').style.display = 'flex';
   $('loginUsername').value = '';
   $('loginError').textContent = '';
-  setApiStatus({ok:null, text:'API 检测中'});
+  
+  // 重新检测API状态而不是设置为检测中
+  checkApiStatusAfterLogout();
+  
   try { window.location.hash = '#login'; } catch {}
+}
+
+// 新增函数：登出后重新检测API状态
+async function checkApiStatusAfterLogout() {
+  setApiStatus({ok:null, text:'API 检测中'});
+  try {
+    const result = await callAPI('testConnection');
+    if (result && result.success) {
+      setApiStatus({ok:true, text:'API 连接成功'});
+    } else {
+      setApiStatus({ok:false, text:'API 连接异常'});
+    }
+  } catch (e) {
+    setApiStatus({ok:false, text:'API 连接失败'});
+  }
 }
 
 /* 修复移动端 100vh：用 window.innerHeight 动态计算 --vh */

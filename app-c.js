@@ -455,7 +455,132 @@ async function registerUser() {
     err.style.color='#c00'; err.textContent=(result && result.message) || '登记失败';
   }
 }
+/* ================== 注册相关逻辑更新 ================== */
 
+// 在 DOMContentLoaded 中添加专业联动逻辑
+document.addEventListener('DOMContentLoaded', async () => {
+  // 原有的初始化代码...
+  
+  // 添加专业联动功能
+  setupMajorDropdown();
+  
+  // 其他原有代码...
+});
+
+// 设置专业下拉联动
+function setupMajorDropdown() {
+  const departmentSelect = document.getElementById('registerDepartment');
+  const majorSelect = document.getElementById('registerMajor');
+  
+  if (!departmentSelect || !majorSelect) return;
+  
+  // 专业选项配置
+  const majorOptions = {
+    '理科大学院': ['情报学', '电子电器', '生物化学', '机械'],
+    '文科大学院': ['文学', '历史学', '社会学', '新闻传播学', '社会福祉学', '表象文化', '经营学', '经济学', '日本语教育'],
+    '其他': [] // 其他部门允许自由填写
+  };
+  
+  // 监听部门选择变化
+  departmentSelect.addEventListener('change', function() {
+    const selectedDept = this.value;
+    updateMajorOptions(selectedDept, majorSelect, majorOptions);
+  });
+}
+
+// 更新专业选项
+function updateMajorOptions(department, majorSelect, majorOptions) {
+  // 清空现有选项
+  majorSelect.innerHTML = '<option value="">选择专业</option>';
+  
+  if (!department) {
+    // 没选择部门时，专业也为空
+    majorSelect.disabled = true;
+    return;
+  }
+  
+  if (department === '其他') {
+    // 其他部门：变回输入框
+    const newInput = document.createElement('input');
+    newInput.type = 'text';
+    newInput.id = 'registerMajor';
+    newInput.placeholder = '请输入专业';
+    newInput.style.cssText = majorSelect.style.cssText;
+    
+    majorSelect.parentNode.replaceChild(newInput, majorSelect);
+  } else {
+    // 理科/文科大学院：使用下拉选项
+    majorSelect.disabled = false;
+    const majors = majorOptions[department] || [];
+    
+    majors.forEach(major => {
+      const option = document.createElement('option');
+      option.value = major;
+      option.textContent = major;
+      majorSelect.appendChild(option);
+    });
+  }
+}
+
+// 更新注册函数
+async function registerUser() {
+  const name = ($('registerName').value || '').trim();
+  const email = ($('registerEmail').value || '').trim();
+  const department = $('registerDepartment').value;
+  const role = $('registerRole').value;
+  const err = $('registerError');
+  
+  // 获取专业值（可能是下拉框或输入框）
+  let major = '';
+  const majorElement = $('registerMajor');
+  if (majorElement) {
+    major = (majorElement.value || '').trim();
+  }
+  
+  // 基础验证
+  if (!name || !email || !department || !major || !role) { 
+    err.textContent = '请填写姓名、邮箱、所属、专业、身份'; 
+    return; 
+  }
+  
+  err.style.color = ''; 
+  err.textContent = '正在登记…';
+  
+  const result = await callAPI('registerByProfile', { name, email, department, major, role });
+  
+  if (result && result.success) {
+    err.style.color = 'green';
+    
+    // 根据身份显示不同提示
+    if (role === '老师') {
+      err.textContent = '老师注册成功！请联系管理员分配"用户ID"，之后使用用户ID登录。';
+    } else {
+      err.textContent = '学生注册成功！请联系老师获取"用户ID"，之后使用用户ID登录。';
+    }
+    
+    // 清空表单
+    $('registerName').value = '';
+    $('registerEmail').value = '';
+    $('registerDepartment').value = '';
+    $('registerRole').value = '';
+    
+    // 重置专业选择
+    const majorElement = $('registerMajor');
+    if (majorElement) {
+      if (majorElement.tagName === 'SELECT') {
+        majorElement.value = '';
+        majorElement.disabled = true;
+      } else {
+        majorElement.value = '';
+      }
+    }
+    
+    setTimeout(showLoginForm, 2000); // 稍微延长显示时间
+  } else {
+    err.style.color = '#c00'; 
+    err.textContent = (result && result.message) || '登记失败';
+  }
+}
 function logout() {
   currentUser = null;
   $('mainApp').style.display = 'none';

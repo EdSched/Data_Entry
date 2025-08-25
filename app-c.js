@@ -1145,6 +1145,239 @@ async function publishCourse() {
     setTimeout(() => setPublishStatus(), 3000);
   }
 }
+/* ================== 增强的日历事件处理 ================== */
+
+// 更新 handleEventClick 函数以处理不同类型的事件
+async function handleEventClick(info) {
+  const ev = info.event, ext = ev.extendedProps || {};
+  if (!currentUser) return;
+  
+  const userRole = getUserRole(currentUser.userId);
+  const eventType = ext.type || 'course'; // 'course' 或 'schedule'
+  
+  if (eventType === 'schedule') {
+    // 处理日程记录点击
+    handleScheduleEventClick(ev, ext, userRole);
+  } else {
+    // 处理课程事件点击（原有逻辑）
+    handleCourseEventClick(ev, ext, userRole);
+  }
+}
+
+function handleScheduleEventClick(event, ext, userRole) {
+  const isOwner = ext.creator === currentUser.userId;
+  const canEdit = isOwner || userRole === 'admin';
+  
+  const details = [
+    `标题: ${event.title}`,
+    `时间: ${event.start.toLocaleString('zh-CN')}`,
+  ];
+  
+  if (event.end) {
+    details.push(`结束: ${event.end.toLocaleString('zh-CN')}`);
+  }
+  
+  if (ext.notes) {
+    details.push(`备注: ${ext.notes}`);
+  }
+  
+  if (ext.status) {
+    details.push(`状态: ${ext.status}`);
+  }
+  
+  if (ext.creator && ext.creator !== currentUser.userId) {
+    details.push(`创建者: ${ext.creator}`);
+  }
+  
+  if (canEdit) {
+    const actions = [
+      { text: '查看详情', action: () => alert(details.join('\n')) },
+      { text: '编辑', action: () => editScheduleRecord(event.id, ext) },
+      { text: '删除', action: () => deleteScheduleRecord(event.id) },
+      { text: '取消', action: () => {} }
+    ];
+    showActionMenu(actions, '日程操作');
+  } else {
+    alert(details.join('\n'));
+  }
+}
+
+function handleCourseEventClick(event, ext, userRole) {
+  // 学生可以预约，老师和管理员只查看详情
+  if (userRole === 'student' && ext.canBook && ext.status === '可约') {
+    const note = prompt(`预约备注（可填具体到达时间等）：\n${event.title}  ${event.start.toLocaleString('zh-CN')}`);
+    if (note !== null) { // 用户点击了确定（包括空字符串）
+      bookSlotFromCalendar(event.id, note);
+    }
+  } else {
+    const details = [`标题: ${event.title}`, `时间: ${event.start.toLocaleString('zh-CN')}`];
+    if (event.end) details.push(`结束: ${event.end.toLocaleString('zh-CN')}`);
+    if (ext && ext.description) details.push(`描述: ${ext.description}`);
+    if (ext && ext.status) details.push(`状态: ${ext.status}`);
+    
+    // 老师和管理员可以看到更多详情
+    if (userRole === 'teacher' || userRole === 'admin') {
+      if (ext.teacherId) details.push(`任课老师: ${ext.teacherId}`);
+      if (ext.attr) details.push(`课程属性: ${ext.attr}`);
+      
+      // 如果是自己发布的课程，提供管理选项
+      if (ext.teacherId === currentUser.userId || userRole === 'admin') {
+        const actions = [
+          { text: '查看详情', action: () => alert(details.join('\n')) },
+          { text: '编辑课程', action: () => editCourseSlot(event.id) },
+          { text: '取消课程', action: () => cancelCourseSlot(event.id) },
+          { text: '关闭', action: () => {} }
+        ];
+        showActionMenu(actions, '课程管理');
+        return;
+      }
+    }
+    
+    alert(details.join('\n'));
+  }
+}
+
+// 从日历预约课程
+async function bookSlotFromCalendar(slotId, note) {
+  const res = await callAPI('bookSlot', { 
+    slotId, 
+    studentId: currentUser.userId, 
+    studentName: currentUser.name || '', 
+    note: note || '' 
+  });
+  
+  if (res && res.success) { 
+    alert('预约成功'); 
+    loadCalendarEvents(); 
+  } else { 
+    alert((res && res.message) || '预约失败'); 
+  }
+}
+
+// 编辑日程记录
+function editScheduleRecord(recordId, ext) {
+  // 这里可以打开编辑对话框，预填现有数据
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-overlay';
+  dialog.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>编辑日程记录</h3>
+        <button class="modal-close" onclick="closeModal(this)">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label>标题</label>
+          <input type="text" id="editScheduleTitle" value="${ext.title || ''}" placeholder="日程标题">
+        </div>
+        <div class="form-row">
+          <label>备注</label>
+          <textarea id="editScheduleNotes" rows="3" placeholder="日程备注...">${ext.notes || ''}</textarea>
+        </div>
+        <div class="form-row">
+          <label>状态</label>
+          <select id="editScheduleStatus">
+            <option value="已安排" ${ext.status === '已安排' ? 'selected' : ''}>已安排</option>
+            <option value="进行中" ${ext.status === '进行中' ? 'selected' : ''}>进行中</option>
+            <option value="已完成" ${ext.status === '已完成' ? 'selected' : ''}>已完成</option>
+            <option value="已取消" ${ext.status === '已取消' ? 'selected' : ''}>已取消</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal(this)">取消</button>
+        <button class="btn btn-primary" onclick="updateScheduleRecord('${recordId}')">保存</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(dialog);
+}
+
+// 更新日程记录
+async function updateScheduleRecord(recordId) {
+  const title = $('editScheduleTitle').value.trim();
+  const notes = $('editScheduleNotes').value.trim();
+  const status = $('editScheduleStatus').value;
+  
+  if (!title) {
+    alert('请填写标题');
+    return;
+  }
+  
+  const params = {
+    recordId,
+    title,
+    notes,
+    status
+  };
+  
+  try {
+    const res = await callAPI('updateScheduleRecord', params);
+    if (res && res.success) {
+      alert('更新成功！');
+      closeModal(document.querySelector('.modal-close'));
+      loadCalendarEvents();
+    } else {
+      alert('更新失败：' + (res && res.message || '未知错误'));
+    }
+  } catch (error) {
+    alert('更新失败：网络错误');
+  }
+}
+
+// 删除日程记录
+async function deleteScheduleRecord(recordId) {
+  if (!confirm('确定要删除这个日程记录吗？')) {
+    return;
+  }
+  
+  try {
+    const res = await callAPI('deleteScheduleRecord', { recordId });
+    if (res && res.success) {
+      alert('删除成功！');
+      loadCalendarEvents();
+    } else {
+      alert('删除失败：' + (res && res.message || '未知错误'));
+    }
+  } catch (error) {
+    alert('删除失败：网络错误');
+  }
+}
+
+// 编辑课程槽位（简化版本）
+function editCourseSlot(slotId) {
+  alert('课程编辑功能开发中...\n槽位ID: ' + slotId);
+}
+
+// 取消课程槽位
+async function cancelCourseSlot(slotId) {
+  if (!confirm('确定要取消这个课程安排吗？')) {
+    return;
+  }
+  
+  try {
+    const res = await callAPI('cancelBooking', { slotId, userId: currentUser.userId, force: true });
+    if (res && res.success) {
+      alert('课程已取消');
+      loadCalendarEvents();
+    } else {
+      alert('取消失败：' + (res && res.message || '未知错误'));
+    }
+  } catch (error) {
+    alert('取消失败：网络错误');
+  }
+}
+
+// 显示当日统计
+function showDayStatistics(date) {
+  alert(`${date} 当日统计功能开发中...`);
+}
+
+// 显示当日安排
+function showDaySchedule(date) {
+  alert(`${date} 当日安排功能开发中...`);
+}
 /* ================== 数据分析 ================== */
 let allStudents = []; let selectedStudents = [];
 

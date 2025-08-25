@@ -1,6 +1,27 @@
 /* =============== 基础配置（按你现有 API） =============== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbybAvJ1PChJbu2WofPrj2-IrZ4Ro07mBlQQ7TymJRtadT0UiXfL1jQbcc3yYuXHaXw/exec';
 
+// 所属 → 专业（学科逻辑顺序，互不混合）
+const MAJOR_OPTIONS = {
+  '理科大学院': [
+    '机械',        // 工学基础
+    '电子电器',    // 电气/信息硬件
+    '生物化学',    // 生命理学
+    '情报学'       // 信息学（软件/数据）
+  ],
+  '文科大学院': [
+    '文学',
+    '历史学',
+    '社会学',
+    '社会福祉学',
+    '新闻传播学',
+    '表象文化',
+    '经营学',
+    '经济学',
+    '日本语教育'
+  ]
+};
+
 /* =============== 小工具 =============== */
 const $ = (id) => document.getElementById(id);
 function setApiStatus({ok, text}) {
@@ -147,19 +168,41 @@ async function registerUser() {
   const name = ($('registerName').value||'').trim();
   const email = ($('registerEmail').value||'').trim();
   const department = $('registerDepartment').value;
-  const major = ($('registerMajor').value||'').trim();
+  // —— 采集“专业”：文/理 → 下拉；其他 → 自由填写 —— //
+  const majorSel  = document.getElementById('registerMajorSelect');
+  const majorFree = document.getElementById('registerMajorFree');
+  const major = (department === '其他')
+    ? (majorFree ? majorFree.value.trim() : '')
+    : (majorSel  ? majorSel.value.trim()  : '');
+
+  // —— 校验 —— //
+  if (!name || !email || !department || !role) {
+    err.textContent = '请填写姓名、邮箱、所属、身份';
+    return;
+  }
+  if (department === '其他' && !major) {
+    err.textContent = '所属为“其他”时，请填写专业'; return;
+  }
+  if (department !== '其他' && !major) {
+    err.textContent = '请选择一个专业'; return;
+  }
   const role = $('registerRole').value;
   const err = $('registerError');
   if (!name || !email || !department || !major || !role) { err.textContent='请填写姓名、邮箱、所属、专业、身份'; return; }
   err.style.color=''; err.textContent='正在登记…';
   const r = await callAPI('registerByProfile', { name, email, department, major, role });
   if (r && r.success) {
-    err.style.color='green'; err.textContent='登记成功！联系老师获取“用户ID”后用用户ID登录。';
-    $('registerName').value=''; $('registerEmail').value=''; $('registerDepartment').value='';
-    $('registerMajor').value=''; $('registerRole').value='';
-    setTimeout(showLoginForm, 1000);
+    err.style.color = 'green';
+    // —— 成功提示：老师/学生分开 —— //
+    if ((role || '').indexOf('老师') > -1) {
+      err.textContent = '已完成注册，等待管理员分配用户ID';
+    } else {
+      err.textContent = '已完成注册，等待老师分配ID';
+    }
+    // （是否清空表单、是否跳回登录，按你原有代码保留）
   } else {
-    err.style.color='#c00'; err.textContent=(r && r.message) || '登记失败';
+    err.style.color = '#c00';
+    err.textContent = (r && r.message) ? r.message : '登记失败（无返回信息）';
   }
 }
 function logout() {
@@ -172,27 +215,6 @@ function logout() {
   try{ window.location.hash = '#login'; }catch{}
   checkApiHealth();  
 }
-
-// 所属 → 专业（独立列表；已按学科逻辑顺序排列）
-const MAJOR_OPTIONS = {
-  '理科大学院': [
-    '机械',          // 工学基础
-    '电子电器',      // 电气/信息硬件
-    '生物化学',      // 生命理学
-    '情报学'         // 信息学（软件/数据）
-  ],
-  '文科大学院': [
-    '文学',
-    '历史学',
-    '社会学',
-    '社会福祉学',
-    '新闻传播学',
-    '表象文化',
-    '经营学',
-    '经济学',
-    '日本语教育'
-  ]
-};
 
 /* =============== 角色导航与页面切换 =============== */
 /** 管理员别名：侧栏 data-page -> 实际页面ID */
@@ -330,6 +352,43 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('showRegisterBtn')?.addEventListener('click', showRegisterForm);
   $('showLoginBtn')?.addEventListener('click', showLoginForm);
   $('loginUsername')?.addEventListener('keypress', (e)=>{ if (e.key==='Enter') login(); });
+
+  // —— 注册表单：所属部门 → 专业 联动（极简，不记历史）——
+  (function () {
+    const depSel    = document.getElementById('registerDepartment');
+    const majorSel  = document.getElementById('registerMajorSelect'); // 下拉
+    const majorFree = document.getElementById('registerMajorFree');   // 自由填写
+    if (!depSel || !majorSel || !majorFree) return;
+
+    const fill = (arr) => {
+      majorSel.innerHTML =
+        '<option value="">选择专业</option>' +
+        (arr || []).map(v => `<option value="${v}">${v}</option>`).join('');
+    };
+
+    const apply = () => {
+      const dep = depSel.value || '';
+      const list = MAJOR_OPTIONS[dep];
+      if (Array.isArray(list) && list.length) {
+        // 文/理：使用下拉
+        majorFree.style.display = 'none';
+        majorSel.style.display  = '';
+        fill(list);
+        majorSel.value = '';      // 每次切换都要求重新选择
+        majorFree.value = '';     // 清空自由输入的残留
+      } else {
+        // 其他：只允许自由填写
+        majorSel.style.display  = 'none';
+        majorFree.style.display = '';
+        majorSel.innerHTML = '<option value="">选择专业</option>'; // 清空下拉
+        majorSel.value = '';
+        majorFree.value = '';     // 切换到“其他”时也清空
+      }
+    };
+
+    apply();
+    depSel.addEventListener('change', apply);
+  })();
 
   // API 健康检查
   setApiStatus({ok:null, text:'API 检测中'});

@@ -369,40 +369,113 @@ function updateCalendarTitle() {
 }
 
 async function loadCalendarEvents() {
-  if (!currentUser || !calendar) return;
+  if (!currentUser || !calendar) {
+    console.log('用户未登录或日历未初始化');
+    return;
+  }
+  
   try {
-    console.log('正在加载日历事件...', currentUser.userId);
-    const events = await callAPI('listVisibleSlots', { userId: currentUser.userId });
+    console.log('开始加载日历事件，用户ID:', currentUser.userId);
     
+    // 清空现有事件
     calendar.removeAllEvents();
     
-    if (Array.isArray(events)) {
-      console.log('收到事件数据:', events.length, '条');
-      
-      // 检查事件格式并适配
-      const fcEvents = (events[0] && (events[0].start || events[0].startStr))
-        ? events  // 已经是FullCalendar格式
-        : adaptEvents(events); // 需要适配
-      
-      console.log('适配后事件:', fcEvents.length, '条');
-      
-      fcEvents.forEach((ev, index) => {
-        try {
-          calendar.addEvent(ev);
-          console.log(`添加事件 ${index + 1}:`, ev.title, ev.start);
-        } catch (e) {
-          console.error('添加事件失败:', e, ev);
-        }
-      });
-      
-      console.log('日历事件加载完成');
-    } else {
-      console.log('未收到有效事件数据:', events);
+    // 调用API获取数据
+    const result = await callAPI('listVisibleSlots', { userId: currentUser.userId });
+    console.log('API调用结果:', result);
+    
+    if (!result) {
+      console.log('API返回空结果');
+      return;
     }
     
+    // 处理不同的返回格式
+    let events = [];
+    if (Array.isArray(result)) {
+      events = result;
+    } else if (result.success && Array.isArray(result.data)) {
+      events = result.data;
+    } else if (result.success && result.events) {
+      events = result.events;
+    } else {
+      console.log('无法识别的API返回格式:', result);
+      return;
+    }
+    
+    console.log('待处理事件数量:', events.length);
+    
+    if (events.length === 0) {
+      console.log('没有事件数据');
+      updateTodayStats();
+      return;
+    }
+    
+    // 处理每个事件
+    events.forEach((eventData, index) => {
+      try {
+        console.log(`处理事件 ${index + 1}:`, eventData);
+        
+        // 直接使用数据，不再适配
+        let calendarEvent;
+        
+        if (eventData.start && eventData.title) {
+          // 已经是FullCalendar格式
+          calendarEvent = eventData;
+        } else {
+          // 需要转换格式
+          const date = eventData.date || eventData.singleDate || '';
+          const startTime = eventData.startTime || eventData.start_time || '';
+          const endTime = eventData.endTime || eventData.end_time || '';
+          
+          if (!date || !startTime) {
+            console.log(`事件 ${index + 1} 缺少必要字段，跳过:`, {date, startTime});
+            return;
+          }
+          
+          const start = `${date}T${startTime.padStart(5, '0')}:00`;
+          const end = endTime ? `${date}T${endTime.padStart(5, '0')}:00` : start;
+          
+          // 根据课程属性设置颜色
+          let backgroundColor = '#1976d2'; // 默认蓝色
+          if (eventData.attr === '大课') backgroundColor = '#1976d2';
+          else if (eventData.attr === 'VIP') backgroundColor = '#d32f2f';
+          else if (eventData.attr === '面谈') backgroundColor = '#388e3c';
+          
+          calendarEvent = {
+            id: eventData.id || eventData.slotId || `event-${index}`,
+            title: eventData.title || eventData.courseName || eventData.attr || '未命名课程',
+            start: start,
+            end: end,
+            backgroundColor: backgroundColor,
+            borderColor: backgroundColor,
+            textColor: '#fff',
+            extendedProps: {
+              type: 'course',
+              attr: eventData.attr || '',
+              status: eventData.status || '',
+              canBook: eventData.canBook || false,
+              teacherId: eventData.teacherId || ''
+            }
+          };
+        }
+        
+        console.log(`添加到日历的事件 ${index + 1}:`, calendarEvent);
+        calendar.addEvent(calendarEvent);
+        
+      } catch (error) {
+        console.error(`处理事件 ${index + 1} 时出错:`, error, eventData);
+      }
+    });
+    
+    console.log(`成功加载 ${events.length} 个日历事件`);
+    
+    // 强制重新渲染日历
+    calendar.render();
+    
     updateTodayStats();
-  } catch (e) { 
-    console.error('加载槽位失败:', e); 
+    
+  } catch (error) {
+    console.error('加载日历事件失败:', error);
   }
 }
 

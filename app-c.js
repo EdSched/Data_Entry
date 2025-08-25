@@ -315,19 +315,183 @@ function updateCalendarTitle() {
   }
 }
 
+/* ================== 更新的日历功能 ================== */
+
+// 更新日历数据加载函数
 async function loadCalendarEvents() {
   if (!currentUser || !calendar) return;
+  
   try {
-    const events = await callAPI('listVisibleSlots', { userId: currentUser.userId });
+    // 获取当前日历视图的日期范围
+    const view = calendar.view;
+    const startDate = formatDateForAPI(view.currentStart);
+    const endDate = formatDateForAPI(view.currentEnd);
+    
+    // 调用新的课程日历API
+    const events = await callAPI('getCourseCalendarEvents', { 
+      userId: currentUser.userId,
+      startDate: startDate,
+      endDate: endDate
+    });
+    
+    // 清除现有事件
     calendar.removeAllEvents();
+    
+    // 添加新事件
     if (Array.isArray(events)) {
-      events.forEach(ev => calendar.addEvent(ev));
+      events.forEach(event => {
+        calendar.addEvent(event);
+      });
     }
+    
+    updateTodayStats();
+    
   } catch (e) { 
-    console.error('加载槽位失败:', e); 
+    console.error('加载课程日历失败:', e); 
   }
 }
 
+// 格式化日期用于API调用
+function formatDateForAPI(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+// 更新事件点击处理
+function handleEventClick(info) {
+  const event = info.event;
+  const props = event.extendedProps || {};
+  
+  // 构建弹窗内容
+  const details = [];
+  details.push(`课程名: ${event.title}`);
+  
+  // 格式化时间显示
+  const startTime = event.start;
+  if (startTime) {
+    const timeStr = startTime.toLocaleString('zh-CN', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    });
+    const endTime = event.end ? event.end.toLocaleString('zh-CN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false
+    }) : '';
+    
+    details.push(`时间: ${timeStr}${endTime ? '–' + endTime : ''}`);
+  }
+  
+  // 任课老师（有才显示）
+  if (props.teacher) {
+    details.push(`任课老师: ${props.teacher}`);
+  }
+  
+  // 槽位ID（便于回表定位）
+  if (props.slotId) {
+    details.push(`槽位ID: ${props.slotId}`);
+  }
+  
+  alert(details.join('\n'));
+}
+
+// 更新日历视图变化时的数据重新加载
+function changeView(viewName, activeBtn) {
+  if (!calendar) return;
+  
+  calendar.changeView(viewName);
+  
+  // 更新按钮状态
+  ['dayBtn','weekBtn','monthBtn'].forEach(id => { 
+    const b = $(id); 
+    if(b) b.classList.remove('active'); 
+  });
+  if (activeBtn) activeBtn.classList.add('active');
+  
+  // 更新标题
+  updateCalendarTitle();
+  
+  // 重新加载数据（因为视图范围改变了）
+  setTimeout(() => {
+    loadCalendarEvents();
+  }, 100);
+}
+
+// 在日历初始化后绑定视图变化监听
+function initCalendar() {
+  const el = $('mainCalendar'); 
+  if (!el) return;
+  
+  const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
+  calendar = new FullCalendar.Calendar(el, {
+    initialView, 
+    locale: 'zh-cn', 
+    firstDay: 1, 
+    height: 'auto',
+    headerToolbar: false, 
+    allDaySlot: false,
+    slotMinTime:'08:00:00', 
+    slotMaxTime:'22:00:00', 
+    slotDuration:'00:30:00', 
+    expandRows:true,
+    datesSet: function(info) {
+      // 当日历视图日期范围改变时，重新加载数据
+      updateCalendarTitle();
+      if (currentUser) {
+        setTimeout(() => {
+          loadCalendarEvents();
+        }, 50);
+      }
+    },
+    eventClick: handleEventClick
+  });
+  
+  // 绑定日历控制按钮
+  const prevBtn = $('prevBtn');
+  const nextBtn = $('nextBtn');
+  const todayBtn = $('todayBtn');
+  const dayBtn = $('dayBtn');
+  const weekBtn = $('weekBtn');
+  const monthBtn = $('monthBtn');
+  const refreshBtn = $('refreshDataBtn');
+  
+  if (prevBtn) prevBtn.onclick = () => calendar.prev();
+  if (nextBtn) nextBtn.onclick = () => calendar.next();
+  if (todayBtn) todayBtn.onclick = () => calendar.today();
+  if (dayBtn) dayBtn.onclick = () => changeView('timeGridDay', dayBtn);
+  if (weekBtn) weekBtn.onclick = () => changeView('timeGridWeek', weekBtn);
+  if (monthBtn) monthBtn.onclick = () => changeView('dayGridMonth', monthBtn);
+  if (refreshBtn) refreshBtn.onclick = refreshData;
+
+  calendar.render();
+  updateCalendarTitle();
+  
+  // 初次加载数据
+  if (currentUser) {
+    loadCalendarEvents();
+  }
+}
+
+// 刷新数据函数
+function refreshData() { 
+  loadCalendarEvents(); 
+}
+
+// 更新今日统计（简化版）
+function updateTodayStats(){
+  // 这里可以根据加载的事件数据统计今日课程数量
+  // 暂时保持原有的占位数据
+  $('todayCourses').textContent = $('todayCourses').textContent || '0';
+  $('todayConsultations').textContent = $('todayConsultations').textContent || '0';
+  $('todayReminders').textContent = $('todayReminders').textContent || '0';
+  $('attendanceRate').textContent = $('attendanceRate').textContent || '—';
+}
 function handleEventClick(info) {
   const ev = info.event;
   alert(`事件: ${ev.title}\n时间: ${ev.start.toLocaleString('zh-CN')}`);

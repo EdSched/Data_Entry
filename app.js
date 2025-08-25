@@ -165,46 +165,85 @@ async function login() {
   }
 }
 async function registerUser() {
-  const name = ($('registerName').value||'').trim();
-  const email = ($('registerEmail').value||'').trim();
-  const department = $('registerDepartment').value;
-  // —— 采集“专业”：文/理 → 下拉；其他 → 自由填写 —— //
-  const majorSel  = document.getElementById('registerMajorSelect');
-  const majorFree = document.getElementById('registerMajorFree');
-  const major = (department === '其他')
-    ? (majorFree ? majorFree.value.trim() : '')
-    : (majorSel  ? majorSel.value.trim()  : '');
+  // 统一先取“错误提示区”和“身份”，避免后面引用未定义
+  const err  = $('registerError');
+  const role = ($('registerRole')?.value || '').trim(); // 学生 / 老师
 
-  // —— 校验 —— //
-  if (!name || !email || !department || !role) {
-    err.textContent = '请填写姓名、邮箱、所属、身份';
-    return;
-  }
-  if (department === '其他' && !major) {
-    err.textContent = '所属为“其他”时，请填写专业'; return;
-  }
-  if (department !== '其他' && !major) {
-    err.textContent = '请选择一个专业'; return;
-  }
-  const role = $('registerRole').value;
-  const err = $('registerError');
-  if (!name || !email || !department || !major || !role) { err.textContent='请填写姓名、邮箱、所属、专业、身份'; return; }
-  err.style.color=''; err.textContent='正在登记…';
-  const r = await callAPI('registerByProfile', { name, email, department, major, role });
-  if (r && r.success) {
-    err.style.color = 'green';
-    // —— 成功提示：老师/学生分开 —— //
-    if ((role || '').indexOf('老师') > -1) {
-      err.textContent = '已完成注册，等待管理员分配用户ID';
-    } else {
-      err.textContent = '已完成注册，等待老师分配ID';
+  try {
+    // 基本字段
+    const name = ($('registerName')?.value || '').trim();
+    const email = ($('registerEmail')?.value || '').trim();
+    const department = $('registerDepartment')?.value || ''; // 文科大学院 / 理科大学院 / 其他
+
+    // —— 专业：文/理 → 下拉；其他 → 自由填写 —— //
+    const majorSel  = document.getElementById('registerMajorSelect'); // 下拉
+    const majorFree = document.getElementById('registerMajorFree');   // 自由填
+    const major = (department === '其他')
+      ? (majorFree ? majorFree.value.trim() : '')
+      : (majorSel  ? majorSel.value.trim()  : '');
+
+    // —— 校验（按你的规则）—— //
+    if (!name || !email || !department || !role) {
+      err.style.color = '#c00';
+      err.textContent = '请填写姓名、邮箱、所属、身份';
+      return;
     }
-    // （是否清空表单、是否跳回登录，按你原有代码保留）
-  } else {
+    if (department === '其他') {
+      if (!major) {
+        err.style.color = '#c00';
+        err.textContent = '所属为“其他”时，请填写专业';
+        return;
+      }
+    } else {
+      if (!major) {
+        err.style.color = '#c00';
+        err.textContent = '请选择一个专业';
+        return;
+      }
+      // 若存在 MAJOR_OPTIONS，做一次白名单校验，防止手改 DOM 传错值
+      if (typeof MAJOR_OPTIONS === 'object' && Array.isArray(MAJOR_OPTIONS[department])) {
+        const allow = MAJOR_OPTIONS[department];
+        if (!allow.includes(major)) {
+          err.style.color = '#c00';
+          err.textContent = '专业选项非法，请从下拉列表中选择';
+          return;
+        }
+      }
+    }
+
+    // —— 提交 —— //
+    err.style.color = '';
+    err.textContent = '正在登记…';
+    const res = await callAPI('registerByProfile', { name, email, department, major, role });
+
+    if (res && res.success) {
+      // 成功提示：老师/学生分开
+      err.style.color = 'green';
+      if (role.includes('老师')) {
+        err.textContent = '已完成注册，等待管理员分配用户ID';
+      } else {
+        err.textContent = '已完成注册，等待老师分配ID';
+      }
+
+      // 可选：清空表单（保留你的视觉/流程，不自动跳转）
+      // $('registerName').value = '';
+      // $('registerEmail').value = '';
+      // $('registerDepartment').value = '';
+      // if (majorSel) majorSel.value = '';
+      // if (majorFree) majorFree.value = '';
+      // $('registerRole').value = '';
+    } else {
+      err.style.color = '#c00';
+      err.textContent = (res && res.message) ? res.message : '登记失败（无返回信息）';
+    }
+  } catch (e) {
+    // 兜底报错：不再“点了没反应”
     err.style.color = '#c00';
-    err.textContent = (r && r.message) ? r.message : '登记失败（无返回信息）';
+    err.textContent = '登记失败：' + (e?.message || String(e));
+    console.error('[registerUser] error:', e);
   }
 }
+
 function logout() {
   currentUser = null;
   $('mainApp').style.display = 'none';

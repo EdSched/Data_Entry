@@ -31,7 +31,18 @@
           <option value="理科大学院">理科大学院</option>
           <option value="其他">其他</option>
         </select>
-        <input type="text" id="registerMajor" placeholder="专业" />
+        <!-- 专业（下拉/自由二选一，随所属部门联动） -->
+<div id="majorRow">
+  <!-- 下拉：当所属部门 = 文科大学院 / 理科大学院 时使用 -->
+  <select id="registerMajorSelect">
+    <option value="">选择专业</option>
+    <!-- 选项由 JS 动态填入 -->
+  </select>
+
+  <!-- 自由填写：当所属部门 = 其他 时显示 -->
+  <input type="text" id="registerMajorFree" placeholder="专业（自由填写）" style="display:none;" />
+</div>
+        
         <select id="registerRole">
           <option value="">选择身份</option>
           <option value="学生">学生</option>

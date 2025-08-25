@@ -89,6 +89,21 @@ async function callAPI(action, params = {}) {
     return { success:false, message:'网络请求失败: ' + err.message };
   }
 }
+async function checkApiHealth() {
+  setApiStatus({ok:null, text:'API 检测中'});
+  try {
+    const [r1, r2] = await Promise.allSettled([
+      callAPI('testConnection'),
+      callAPI('ping', { t: Date.now() })
+    ]);
+    const ok = (r1.value && r1.value.success) || (r2.value && r2.value.success);
+    setApiStatus({ ok, text: ok ? 'API 连接成功' : 'API 连接异常' });
+    return ok;
+  } catch (e) {
+    setApiStatus({ ok:false, text:'API 连接失败' });
+    return false;
+  }
+}
 
 /* =============== 全局状态 =============== */
 let currentUser = null;
@@ -155,6 +170,7 @@ function logout() {
   $('loginError').textContent = '';
   setApiStatus({ok:null, text:'API 检测中'});
   try{ window.location.hash = '#login'; }catch{}
+  checkApiHealth();  
 }
 
 /* =============== 角色导航与页面切换 =============== */

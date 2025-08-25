@@ -383,7 +383,414 @@ function updateTodayStats(){
   $('todayReminders').textContent = $('todayReminders').textContent || '0';
   $('attendanceRate').textContent = $('attendanceRate').textContent || '—';
 }
+/* ================== 日历点击填写功能 ================== */
 
+// 在initCalendar函数中添加dateClick事件
+function initCalendar() {
+  const el = $('mainCalendar'); if (!el) return;
+  const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
+  calendar = new FullCalendar.Calendar(el, {
+    initialView, locale: 'zh-cn', firstDay: 1, height: 'auto',
+    headerToolbar: false, allDaySlot: false,
+    slotMinTime:'08:00:00', slotMaxTime:'22:00:00', slotDuration:'00:30:00', expandRows:true,
+    selectable: true, // 启用选择功能
+    selectMirror: true,
+    datesSet: updateCalendarTitle,
+    eventClick: handleEventClick,
+    dateClick: handleDateClick, // 新增：处理空白日期点击
+    select: handleDateSelect // 新增：处理时间段选择
+  });
+  
+  $('prevBtn').onclick = () => calendar.prev();
+  $('nextBtn').onclick = () => calendar.next();
+  $('todayBtn').onclick = () => calendar.today();
+  $('dayBtn').onclick = () => changeView('timeGridDay', $('dayBtn'));
+  $('weekBtn').onclick = () => changeView('timeGridWeek', $('weekBtn'));
+  $('monthBtn').onclick = () => changeView('dayGridMonth', $('monthBtn'));
+  $('refreshDataBtn').onclick = refreshData;
+
+  calendar.render();
+  updateCalendarTitle();
+  loadCalendarEvents();
+}
+
+// 处理空白日期点击
+function handleDateClick(info) {
+  if (!currentUser) return;
+  
+  const userRole = getUserRole(currentUser.userId);
+  const clickedDate = info.dateStr.split('T')[0]; // 获取日期部分
+  const clickedTime = info.dateStr.includes('T') ? info.dateStr.split('T')[1].substring(0,5) : '09:00';
+  
+  // 根据用户角色显示不同的操作选项
+  if (userRole === 'student') {
+    showStudentQuickActions(clickedDate, clickedTime);
+  } else if (userRole === 'teacher' || userRole === 'admin') {
+    showTeacherQuickActions(clickedDate, clickedTime);
+  }
+}
+
+// 处理时间段选择
+function handleDateSelect(info) {
+  if (!currentUser) return;
+  
+  const userRole = getUserRole(currentUser.userId);
+  const startDate = info.startStr.split('T')[0];
+  const startTime = info.startStr.includes('T') ? info.startStr.split('T')[1].substring(0,5) : '09:00';
+  const endTime = info.endStr.includes('T') ? info.endStr.split('T')[1].substring(0,5) : '10:00';
+  
+  if (userRole === 'teacher' || userRole === 'admin') {
+    showQuickPublishDialog(startDate, startTime, endTime);
+  }
+  
+  // 清除选择
+  calendar.unselect();
+}
+
+// 学生快速操作
+function showStudentQuickActions(date, time) {
+  const actions = [
+    { text: '添加学习记录', action: () => showStudentRecordForm(date, time) },
+    { text: '查看当日安排', action: () => showDaySchedule(date) },
+    { text: '取消', action: () => {} }
+  ];
+  
+  showActionMenu(actions, '学生操作');
+}
+
+// 老师快速操作
+function showTeacherQuickActions(date, time) {
+  const actions = [
+    { text: '快速发布课程', action: () => showQuickPublishDialog(date, time, addMinutesToTime(time, 60)) },
+    { text: '添加日程记录', action: () => showScheduleForm(date, time) },
+    { text: '查看当日统计', action: () => showDayStatistics(date) },
+    { text: '取消', action: () => {} }
+  ];
+  
+  showActionMenu(actions, '老师操作');
+}
+
+// 显示操作菜单
+function showActionMenu(actions, title) {
+  const menu = document.createElement('div');
+  menu.className = 'action-menu-overlay';
+  menu.innerHTML = `
+    <div class="action-menu">
+      <div class="action-menu-header">${title}</div>
+      <div class="action-menu-body">
+        ${actions.map((action, index) => `
+          <button class="action-menu-item ${index === actions.length - 1 ? 'cancel' : ''}" data-index="${index}">
+            ${action.text}
+          </button>
+        `).join('')}
+      </div>
+    </div>
+  `;
+  
+  // 绑定点击事件
+  menu.addEventListener('click', function(e) {
+    if (e.target.classList.contains('action-menu-item')) {
+      const index = parseInt(e.target.dataset.index);
+      actions[index].action();
+      document.body.removeChild(menu);
+    } else if (e.target === menu) {
+      document.body.removeChild(menu);
+    }
+  });
+  
+  document.body.appendChild(menu);
+}
+
+// 快速发布对话框
+function showQuickPublishDialog(date, startTime, endTime) {
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-overlay';
+  dialog.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>快速发布课程</h3>
+        <button class="modal-close" onclick="closeModal(this)">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label>日期时间</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="date" id="quickDate" value="${date}">
+            <input type="time" id="quickStartTime" value="${startTime}">
+            <span>至</span>
+            <input type="time" id="quickEndTime" value="${endTime}">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>课程属性</label>
+          <select id="quickAttr">
+            <option value="VIP">VIP（可约）</option>
+            <option value="面谈">面谈（可约）</option>
+            <option value="大课">大课（只读）</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>课程名称</label>
+          <input type="text" id="quickCourseName" placeholder="课程名称（大课必填）">
+        </div>
+        <div class="form-row">
+          <label>备注</label>
+          <textarea id="quickNotes" rows="2" placeholder="课程备注..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal(this)">取消</button>
+        <button class="btn btn-primary" onclick="submitQuickPublish()">发布</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(dialog);
+}
+
+// 学生记录表单
+function showStudentRecordForm(date, time) {
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-overlay';
+  dialog.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>添加学习记录</h3>
+        <button class="modal-close" onclick="closeModal(this)">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label>日期时间</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="date" id="recordDate" value="${date}">
+            <input type="time" id="recordTime" value="${time}">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>记录类型</label>
+          <select id="recordType">
+            <option value="学习进度">学习进度</option>
+            <option value="作业完成">作业完成</option>
+            <option value="复习计划">复习计划</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>标题</label>
+          <input type="text" id="recordTitle" placeholder="记录标题">
+        </div>
+        <div class="form-row">
+          <label>详细内容</label>
+          <textarea id="recordContent" rows="4" placeholder="详细描述..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal(this)">取消</button>
+        <button class="btn btn-primary" onclick="submitStudentRecord()">保存</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(dialog);
+}
+
+// 日程记录表单（老师用）
+function showScheduleForm(date, time) {
+  const dialog = document.createElement('div');
+  dialog.className = 'modal-overlay';
+  dialog.innerHTML = `
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>添加日程记录</h3>
+        <button class="modal-close" onclick="closeModal(this)">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <label>日期时间</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="date" id="scheduleDate" value="${date}">
+            <input type="time" id="scheduleStartTime" value="${time}">
+            <span>至</span>
+            <input type="time" id="scheduleEndTime" value="${addMinutesToTime(time, 60)}">
+          </div>
+        </div>
+        <div class="form-row">
+          <label>日程类型</label>
+          <select id="scheduleType">
+            <option value="会议">会议</option>
+            <option value="准备工作">准备工作</option>
+            <option value="个人事务">个人事务</option>
+            <option value="其他">其他</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label>标题</label>
+          <input type="text" id="scheduleTitle" placeholder="日程标题">
+        </div>
+        <div class="form-row">
+          <label>备注</label>
+          <textarea id="scheduleNotes" rows="3" placeholder="日程备注..."></textarea>
+        </div>
+        <div class="form-row">
+          <label>可见性</label>
+          <select id="scheduleVisibility">
+            <option value="private">仅自己可见</option>
+            <option value="department">部门可见</option>
+            <option value="public">公开可见</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" onclick="closeModal(this)">取消</button>
+        <button class="btn btn-primary" onclick="submitScheduleRecord()">保存</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(dialog);
+}
+
+// 工具函数：时间加减
+function addMinutesToTime(timeStr, minutes) {
+  const [hours, mins] = timeStr.split(':').map(Number);
+  const totalMins = hours * 60 + mins + minutes;
+  const newHours = Math.floor(totalMins / 60) % 24;
+  const newMins = totalMins % 60;
+  return `${String(newHours).padStart(2, '0')}:${String(newMins).padStart(2, '0')}`;
+}
+
+// 关闭模态框
+function closeModal(button) {
+  const modal = button.closest('.modal-overlay');
+  if (modal && modal.parentNode) {
+    modal.parentNode.removeChild(modal);
+  }
+}
+
+// 提交快速发布
+async function submitQuickPublish() {
+  const date = $('quickDate').value;
+  const startTime = $('quickStartTime').value;
+  const endTime = $('quickEndTime').value;
+  const attr = $('quickAttr').value;
+  const courseName = $('quickCourseName').value.trim();
+  
+  if (!date || !startTime || !endTime) {
+    alert('请填写完整的日期和时间');
+    return;
+  }
+  
+  if (attr === '大课' && !courseName) {
+    alert('大课必须填写课程名称');
+    return;
+  }
+  
+  const params = {
+    teacherId: currentUser.userId,
+    attr,
+    courseName,
+    mode: 'single',
+    date,
+    startTime,
+    endTime,
+    majors: '', // 默认全专业
+    visibleStudentIds: ''
+  };
+  
+  try {
+    const res = await callAPI('publishSlots', params);
+    if (res && res.success) {
+      alert('快速发布成功！');
+      closeModal(document.querySelector('.modal-close'));
+      loadCalendarEvents();
+    } else {
+      alert('发布失败：' + (res && res.message || '未知错误'));
+    }
+  } catch (error) {
+    alert('发布失败：网络错误');
+  }
+}
+
+// 提交学生记录
+async function submitStudentRecord() {
+  const date = $('recordDate').value;
+  const time = $('recordTime').value;
+  const type = $('recordType').value;
+  const title = $('recordTitle').value.trim();
+  const content = $('recordContent').value.trim();
+  
+  if (!date || !title) {
+    alert('请填写日期和标题');
+    return;
+  }
+  
+  const params = {
+    userId: currentUser.userId,
+    type: 'schedule',
+    title,
+    date,
+    starttime: time,
+    endtime: addMinutesToTime(time, 30),
+    creator: currentUser.userId,
+    notes: content,
+    schedulestatus: '个人记录',
+    visiblegroups: 'private'
+  };
+  
+  try {
+    const res = await callAPI('addScheduleRecord', params);
+    if (res && res.success) {
+      alert('记录保存成功！');
+      closeModal(document.querySelector('.modal-close'));
+      loadCalendarEvents();
+    } else {
+      alert('保存失败：' + (res && res.message || '未知错误'));
+    }
+  } catch (error) {
+    alert('保存失败：网络错误');
+  }
+}
+
+// 提交日程记录
+async function submitScheduleRecord() {
+  const date = $('scheduleDate').value;
+  const startTime = $('scheduleStartTime').value;
+  const endTime = $('scheduleEndTime').value;
+  const type = $('scheduleType').value;
+  const title = $('scheduleTitle').value.trim();
+  const notes = $('scheduleNotes').value.trim();
+  const visibility = $('scheduleVisibility').value;
+  
+  if (!date || !startTime || !endTime || !title) {
+    alert('请填写完整信息');
+    return;
+  }
+  
+  const params = {
+    type: 'schedule',
+    title,
+    date,
+    starttime: startTime,
+    endtime: endTime,
+    creator: currentUser.userId,
+    notes,
+    schedulestatus: type,
+    visiblegroups: visibility
+  };
+  
+  try {
+    const res = await callAPI('addScheduleRecord', params);
+    if (res && res.success) {
+      alert('日程保存成功！');
+      closeModal(document.querySelector('.modal-close'));
+      loadCalendarEvents();
+    } else {
+      alert('保存失败：' + (res && res.message || '未知错误'));
+    }
+  } catch (error) {
+    alert('保存失败：网络错误');
+  }
+}
 /* ================== 课程发布 ================== */
 /* ================== 课程发布相关变量 ================== */
 let allStudentsForSearch = []; // 用于搜索的学生列表

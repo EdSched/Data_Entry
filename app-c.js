@@ -385,53 +385,359 @@ function updateTodayStats(){
 }
 
 /* ================== 课程发布 ================== */
+/* ================== 课程发布相关变量 ================== */
+let allStudentsForSearch = []; // 用于搜索的学生列表
+let selectedStudentsForPublish = []; // 选中的特定学生
+
+/* ================== 课程发布 ================== */
 function bindArrangePanel() {
   const pubMode = $('pubMode'), singleDateRow = $('singleDateRow'), rangeRows = $('rangeRows');
+  
+  // 模式切换
   if (pubMode) pubMode.addEventListener('change', function(){
     const isRange = this.value === 'range';
     if (singleDateRow) singleDateRow.style.display = isRange ? 'none' : 'block';
     if (rangeRows) rangeRows.style.display = isRange ? 'block' : 'none';
   });
+
+  // 专业选择逻辑
+  setupMajorSelection();
+  
+  // 学生搜索逻辑
+  setupStudentSearch();
+  
+  // 发布按钮
   const pubSubmitBtn = $('pubSubmitBtn');
-  if (pubSubmitBtn) pubSubmitBtn.addEventListener('click', async function(){
-    if (!currentUser) return;
-    
-    const userRole = getUserRole(currentUser.userId);
-    if (userRole !== 'teacher' && userRole !== 'admin') { 
-      alert('只有老师和管理员可以发布课程'); 
-      return; 
-    }
+  if (pubSubmitBtn) pubSubmitBtn.addEventListener('click', publishCourse);
+}
 
-    const attr = $('pubAttr').value;
-    const courseName = ($('pubCourseName').value || '').trim();
-    const mode = $('pubMode').value;
-    const startTime = $('pubStartTime').value;
-    const endTime = $('pubEndTime').value;
-    const majors = ($('pubMajors').value || '').trim();
-    const visibleStudentIds = ($('pubVisibleIds').value || '').trim();
-
-    if (attr === '大课' && !courseName) { alert('大课需填写课程名'); return; }
-    if (!startTime || !endTime) { alert('请填写时间'); return; }
-
-    const params = { teacherId: currentUser.userId, attr, courseName, mode, startTime, endTime, majors, visibleStudentIds };
-
-    if (mode === 'single') {
-      const date = $('pubDate').value; if (!date) { alert('请选择日期'); return; }
-      params.date = date;
+function setupMajorSelection() {
+  const allMajorsCheck = $('allMajorsCheck');
+  const majorSelection = $('majorSelection');
+  
+  if (!allMajorsCheck || !majorSelection) return;
+  
+  // "全部专业"复选框逻辑
+  allMajorsCheck.addEventListener('change', function() {
+    if (this.checked) {
+      majorSelection.style.display = 'none';
+      // 清空所有专业选择
+      document.querySelectorAll('.dept-check, .major-check').forEach(cb => cb.checked = false);
     } else {
-      const sd = $('pubStartDate').value, ed = $('pubEndDate').value;
-      if (!sd || !ed) { alert('请选择起止日期'); return; }
-      const wds = Array.from(document.querySelectorAll('.wd:checked')).map(cb => Number(cb.value));
-      if (wds.length === 0) { alert('请选择周几'); return; }
-      params.startDate = sd; params.endDate = ed; params.weekdays = wds;
-      const c = $('pubCount').value; if (c) params.count = Number(c);
+      majorSelection.style.display = 'block';
     }
-
-    const res = await callAPI('publishSlots', params);
-    if (res && res.success) { alert(res.message || '发布成功'); loadCalendarEvents(); } else { alert((res && res.message) || '发布失败'); }
+  });
+  
+  // 部门复选框逻辑
+  document.querySelectorAll('.dept-check').forEach(deptCheck => {
+    deptCheck.addEventListener('change', function() {
+      const dept = this.dataset.dept;
+      const majorChecks = document.querySelectorAll(`.major-check[data-dept="${dept}"]`);
+      
+      if (this.checked) {
+        // 选中该部门下所有专业
+        majorChecks.forEach(cb => cb.checked = true);
+      } else {
+        // 取消选中该部门下所有专业
+        majorChecks.forEach(cb => cb.checked = false);
+      }
+      updateAllMajorsCheck();
+    });
+  });
+  
+  // 专业复选框逻辑
+  document.querySelectorAll('.major-check').forEach(majorCheck => {
+    majorCheck.addEventListener('change', function() {
+      const dept = this.dataset.dept;
+      const deptCheck = document.querySelector(`.dept-check[data-dept="${dept}"]`);
+      const majorChecks = document.querySelectorAll(`.major-check[data-dept="${dept}"]`);
+      const checkedMajors = document.querySelectorAll(`.major-check[data-dept="${dept}"]:checked`);
+      
+      // 更新部门复选框状态
+      if (checkedMajors.length === majorChecks.length) {
+        deptCheck.checked = true;
+        deptCheck.indeterminate = false;
+      } else if (checkedMajors.length > 0) {
+        deptCheck.checked = false;
+        deptCheck.indeterminate = true;
+      } else {
+        deptCheck.checked = false;
+        deptCheck.indeterminate = false;
+      }
+      
+      updateAllMajorsCheck();
+    });
   });
 }
 
+function updateAllMajorsCheck() {
+  const allMajorsCheck = $('allMajorsCheck');
+  const checkedMajors = document.querySelectorAll('.major-check:checked');
+  
+  if (checkedMajors.length === 0) {
+    allMajorsCheck.checked = true;
+    allMajorsCheck.indeterminate = false;
+    $('majorSelection').style.display = 'none';
+  } else {
+    allMajorsCheck.checked = false;
+    allMajorsCheck.indeterminate = false;
+  }
+}
+
+function setupStudentSearch() {
+  const searchInput = $('studentSearch');
+  const searchResults = $('searchResults');
+  
+  if (!searchInput || !searchResults) return;
+  
+  // 加载学生数据用于搜索
+  loadStudentsForSearch();
+  
+  let searchTimeout;
+  searchInput.addEventListener('input', function() {
+    const query = this.value.trim();
+    
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(() => {
+      if (query.length >= 1) {
+        showSearchResults(query);
+      } else {
+        searchResults.style.display = 'none';
+      }
+    }, 300);
+  });
+  
+  // 点击外部隐藏搜索结果
+  document.addEventListener('click', function(e) {
+    if (!searchInput.contains(e.target) && !searchResults.contains(e.target)) {
+      searchResults.style.display = 'none';
+    }
+  });
+}
+
+async function loadStudentsForSearch() {
+  if (!currentUser) return;
+  const userRole = getUserRole(currentUser.userId);
+  if (userRole !== 'teacher' && userRole !== 'admin') return;
+  
+  try {
+    // 加载所有部门的学生
+    const [scienceStudents, artsStudents] = await Promise.all([
+      callAPI('getStudentsByClass', { department: '理科大学院' }),
+      callAPI('getStudentsByClass', { department: '文科大学院' })
+    ]);
+    
+    allStudentsForSearch = [
+      ...(Array.isArray(scienceStudents) ? scienceStudents : []),
+      ...(Array.isArray(artsStudents) ? artsStudents : [])
+    ];
+  } catch (e) {
+    console.error('加载学生数据失败:', e);
+  }
+}
+
+function showSearchResults(query) {
+  const searchResults = $('searchResults');
+  if (!searchResults) return;
+  
+  const filteredStudents = allStudentsForSearch.filter(student => {
+    const name = (student.name || '').toLowerCase();
+    const id = (student.id || student.userId || '').toLowerCase();
+    return name.includes(query.toLowerCase()) || id.includes(query.toLowerCase());
+  });
+  
+  if (filteredStudents.length === 0) {
+    searchResults.innerHTML = '<div style="padding:8px;color:#666;text-align:center;">未找到学生</div>';
+  } else {
+    searchResults.innerHTML = filteredStudents.slice(0, 10).map(student => `
+      <div class="search-result-item" data-student-id="${student.id || student.userId}" 
+           style="padding:8px 12px;cursor:pointer;border-bottom:1px solid #eee;"
+           onmouseover="this.style.background='#f5f5f5'" 
+           onmouseout="this.style.background='white'">
+        <strong>${student.name}</strong> (${student.id || student.userId})
+        <br><small style="color:#666;">${student.major} - ${student.department || ''}</small>
+      </div>
+    `).join('');
+    
+    // 绑定点击事件
+    searchResults.querySelectorAll('.search-result-item').forEach(item => {
+      item.addEventListener('click', function() {
+        const studentId = this.dataset.studentId;
+        const student = allStudentsForSearch.find(s => (s.id || s.userId) === studentId);
+        if (student) {
+          addSelectedStudent(student);
+          $('studentSearch').value = '';
+          searchResults.style.display = 'none';
+        }
+      });
+    });
+  }
+  
+  searchResults.style.display = 'block';
+}
+
+function addSelectedStudent(student) {
+  const studentId = student.id || student.userId;
+  
+  // 避免重复添加
+  if (selectedStudentsForPublish.find(s => (s.id || s.userId) === studentId)) {
+    return;
+  }
+  
+  selectedStudentsForPublish.push(student);
+  updateSelectedStudentsDisplay();
+  updateVisibleIds();
+}
+
+function removeSelectedStudent(studentId) {
+  selectedStudentsForPublish = selectedStudentsForPublish.filter(s => (s.id || s.userId) !== studentId);
+  updateSelectedStudentsDisplay();
+  updateVisibleIds();
+}
+
+function updateSelectedStudentsDisplay() {
+  const container = $('selectedStudents');
+  if (!container) return;
+  
+  container.innerHTML = selectedStudentsForPublish.map(student => {
+    const studentId = student.id || student.userId;
+    return `
+      <span style="display:inline-flex;align-items:center;gap:6px;padding:4px 8px;background:#e3f2fd;border-radius:16px;font-size:12px;">
+        ${student.name} (${studentId})
+        <button type="button" onclick="removeSelectedStudent('${studentId}')" 
+                style="background:none;border:none;color:#666;cursor:pointer;font-size:14px;line-height:1;">×</button>
+      </span>
+    `;
+  }).join('');
+}
+
+function updateVisibleIds() {
+  const visibleIds = selectedStudentsForPublish.map(s => s.id || s.userId).join(',');
+  const hiddenInput = $('pubVisibleIds');
+  if (hiddenInput) {
+    hiddenInput.value = visibleIds;
+  }
+}
+
+function getSelectedMajors() {
+  const allMajorsCheck = $('allMajorsCheck');
+  if (allMajorsCheck && allMajorsCheck.checked) {
+    return ''; // 空字符串表示全部专业
+  }
+  
+  const checkedMajors = document.querySelectorAll('.major-check:checked');
+  return Array.from(checkedMajors).map(cb => cb.dataset.major).join(',');
+}
+
+function setPublishStatus(message, isLoading = false) {
+  const statusDiv = $('publishStatus');
+  const submitBtn = $('pubSubmitBtn');
+  
+  if (!statusDiv || !submitBtn) return;
+  
+  if (message) {
+    statusDiv.textContent = message;
+    statusDiv.style.display = 'block';
+    if (isLoading) {
+      statusDiv.style.color = '#1976d2';
+      submitBtn.disabled = true;
+      submitBtn.textContent = '发布中...';
+    }
+  } else {
+    statusDiv.style.display = 'none';
+    submitBtn.disabled = false;
+    submitBtn.textContent = '发布';
+  }
+}
+
+async function publishCourse() {
+  if (!currentUser) return;
+  
+  const userRole = getUserRole(currentUser.userId);
+  if (userRole !== 'teacher' && userRole !== 'admin') { 
+    alert('只有老师和管理员可以发布课程'); 
+    return; 
+  }
+
+  const attr = $('pubAttr').value;
+  const courseName = ($('pubCourseName').value || '').trim();
+  const mode = $('pubMode').value;
+  const startTime = $('pubStartTime').value;
+  const endTime = $('pubEndTime').value;
+
+  if (attr === '大课' && !courseName) { 
+    alert('大课需填写课程名'); 
+    return; 
+  }
+  if (!startTime || !endTime) { 
+    alert('请填写时间'); 
+    return; 
+  }
+
+  // 获取选中的专业
+  const majors = getSelectedMajors();
+  
+  // 获取选中的特定学生ID
+  const visibleStudentIds = selectedStudentsForPublish.map(s => s.id || s.userId).join(',');
+
+  const params = { 
+    teacherId: currentUser.userId, 
+    attr, 
+    courseName, 
+    mode, 
+    startTime, 
+    endTime, 
+    majors, 
+    visibleStudentIds 
+  };
+
+  if (mode === 'single') {
+    const date = $('pubDate').value; 
+    if (!date) { 
+      alert('请选择日期'); 
+      return; 
+    }
+    params.date = date;
+  } else {
+    const sd = $('pubStartDate').value, ed = $('pubEndDate').value;
+    if (!sd || !ed) { 
+      alert('请选择起止日期'); 
+      return; 
+    }
+    const wds = Array.from(document.querySelectorAll('.wd:checked')).map(cb => Number(cb.value));
+    if (wds.length === 0) { 
+      alert('请选择周几'); 
+      return; 
+    }
+    params.startDate = sd; 
+    params.endDate = ed; 
+    params.weekdays = wds;
+    const c = $('pubCount').value; 
+    if (c) params.count = Number(c);
+  }
+
+  // 显示发布中状态
+  setPublishStatus('正在发布课程...', true);
+
+  try {
+    const res = await callAPI('publishSlots', params);
+    
+    if (res && res.success) {
+      setPublishStatus('发布成功！');
+      setTimeout(() => setPublishStatus(), 2000);
+      loadCalendarEvents(); // 刷新日历
+      
+      // 清空表单（可选）
+      // resetPublishForm();
+    } else {
+      setPublishStatus('发布失败：' + (res && res.message || '未知错误'));
+      setTimeout(() => setPublishStatus(), 3000);
+    }
+  } catch (error) {
+    setPublishStatus('发布失败：网络错误');
+    setTimeout(() => setPublishStatus(), 3000);
+  }
+}
 /* ================== 数据分析 ================== */
 let allStudents = []; let selectedStudents = [];
 

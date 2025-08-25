@@ -106,9 +106,11 @@
           </div>
 
           <!-- 我的发布页面 -->
+         <!-- 我的发布页面 -->
           <div id="outputPage" class="page-content">
             <section class="card">
               <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">我的发布</h2>
+              
               <div class="filter-item">
                 <label>课程属性</label>
                 <select id="pubAttr">
@@ -117,10 +119,12 @@
                   <option value="面谈">面谈（可约）</option>
                 </select>
               </div>
+              
               <div class="filter-item">
                 <label>课程名（大课必填）</label>
                 <input type="text" id="pubCourseName" />
               </div>
+              
               <div class="filter-item">
                 <label>模式</label>
                 <select id="pubMode">
@@ -128,10 +132,12 @@
                   <option value="range">区间+周几</option>
                 </select>
               </div>
+              
               <div class="filter-item" id="singleDateRow">
                 <label>日期</label>
                 <input type="date" id="pubDate" />
               </div>
+              
               <div class="filter-item" id="rangeRows" style="display:none;">
                 <label>起止日期</label>
                 <div style="display:flex;gap:6px;">
@@ -151,6 +157,7 @@
                 <label style="margin-top:6px;">回数（可选）</label>
                 <input type="number" id="pubCount" min="1" placeholder="不填则按区间+周几全部展开" />
               </div>
+              
               <div class="filter-item">
                 <label>时间（开始-结束）</label>
                 <div style="display:flex;gap:6px;">
@@ -159,15 +166,89 @@
                 </div>
                 <div style="font-size:11px;color:#666;">仅允许整点或半点（:00 / :30）</div>
               </div>
+
+              <!-- 新的可见用户群选择 -->
               <div class="filter-item">
-                <label>面向专业（逗号分隔；空=全专业）</label>
-                <input type="text" id="pubMajors" placeholder="例：文科研究科,工学研究科" />
+                <label>面向专业</label>
+                <div style="margin-bottom:12px;">
+                  <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+                    <input type="checkbox" id="allMajorsCheck" checked>
+                    <span style="font-weight:600;">全部专业</span>
+                  </label>
+                </div>
+                
+                <div id="majorSelection" style="display:none;">
+                  <!-- 理科大学院 -->
+                  <div style="margin-bottom:16px;padding:12px;background:#f8f9fa;border-radius:6px;">
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:600;">
+                      <input type="checkbox" class="dept-check" data-dept="理科大学院">
+                      <span>理科大学院</span>
+                    </label>
+                    <div style="margin-left:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px;">
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="理科大学院" data-major="机械">机械
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="理科大学院" data-major="电子电器">电子电器
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="理科大学院" data-major="情报学">情报学
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="理科大学院" data-major="工学">工学
+                      </label>
+                    </div>
+                  </div>
+
+                  <!-- 文科大学院 -->
+                  <div style="margin-bottom:16px;padding:12px;background:#f8f9fa;border-radius:6px;">
+                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:600;">
+                      <input type="checkbox" class="dept-check" data-dept="文科大学院">
+                      <span>文科大学院</span>
+                    </label>
+                    <div style="margin-left:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px;">
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="社会学">社会学
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="新闻传播学">新闻传播学
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="社会福祉学">社会福祉学
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="表象文化">表象文化
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="经济学">经济学
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="经营学">经营学
+                      </label>
+                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
+                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="日本语教育">日本语教育
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
+
+              <!-- 特定学生搜索 -->
               <div class="filter-item">
-                <label>可见学生IDs（逗号分隔；VIP/面谈用）</label>
-                <input type="text" id="pubVisibleIds" placeholder="例：S001,S015" />
+                <label>指定学生（VIP/面谈用）</label>
+                <div style="margin-bottom:8px;">
+                  <input type="text" id="studentSearch" placeholder="搜索学生姓名..." style="margin-bottom:8px;">
+                  <div id="searchResults" style="max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;display:none;"></div>
+                </div>
+                <div id="selectedStudents" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+                <input type="hidden" id="pubVisibleIds" />
               </div>
-              <button class="btn btn-primary" id="pubSubmitBtn">发布</button>
+
+              <!-- 发布按钮和状态 -->
+              <div style="display:flex;align-items:center;gap:12px;margin-top:24px;">
+                <button class="btn btn-primary" id="pubSubmitBtn">发布</button>
+                <div id="publishStatus" style="display:none;color:#666;font-size:14px;"></div>
+              </div>
             </section>
           </div>
          <!-- 我的录入页面（静态示例） -->

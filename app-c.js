@@ -1,5 +1,5 @@
 /* ================== 基础配置 ================== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbybAvJ1PChJbu2WofPrj2-IrZ4Ro07mBlQQ7TymJRtadT0UiXfL1jQbcc3yYuXHaXw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxXGgiM5DRD5FxH8tVSJq9t0xJ7BCxwuJypZhyF34LqeqSqVvR213Attt9eEluX7s4/exec';
 
 /* ================== 小工具 ================== */
 const $ = (id) => document.getElementById(id);

@@ -23,26 +23,30 @@
       </div>
 
       <div id="registerForm" style="display: none;">
-        <input type="text" id="registerName" placeholder="姓名" />
-        <input type="email" id="registerEmail" placeholder="邮箱（用于区分同名，不对外公开）" />
-        <select id="registerDepartment">
-          <option value="">选择所属部门</option>
-          <option value="文科大学院">文科大学院</option>
-          <option value="理科大学院">理科大学院</option>
-          <option value="其他">其他</option>
-        </select>
-        <input type="text" id="registerMajor" placeholder="专业" />
-        <select id="registerRole">
-          <option value="">选择身份</option>
-          <option value="学生">学生</option>
-          <option value="老师">老师</option>
-        </select>
-        <button type="button" id="registerBtn">登记</button>
-        <div class="link-text" id="showLoginBtn">已有账号？返回登录</div>
-        <div id="registerError" class="error-message"></div>
-      </div>
-    </div>
-  </div>
+  <input type="text" id="registerName" placeholder="姓名" />
+  <input type="email" id="registerEmail" placeholder="邮箱（用于区分同名，不对外公开）" />
+  
+  <select id="registerDepartment">
+    <option value="">选择所属部门</option>
+    <option value="文科大学院">文科大学院</option>
+    <option value="理科大学院">理科大学院</option>
+    <option value="其他">其他</option>
+  </select>
+  
+  <select id="registerMajor" disabled>
+    <option value="">选择专业</option>
+  </select>
+  
+  <select id="registerRole">
+    <option value="">选择身份</option>
+    <option value="学生">学生</option>
+    <option value="老师">老师</option>
+  </select>
+  
+  <button type="button" id="registerBtn">登记</button>
+  <div class="link-text" id="showLoginBtn">已有账号？返回登录</div>
+  <div id="registerError" class="error-message"></div>
+</div>
 
   <!-- 主应用包裹（登录后显示） -->
   <div id="mainApp" style="display:none;">

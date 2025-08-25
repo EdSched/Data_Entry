@@ -6,7 +6,7 @@
   <title>大学院管理平台</title>
   <!-- FullCalendar -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
-  <link rel="stylesheet" href="app-c.css"/>
+  <link rel="stylesheet" href="app.css"/>
 </head>
 <body>
   <!-- 登录界面（保持你原有布局） -->
@@ -62,7 +62,7 @@
     <div class="app">
       <div class="wrap">
         <aside>
-          <div class="sidebar-section overview">
+          <div class="sidebar-section">
             <h3>今日提醒</h3>
             <div class="stats-grid">
               <div class="stat-item"><div class="stat-number" id="todayCourses">0</div><div class="stat-label">课程</div></div>
@@ -71,18 +71,38 @@
               <div class="stat-item"><div class="stat-number" id="attendanceRate">—</div><div class="stat-label">出勤率</div></div>
             </div>
           </div>
-          <nav>
+          
+          <!-- 学生导航（默认先隐藏；下轮JS按角色显示） -->
+          <nav id="nav-student" style="display:none;">
             <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
-            <a href="#" class="nav-link" data-page="output" style="display:none;"><span>我的发布</span></a>
+            <a href="#" class="nav-link" data-page="mycourses"><span>我的课程</span></a>
+            <a href="#" class="nav-link" data-page="myprogress"><span>我的进度</span></a>
+            <a href="#" class="nav-link" data-page="myprofile"><span>我的信息</span></a>
+          </nav>
+
+          <!-- 老师导航（默认显示，保持你原来的四项） -->
+          <nav id="nav-teacher">
+            <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
+            <a href="#" class="nav-link" data-page="output"><span>我的发布</span></a>
             <a href="#" class="nav-link" data-page="input"><span>我的录入</span></a>
+            <a href="#" class="nav-link" data-page="datamanagement"><span>数据管理</span></a>
+          </nav>
+
+          <!-- 管理员导航（默认先隐藏；下轮JS按角色显示） -->
+          <nav id="nav-admin" style="display:none;">
+            <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
+            <!-- 这里用 data-page 复用现有页面键，文案用管理员语义 -->
+            <a href="#" class="nav-link" data-page="output"><span>我的安排</span></a>
+            <a href="#" class="nav-link" data-page="datamanagement"><span>我的查看</span></a>
             <a href="#" class="nav-link" data-page="task"><span>我的任务</span></a>
-            <a href="#" class="nav-link" data-page="datamanagement" style="display:none;"><span>数据管理</span></a>
           </nav>
         </aside>
-       <!-- 手机端抽屉开关（点击展开/收起侧栏=今日概览+导航） -->
-<div id="menuStrip" class="pull-strip" role="button" aria-expanded="false">
-  <span class="grip"></span><span class="label">展开菜单</span>
-</div>
+        
+        <!-- 手机端抽屉开关（点击展开/收起侧栏=今日概览+导航） -->
+        <div id="menuStrip" class="pull-strip" role="button" aria-expanded="false">
+          <span class="grip"></span><span class="label">展开菜单</span>
+        </div>
+        
         <main>
           <!-- 日历页面 -->
           <div id="calendarPage" class="page-content active">
@@ -105,300 +125,66 @@
             </section>
           </div>
 
-          <!-- 我的发布页面 -->
-         <!-- 我的发布页面 -->
-          <div id="outputPage" class="page-content">
+          <!-- 学生：我的课程 -->
+          <div id="mycoursesPage" class="page-content" style="display:none;">
             <section class="card">
-              <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">我的发布</h2>
-              
-              <div class="filter-item">
-                <label>课程属性</label>
-                <select id="pubAttr">
-                  <option value="大课">大课（只读）</option>
-                  <option value="VIP">VIP（可约）</option>
-                  <option value="面谈">面谈（可约）</option>
-                </select>
-              </div>
-              
-              <div class="filter-item">
-                <label>课程名（大课必填）</label>
-                <input type="text" id="pubCourseName" />
-              </div>
-              
-              <div class="filter-item">
-                <label>模式</label>
-                <select id="pubMode">
-                  <option value="single">单次</option>
-                  <option value="range">区间+周几</option>
-                </select>
-              </div>
-              
-              <div class="filter-item" id="singleDateRow">
-                <label>日期</label>
-                <input type="date" id="pubDate" />
-              </div>
-              
-              <div class="filter-item" id="rangeRows" style="display:none;">
-                <label>起止日期</label>
-                <div style="display:flex;gap:6px;">
-                  <input type="date" id="pubStartDate" />
-                  <input type="date" id="pubEndDate" />
-                </div>
-                <label style="margin-top:6px;">周几（可多选）</label>
-                <div>
-                  <label><input type="checkbox" class="wd" value="1">周一</label>
-                  <label><input type="checkbox" class="wd" value="2">周二</label>
-                  <label><input type="checkbox" class="wd" value="3">周三</label>
-                  <label><input type="checkbox" class="wd" value="4">周四</label>
-                  <label><input type="checkbox" class="wd" value="5">周五</label>
-                  <label><input type="checkbox" class="wd" value="6">周六</label>
-                  <label><input type="checkbox" class="wd" value="0">周日</label>
-                </div>
-                <label style="margin-top:6px;">回数（可选）</label>
-                <input type="number" id="pubCount" min="1" placeholder="不填则按区间+周几全部展开" />
-              </div>
-              
-              <div class="filter-item">
-                <label>时间（开始-结束）</label>
-                <div style="display:flex;gap:6px;">
-                  <input type="time" id="pubStartTime" value="09:00" />
-                  <input type="time" id="pubEndTime" value="10:00" />
-                </div>
-                <div style="font-size:11px;color:#666;">仅允许整点或半点（:00 / :30）</div>
-              </div>
-
-              <!-- 新的可见用户群选择 -->
-              <div class="filter-item">
-                <label>面向专业</label>
-                <div style="margin-bottom:12px;">
-                  <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-                    <input type="checkbox" id="allMajorsCheck" checked>
-                    <span style="font-weight:600;">全部专业</span>
-                  </label>
-                </div>
-                
-                <div id="majorSelection" style="display:none;">
-                  <!-- 理科大学院 -->
-                  <div style="margin-bottom:16px;padding:12px;background:#f8f9fa;border-radius:6px;">
-                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:600;">
-                      <input type="checkbox" class="dept-check" data-dept="理科大学院">
-                      <span>理科大学院</span>
-                    </label>
-                    <div style="margin-left:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px;">
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="理科大学院" data-major="机械">机械
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="理科大学院" data-major="电子电器">电子电器
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="理科大学院" data-major="情报学">情报学
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="理科大学院" data-major="工学">工学
-                      </label>
-                    </div>
-                  </div>
-
-                  <!-- 文科大学院 -->
-                  <div style="margin-bottom:16px;padding:12px;background:#f8f9fa;border-radius:6px;">
-                    <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:600;">
-                      <input type="checkbox" class="dept-check" data-dept="文科大学院">
-                      <span>文科大学院</span>
-                    </label>
-                    <div style="margin-left:24px;display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:4px;">
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="社会学">社会学
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="新闻传播学">新闻传播学
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="社会福祉学">社会福祉学
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="表象文化">表象文化
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="经济学">经济学
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="经营学">经营学
-                      </label>
-                      <label style="display:flex;align-items:center;gap:6px;font-size:14px;">
-                        <input type="checkbox" class="major-check" data-dept="文科大学院" data-major="日本语教育">日本语教育
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- 特定学生搜索 -->
-              <div class="filter-item">
-                <label>指定学生（VIP/面谈用）</label>
-                <div style="margin-bottom:8px;">
-                  <input type="text" id="studentSearch" placeholder="搜索学生姓名..." style="margin-bottom:8px;">
-                  <div id="searchResults" style="max-height:120px;overflow-y:auto;border:1px solid var(--border);border-radius:4px;display:none;"></div>
-                </div>
-                <div id="selectedStudents" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
-                <input type="hidden" id="pubVisibleIds" />
-              </div>
-
-              <!-- 发布按钮和状态 -->
-              <div style="display:flex;align-items:center;gap:12px;margin-top:24px;">
-                <button class="btn btn-primary" id="pubSubmitBtn">发布</button>
-                <div id="publishStatus" style="display:none;color:#666;font-size:14px;"></div>
-              </div>
-            </section>
-          </div>
-         <!-- 我的录入页面（静态示例） -->
-          <div id="inputPage" class="page-content">
-            <section class="card">
-              <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">我的录入</h2>
-              <div style="display:grid;gap:12px;">
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
-                  <input type="checkbox" checked>
-                  <span>批改期中考试试卷</span>
-                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">今天截止</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
-                  <input type="checkbox">
-                  <span>准备下周课程材料</span>
-                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">明天截止</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
-                  <input type="checkbox">
-                  <span>学生面谈记录整理</span>
-                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">周五截止</span>
-                </div>
-              </div>
+              <h2 style="margin:0 0 12px 0;">我的课程</h2>
+              <div class="muted">占位：后续接 listVisibleSlots / 讲义链接 / 作业提交等。</div>
             </section>
           </div>
 
-          <!-- 我的任务页面（静态示例） -->
-          <div id="taskPage" class="page-content">
+          <!-- 学生：我的进度 -->
+          <div id="myprogressPage" class="page-content" style="display:none;">
             <section class="card">
-              <h2 style="margin:0 0 24px 0;font-size:24px;font-weight:600;">我的任务</h2>
-              <div style="display:grid;gap:12px;">
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
-                  <input type="checkbox" checked>
-                  <span>批改期中考试试卷</span>
-                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">今天截止</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
-                  <input type="checkbox">
-                  <span>准备下周课程材料</span>
-                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">明天截止</span>
-                </div>
-                <div style="display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:8px;">
-                  <input type="checkbox">
-                  <span>学生面谈记录整理</span>
-                  <span style="margin-left:auto;color:var(--muted);font-size:12px;">周五截止</span>
-                </div>
-              </div>
+              <h2 style="margin:0 0 12px 0;">我的进度</h2>
+              <div class="muted">占位：总进度概览 / 当前任务列表 / 进度提醒。</div>
             </section>
           </div>
 
-          <!-- 数据分析页面 -->
-          <div id="datamanagementPage" class="page-content">
+          <!-- 学生：我的信息 -->
+          <div id="myprofilePage" class="page-content" style="display:none;">
             <section class="card">
-              <div class="filter-panel">
-                <div class="filter-section">
-                  <h3>学生选择</h3>
-                  <div class="filter-grid">
-                    <div class="filter-item">
-                      <label for="departmentSelect">选择所属</label>
-                      <select id="departmentSelect">
-                        <option value="">请选择所属部门</option>
-                      </select>
-                    </div>
-                    <div class="filter-item">
-                      <label for="majorSelect">选择专业</label>
-                      <select id="majorSelect">
-                        <option value="">请选择专业</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div id="studentListArea" style="display: none; margin-top: 10px;">
-                    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-                      <span style="font-size: 12px;">已选: <span id="selectedCount">0</span></span>
-                      <div>
-                        <button class="btn" style="padding: 3px 6px; font-size: 10px;" id="selectAllBtn">全选</button>
-                        <button class="btn" style="padding: 3px 6px; font-size: 10px;" id="clearAllBtn">清空</button>
-                      </div>
-                    </div>
-                    <div class="student-list" id="studentList"></div>
-                  </div>
-                </div>
-                <div class="filter-section">
-                  <h3>时间范围</h3>
-                  <div class="filter-grid">
-                    <div class="filter-item">
-                      <label for="startMonth">开始月份</label>
-                      <input type="month" id="startMonth">
-                    </div>
-                    <div class="filter-item">
-                      <label for="endMonth">结束月份</label>
-                      <input type="month" id="endMonth">
-                    </div>
-                  </div>
-                </div>
-                <div class="filter-section">
-                  <h3>数据类型</h3>
-                  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 5px;">
-                    <label style="display: flex; align-items: center; gap: 5px;">
-                      <input type="checkbox" id="attendance" checked>
-                      <span style="font-size: 12px;">出勤情况</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 5px;">
-                      <input type="checkbox" id="homework" checked>
-                      <span style="font-size: 12px;">作业情况</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 5px;">
-                      <input type="checkbox" id="consultation" checked>
-                      <span style="font-size: 12px;">面谈记录</span>
-                    </label>
-                    <label style="display: flex; align-items: center; gap: 5px;">
-                      <input type="checkbox" id="progress" checked>
-                      <span style="font-size: 12px;">学习进度</span>
-                    </label>
-                  </div>
-                </div>
-                <div class="action-buttons">
-                  <button class="btn" id="resetFiltersBtn">重置</button>
-                  <button class="btn btn-primary" id="generateReportBtn">生成报告</button>
-                  <button class="btn" style="display: none;" id="exportBtn">复制报告</button>
-                </div>
-              </div>
-              <div class="results-panel" id="resultsPanel" style="display:none;">
-                <div class="results-header">
-                  <strong>分析结果</strong>
-                  <span id="resultCount"></span>
-                </div>
-                <div class="results-content">
-                  <div class="loading" id="loadingIndicator" style="display:none;">
-                    <div class="spinner"></div>
-                    正在查询数据...
-                  </div>
-                  <div id="resultsData" style="display: none;">
-                    <table class="data-table" id="dataTable">
-                      <thead>
-                        <tr>
-                          <th>学生</th><th>数据类型</th><th>数值</th><th>备注</th>
-                        </tr>
-                      </thead>
-                      <tbody id="tableBody"></tbody>
-                    </table>
-                    <div class="copy-area" id="copyArea" style="white-space:pre-wrap;margin-top:12px;"></div>
-                  </div>
-                </div>
-              </div>
+              <h2 style="margin:0 0 12px 0;">我的信息</h2>
+              <div class="muted">占位：个人信息 / 面谈记录 / 讲师反馈。</div>
             </section>
-          </div>               
+          </div>
+
+          <!-- 老师：我的发布 -->
+          <div id="outputPage" class="page-content" style="display:none;">
+            <section class="card">
+              <h2 style="margin:0 0 12px 0;">我的发布</h2>
+              <div class="muted">占位：课程发布 / 时间安排 / 面向学生设置等。</div>
+            </section>
+          </div>
+
+          <!-- 老师：我的录入 -->
+          <div id="inputPage" class="page-content" style="display:none;">
+            <section class="card">
+              <h2 style="margin:0 0 12px 0;">我的录入</h2>
+              <div class="muted">占位：学生考勤 / 作业评分 / 面谈记录等。</div>
+            </section>
+          </div>
+
+          <!-- 老师：数据管理 -->
+          <div id="datamanagementPage" class="page-content" style="display:none;">
+            <section class="card">
+              <h2 style="margin:0 0 12px 0;">数据管理</h2>
+              <div class="muted">占位：学生数据分析 / 进度统计 / 报告生成等。</div>
+            </section>
+          </div>
+
+          <!-- 管理员：我的任务 -->
+          <div id="taskPage" class="page-content" style="display:none;">
+            <section class="card">
+              <h2 style="margin:0 0 12px 0;">我的任务</h2>
+              <div class="muted">占位：系统管理 / 用户管理 / 数据监控等。</div>
+            </section>
+          </div>
         </main>
       </div>
     </div>
   </div>
- <script src="app-c.js" defer></script>
+  
+  <script src="appV1.js" defer></script>
 </body>
 </html>

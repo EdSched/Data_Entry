@@ -224,14 +224,17 @@ async function registerUser() {
       } else {
         err.textContent = '已完成注册，等待老师分配ID';
       }
-
-      // 可选：清空表单（保留你的视觉/流程，不自动跳转）
-      // $('registerName').value = '';
-      // $('registerEmail').value = '';
-      // $('registerDepartment').value = '';
-      // if (majorSel) majorSel.value = '';
-      // if (majorFree) majorFree.value = '';
-      // $('registerRole').value = '';
+// 延时 1.5 秒再清空并跳回登录
+  setTimeout(() => {
+    $('registerName').value = '';
+    $('registerEmail').value = '';
+    $('registerDepartment').value = '';
+    if (majorSel) majorSel.value = '';
+    if (majorFree) majorFree.value = '';
+    $('registerRole').value = '';
+    showLoginForm();
+  }, 1500);
+  
     } else {
       err.style.color = '#c00';
       err.textContent = (res && res.message) ? res.message : '登记失败（无返回信息）';

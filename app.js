@@ -238,7 +238,6 @@ function initCalendar() {
     slotDuration:'00:30:00',
     expandRows:true,
     datesSet: updateCalendarTitle,
-    eventClick: handleEventClick
   });
   cal.render();
   window.calendar = cal;
@@ -265,23 +264,7 @@ async function loadCalendarEvents() {
   events.forEach(ev => calendar.addEvent(ev));
   updateTodayStats();
 }
-async function handleEventClick(info) {
-  const ev = info.event, ext = ev.extendedProps || {};
-  if (!currentUser) return;
-  const isStudent = (String(currentUser.role).includes('学生') || String(currentUser.userId||'').startsWith('S'));
-  // 极简：学生且可约 -> prompt 预约；否则仅弹详情
-  if (isStudent && ext.canBook && ext.status === '可约') {
-    const note = prompt(`预约备注：\n${ev.title}  ${ev.start.toLocaleString('zh-CN')}`) || '';
-    const res = await callAPI('bookSlot', { slotId: ev.id, studentId: currentUser.userId, studentName: currentUser.name||'', note });
-    alert(res && res.success ? '预约成功' : (res?.message || '预约失败'));
-    if (res && res.success) loadCalendarEvents();
-  } else {
-    const lines = [`标题: ${ev.title}`, `时间: ${ev.start.toLocaleString('zh-CN')}`];
-    if (ev.end) lines.push(`结束: ${ev.end.toLocaleString('zh-CN')}`);
-    if (ext.description) lines.push(`描述: ${ext.description}`);
-    alert(lines.join('\n'));
-  }
-}
+
 function updateTodayStats(){
   // 占位（不连后台统计）
   $('todayCourses').textContent = $('todayCourses').textContent || '0';

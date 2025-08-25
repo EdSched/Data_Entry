@@ -234,6 +234,7 @@ async function registerUser() {
     $('registerRole').value = '';
     showLoginForm();
   }, 1500);
+  }
   
     } else {
       err.style.color = '#c00';

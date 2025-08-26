@@ -271,15 +271,15 @@ function initCalendar() {
   const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
   const cal = new FullCalendar.Calendar(el, {
     eventClick: function(info) {
-  const ev = info.event;
-  const ext = ev.extendedProps || {};
-  const t = ev.title || '';
-  const s = ev.start ? ev.start.toLocaleString('zh-CN') : '';
-  const e = ev.end   ? ev.end.toLocaleString('zh-CN')   : '';
-  const teacher = ext.teacher ? `\n任课老师：${ext.teacher}` : '';
-  const sid = ext.slotId ? `\n槽位ID：${ext.slotId}` : '';
-  alert(`课程：${t}\n时间：${s} ~ ${e}${teacher}${sid}`);
-},
+      const ev = info.event;
+      const ext = ev.extendedProps || {};
+      const t = ev.title || '';
+      const s = ev.start ? ev.start.toLocaleString('zh-CN') : '';
+      const e = ev.end   ? ev.end.toLocaleString('zh-CN')   : '';
+      const teacher = ext.teacher ? `\n任课老师：${ext.teacher}` : '';
+      const sid = ext.slotId ? `\n槽位ID：${ext.slotId}` : '';
+      alert(`课程：${t}\n时间：${s} ~ ${e}${teacher}${sid}`);
+    },
     initialView,
     locale: 'zh-cn',
     firstDay: 1,
@@ -291,6 +291,25 @@ function initCalendar() {
     slotDuration:'00:30:00',
     expandRows:true,
     datesSet: updateCalendarTitle,
+
+    // ★ 新增：由 FullCalendar 主动拉取你的 API
+    events: async function(info, success, failure) {
+      try {
+        const viewStart = info.startStr ? info.startStr.slice(0,10) : '';
+        const viewEnd   = info.endStr   ? info.endStr.slice(0,10)   : '';
+        const params = {
+          userId: (currentUser && currentUser.userId) ? currentUser.userId : '',
+          viewStart, viewEnd,
+          debugNoAuth: !currentUser   // 允许未登录自测
+        };
+        const res  = await callAPI('listVisibleSlots', params);
+        const rows = Array.isArray(res) ? res : (res && res.data) ? res.data : [];
+        // 你的后端已按 FullCalendar 事件结构返回，可直接给 success
+        success(rows);
+      } catch (err) {
+        failure && failure(err);
+      }
+    }
   });
   cal.render();
   window.calendar = cal;
@@ -298,6 +317,7 @@ function initCalendar() {
   setTimeout(()=>{ try{ cal.updateSize(); }catch{} }, 60);
   updateCalendarTitle();
 }
+
 function updateCalendarTitle() {
   if (!calendar) return;
   const view = calendar.view, date = calendar.getDate();
@@ -309,30 +329,28 @@ function updateCalendarTitle() {
   } else $('calendarTitle').textContent = `${y}/${m}`;
 }
 async function loadCalendarEvents() {
-  if (!currentUser || !calendar) return;
+  if (!calendar) return;
+  // 新：统一交给 FullCalendar 触发拉取逻辑
+  try { calendar.refetchEvents(); } catch {}
 
+  // 旧逻辑（保留以备回退）
+  /*
   const view = calendar.view;
   const viewStart = view.currentStart ? view.currentStart.toISOString().slice(0,10) : '';
   const viewEnd   = view.currentEnd   ? view.currentEnd.toISOString().slice(0,10)   : '';
-
-  const res = await callAPI('listVisibleSlots', {
-    userId: currentUser.userId,
-    viewStart,
-    viewEnd
-    // 不改你的 debugNoAuth 逻辑
-  });
-
-  const rows = Array.isArray(res) ? res : (res && (res.data || res.events) || []);
-  const events = rows.map(r => ({
-    id: r.id, title: r.title, start: r.start, end: r.end,
-    backgroundColor: r.backgroundColor, borderColor: r.borderColor,
-    extendedProps: r.extendedProps || {}
-  })).filter(e => e && e.start);
-
+  const params = {
+    userId: (currentUser && currentUser.userId) ? currentUser.userId : '',
+    viewStart, viewEnd,
+    debugNoAuth: !currentUser
+  };
+  const res = await callAPI('listVisibleSlots', params);
+  const rows = Array.isArray(res) ? res : (res?.data || []);
   calendar.removeAllEvents();
-  events.forEach(ev => calendar.addEvent(ev));
+  rows.forEach(ev => calendar.addEvent(ev));
   updateTodayStats();
+  */
 }
+
 
 
 
@@ -354,7 +372,7 @@ function bindTopBarButtons() {
   $('weekBtn')?.addEventListener('click', (e)=>{ calendar?.changeView('timeGridWeek'); setSegActive(e.target); updateCalendarTitle(); });
   $('monthBtn')?.addEventListener('click', (e)=>{ calendar?.changeView('dayGridMonth'); setSegActive(e.target); updateCalendarTitle(); });
 
-  $('refreshDataBtn')?.addEventListener('click', ()=> loadCalendarEvents());
+  $('refreshDataBtn')?.addEventListener('click', ()=> { calendar?.refetchEvents(); });
 }
 function setSegActive(btn){
   ['dayBtn','weekBtn','monthBtn'].forEach(id=>{ const b=$(id); b && b.classList.remove('active'); });

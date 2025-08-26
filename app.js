@@ -218,15 +218,8 @@ function logout() {
 
 /* =============== 角色导航与页面切换 =============== */
 /** 管理员别名：侧栏 data-page -> 实际页面ID */
+// 统一：直接按 data-page 去找 `${pageId}Page`
 function resolvePageIdForRole(pageId) {
-  if (!currentUser) return pageId;
-  const rn = currentUser.roleNorm;
-  // 管理员点击“我的安排/我的查看/我的任务”时，HTML 的 data-page 分别是：output / datamanagement / task
-  if (rn === 'admin') {
-    if (pageId === 'output') return 'arrange';          // 显示 #arrangePage
-    if (pageId === 'datamanagement') return 'review';   // 显示 #reviewPage
-  }
-  // 学生、老师都按 data-page + 'Page' 寻找
   return pageId;
 }
 function showPage(pageIdRaw) {

@@ -329,6 +329,47 @@ button {
   appearance: none;
 }
 
+/* === Mobile: 让内容真正居中，去掉残留的左间距 === */
+@media (max-width: 600px) {
+  /* 1) 主布局改为单列并自适应两侧留白 */
+  .wrap { 
+    display: grid;
+    grid-template-columns: 1fr;
+    margin: 0 auto;
+    padding: 0 16px;          /* 左右各 16px 统一留白 */
+    box-sizing: border-box;
+    width: 100%;
+  }
+
+  /* 2) 侧栏在手机上不占宽度；内容区不再向右偏移 */
+  aside {
+    position: static;         /* 关闭时不固定，不留占位 */
+    width: auto;
+    margin: 0;
+    padding: 0;
+  }
+  main {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  /* 3) 抽屉关闭时，强制清掉任何“推开主内容”的样式 */
+  body:not(.mobile-menu-open) main { 
+    transform: none !important;
+    margin-left: 0 !important;
+  }
+
+  /* 4) 侧栏里的块与导航在手机上也贴齐左边 */
+  .sidebar-section,
+  #nav-teacher, #nav-student, #nav-admin {
+    margin: 0;
+  }
+}
+
+
+
 
 
 

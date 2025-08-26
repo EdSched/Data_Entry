@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>测试输入框配色</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      background:#f7f7f7;
+      padding:20px;
+    }
+    .box {
+      max-width: 300px;
+      margin: 0 auto;
+      padding:20px;
+      background:#fff;
+      border-radius:8px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.1);
+    }
+    input, select {
+      width:100%;
+      margin:10px 0;
+      padding:8px 10px;
+      border:1px solid #ccc;
+      border-radius:4px;
+      font-size:14px;
+      outline:none;
+      transition: all 0.25s ease;
+    }
+    /* 改高亮配色 */
+    input:focus, select:focus {
+      border-color: #c9a227;       /* 橄榄金色 */
+      box-shadow: 0 0 0 3px rgba(201,162,39,0.35); /* 柔和光晕 */
+    }
+    button {
+      width:100%;
+      padding:10px;
+      border:none;
+      border-radius:4px;
+      background:#c9a227;   /* 主色 */
+      color:#fff;
+      font-size:15px;
+      cursor:pointer;
+      transition: background 0.25s;
+    }
+    button:hover {
+      background:#a5891f;   /* hover 更深一点 */
+    }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <h2>注册测试</h2>
+    <input type="text" placeholder="姓名">
+    <input type="email" placeholder="邮箱">
+    <select>
+      <option>请选择专业</option>
+      <option>文学</option>
+      <option>社会学</option>
+      <option>机械</option>
+    </select>
+    <button>提交</button>
+  </div>
+</body>
+</html>

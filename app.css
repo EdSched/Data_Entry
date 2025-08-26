@@ -264,4 +264,10 @@ select {
     padding: 6px 14px;
   }
 }
+summary {
+  list-style: none;
+}
+summary::-webkit-details-marker {
+  display: none;
+}
 

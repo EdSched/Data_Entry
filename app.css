@@ -64,6 +64,11 @@ main{flex:1;overflow-y:auto;padding:20px;}
 .btn-primary{border-color:#e6b56c;background:#fab041;color:#fff}
 .btn-primary:hover{background:#fab041;border-color:#fab041}
 
+/* 通用复选框样式 */
+input[type="checkbox"] {
+  accent-color: #555856ff; /* 改成你喜欢的颜色，比如粉色/橙色/灰色 */
+}
+
 /* 日历样式 */
 .calendar-head{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
 .calendar-title{font-weight:700;font-size:20px;color:var(--text)}
@@ -208,7 +213,7 @@ aside{ display:flex; }                 /* 桌面/iPad 正常显示侧栏 */
   }
 }
 .fc .fc-day-today {
-  background-color: #dee4e0ff !important;  /* 浅灰色 */}
+  background-color: #edf1efe1 !important;  /* 浅灰色 */}
   
 /* 全局覆盖所有下拉框的默认蓝色文字 */
 select {

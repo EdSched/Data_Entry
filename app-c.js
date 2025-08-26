@@ -286,16 +286,6 @@ function initCalendar() {
   loadCalendarEvents();
 }
 
-function changeView(viewName, activeBtn) {
-  if (!calendar) return;
-  calendar.changeView(viewName);
-  ['dayBtn','weekBtn','monthBtn'].forEach(id => { 
-    const b=$(id); 
-    if(b) b.classList.remove('active'); 
-  });
-  if (activeBtn) activeBtn.classList.add('active');
-  updateCalendarTitle();
-}
 
 function updateCalendarTitle() {
   if (!calendar) return;
@@ -401,27 +391,6 @@ function handleEventClick(info) {
   alert(details.join('\n'));
 }
 
-// 更新日历视图变化时的数据重新加载
-function changeView(viewName, activeBtn) {
-  if (!calendar) return;
-  
-  calendar.changeView(viewName);
-  
-  // 更新按钮状态
-  ['dayBtn','weekBtn','monthBtn'].forEach(id => { 
-    const b = $(id); 
-    if(b) b.classList.remove('active'); 
-  });
-  if (activeBtn) activeBtn.classList.add('active');
-  
-  // 更新标题
-  updateCalendarTitle();
-  
-  // 重新加载数据（因为视图范围改变了）
-  setTimeout(() => {
-    loadCalendarEvents();
-  }, 100);
-}
 
 // 在日历初始化后绑定视图变化监听
 function initCalendar() {
@@ -482,6 +451,27 @@ function initCalendar() {
 function refreshData() { 
   loadCalendarEvents(); 
 }
+// 更新日历视图变化时的数据重新加载
+function changeView(viewName, activeBtn) {
+  if (!calendar) return;
+  
+  calendar.changeView(viewName);
+  
+  // 更新按钮状态
+  ['dayBtn','weekBtn','monthBtn'].forEach(id => { 
+    const b = $(id); 
+    if(b) b.classList.remove('active'); 
+  });
+  if (activeBtn) activeBtn.classList.add('active');
+  
+  // 更新标题
+  updateCalendarTitle();
+  
+  // 重新加载数据（因为视图范围改变了）
+  setTimeout(() => {
+    loadCalendarEvents();
+  }, 100);
+}
 
 // 更新今日统计（简化版）
 function updateTodayStats(){
@@ -492,14 +482,7 @@ function updateTodayStats(){
   $('todayReminders').textContent = $('todayReminders').textContent || '0';
   $('attendanceRate').textContent = $('attendanceRate').textContent || '—';
 }
-function handleEventClick(info) {
-  const ev = info.event;
-  alert(`事件: ${ev.title}\n时间: ${ev.start.toLocaleString('zh-CN')}`);
-}
 
-function refreshData() { 
-  loadCalendarEvents(); 
-}
 
 /* ================== 登录成功后的初始化流程 ================== */
 async function initializeAfterLogin() {

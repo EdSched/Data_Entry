@@ -1,4 +1,3 @@
-
 /* =============== 基础配置（按你现有 API） =============== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbybAvJ1PChJbu2WofPrj2-IrZ4Ro07mBlQQ7TymJRtadT0UiXfL1jQbcc3yYuXHaXw/exec';
 
@@ -278,17 +277,26 @@ function recordClickLog(ev) {
       userId: (window.currentUser && window.currentUser.userId) || '',
       ts: new Date().toISOString()
     };
+    var dayKey = item.start ? item.start.slice(0,10) : new Date().toISOString().slice(0,10);
     var arr = [];
     try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_) {}
-    arr.push(item);
-    localStorage.setItem(key, JSON.stringify(arr));
-    alert('已记录本次预约意向。');
+    var dup = arr.some(function(x){
+      return (x.slotId === item.slotId) && (x.userId === item.userId) && (String(x.start).slice(0,10) === dayKey);
+    });
+    if (!dup) {
+      arr.push(item);
+      localStorage.setItem(key, JSON.stringify(arr));
+      alert('已记录本次预约意向。');
+    } else {
+      alert('今天已记录过该课程。');
+    }
     return true;
   } catch (e) {
     alert('记录失败：' + e.message);
     return false;
   }
 }
+
 
 /* =============== 日历 =============== */
 function initCalendar() {
@@ -314,51 +322,75 @@ function initCalendar() {
 
   // 新增：为每个事件渲染一个“预约”按钮（右上角）
   eventContent: function(arg) {
-    // 容器：用 DOM API（不依赖模板字符串）
-    var root = document.createElement('div');
-    root.style.position = 'relative';
+  var root = document.createElement('div');
+  root.style.position = 'relative';
 
-    // 标题（保持 FullCalendar 默认信息的简洁）
-    var title = document.createElement('div');
-    title.textContent = arg.event.title || '';
-    title.style.pointerEvents = 'none'; // 避免挡住点击
-    root.appendChild(title);
+  // 月视图给按钮预留空间，避免与标题重叠
+  if (arg.view && arg.view.type === 'dayGridMonth') {
+    root.style.paddingRight = '40px';
+  }
 
-    // 右上角按钮
-    var btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'fc-book-btn'; // 给 eventClick 用来识别
-    btn.textContent = '预约';
-    // 只做最小内联样式，不碰你的全局 CSS
-    btn.style.cssText = 'position:absolute;top:2px;right:2px;padding:2px 6px;font-size:12px;line-height:1;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;';
+  var title = document.createElement('div');
+  title.textContent = arg.event.title || '';
+  title.style.pointerEvents = 'none';
+  root.appendChild(title);
 
-    // 点击按钮：本地记录，不跳转
-    btn.addEventListener('click', function(e) {
-      e.stopPropagation();
-      e.preventDefault();
+  // 仅对「面谈 / VIP」显示按钮（不再使用 status === '可预约'）
+  var ext = arg.event.extendedProps || {};
+  var attr = String(ext.attr || '');
+  var bookable = (attr.indexOf('面谈') > -1) || (attr.toUpperCase().indexOf('VIP') > -1);
 
-      // 仅当“面谈 / VIP / status=可预约”时视为可预约；否则给出提醒即可
-      var ext = arg.event.extendedProps || {};
-      var attr = String(ext.attr || '');
-      var status = String(ext.status || '');
-      var bookable = (attr.indexOf('面谈') > -1) || (attr.toUpperCase().indexOf('VIP') > -1) || (status === '可预约');
+  if (!bookable) {
+    return { domNodes: [root] };  // 非面谈/VIP，无按钮，只显示标题
+  }
 
-      if (!bookable) {
-        alert('此课程不可预约（仅展示）。');
-        return;
-      }
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'fc-book-btn';
+  btn.textContent = (String(ext.status || '') === '已预约') ? '已预约' : '预约';
+  if (ext.status === '已预约') {
+    btn.disabled = true;
+    btn.classList.add('fc-book-btn--done');
+  }
 
-      var ok = recordClickLog(arg.event);
-      if (ok) {
-        btn.disabled = true;
-        btn.textContent = '已记录';
-      }
-    });
+  btn.style.cssText = 'position:absolute;top:2px;right:2px;padding:2px 6px;font-size:' +
+                      ((arg.view && arg.view.type === 'dayGridMonth') ? '11px' : '12px') +
+                      ';line-height:1;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;';
 
-    root.appendChild(btn);
+  btn.addEventListener('click', function(e) {
+    e.stopPropagation();
+    e.preventDefault();
 
-    return { domNodes: [root] };
-  },
+    // 1) 本地记录
+    var ok = recordClickLog(arg.event);
+
+    // 2) 回写表：把课程状态设为“已预约”，失败不影响本地记录
+    (async function(){
+      try {
+        var payload = {
+          slotId: (ext.slotId || arg.event.id || ''),
+          status: '已预约'
+        };
+        var res = await callAPI('updateCourseStatus', payload);
+        // 兼容 {ok:true} 或直接返回对象/数组
+        var okServer = res && (res.ok === true || res.status === 'ok');
+        if (okServer) {
+          // 更新本地事件状态
+          try { arg.event.setExtendedProp('status', '已预约'); } catch(_) {
+            (arg.event.extendedProps || {}).status = '已预约';
+          }
+        }
+      } catch(_) { /* 忽略网络/权限异常 */ }
+      // 无论成功失败，按钮置为已预约态（与本地记录一致）
+      btn.disabled = true;
+      btn.textContent = '已预约';
+      btn.classList.add('fc-book-btn--done');
+    })();
+  });
+
+  root.appendChild(btn);
+  return { domNodes: [root] };
+},
 
   // —— 下面继续保留你其余既有配置 —— 
   initialView,

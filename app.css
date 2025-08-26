@@ -16,8 +16,7 @@
 .api-dot.ok{background:#22c55e}
 .api-dot.err{background:#ef4444}
 .api-dot.wait{background:#f59e0b}
-.fc .fc-day-today {
-  background-color: #f5f5f5 !important;  /* 浅灰色 */
+
 /* 主容器与卡片 */
 /* 使用自定义 --vh，避免 iOS 100vh 被地址栏压缩；并允许内容溢出时自然增高 */
 .app{min-height:calc(var(--vh, 1vh)*100 - var(--topbar));height:auto;display:flex}
@@ -207,4 +206,13 @@ aside{ display:flex; }                 /* 桌面/iPad 正常显示侧栏 */
   body.mobile-menu-open aside{
     display:block !important; margin:0 20px 8px 20px;
   }
+}
+.fc .fc-day-today {
+  background-color: #f5f5f5 !important;  /* 浅灰色 */
+  /* 全局覆盖所有下拉框的默认蓝色文字 */
+select {
+  -webkit-appearance: none; /* 去掉 iOS Safari 默认样式 */
+  -moz-appearance: none;
+  appearance: none;
+  color: #333;   /* 这里换成你喜欢的颜色 */
 }

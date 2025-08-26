@@ -309,21 +309,31 @@ function updateCalendarTitle() {
   } else $('calendarTitle').textContent = `${y}/${m}`;
 }
 async function loadCalendarEvents() {
-  if (!calendar) return;
+  if (!currentUser || !calendar) return;
+
   const view = calendar.view;
   const viewStart = view.currentStart ? view.currentStart.toISOString().slice(0,10) : '';
   const viewEnd   = view.currentEnd   ? view.currentEnd.toISOString().slice(0,10)   : '';
-  const params = {
-    userId: (currentUser && currentUser.userId) ? currentUser.userId : '',
-    viewStart, viewEnd,
-    debugNoAuth: !currentUser  // 未登录时放开过滤，便于你单人测试
-  };
-  const res = await callAPI('listVisibleSlots', params);
-  const rows = Array.isArray(res) ? res : (res?.data || []);
+
+  const res = await callAPI('listVisibleSlots', {
+    userId: currentUser.userId,
+    viewStart,
+    viewEnd
+    // 不改你的 debugNoAuth 逻辑
+  });
+
+  const rows = Array.isArray(res) ? res : (res && (res.data || res.events) || []);
+  const events = rows.map(r => ({
+    id: r.id, title: r.title, start: r.start, end: r.end,
+    backgroundColor: r.backgroundColor, borderColor: r.borderColor,
+    extendedProps: r.extendedProps || {}
+  })).filter(e => e && e.start);
+
   calendar.removeAllEvents();
-  rows.forEach(ev => calendar.addEvent(ev));
+  events.forEach(ev => calendar.addEvent(ev));
   updateTodayStats();
 }
+
 
 
 function updateTodayStats(){

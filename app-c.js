@@ -1,848 +1,576 @@
-/* ================== 基础配置 ================== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbxXGgiM5DRD5FxH8tVSJq9t0xJ7BCxwuJypZhyF34LqeqSqVvR213Attt9eEluX7s4/exec';
+/***********************
+ * 修复版本：统一API响应格式，增加调试信息
+ * 兼容函数：testConnection / ping / loginByUsername / registerByProfile / getCourseCalendarEvents
+ ***********************/
 
-/* ================== 小工具 ================== */
-const $ = (id) => document.getElementById(id);
-const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+// ========= 配置 =========
+const SPREADSHEET_ID = '143a4QkLhuesusFyjiuIx8118A_PyffZBobmnT9NPaRc';
 
-function setApiStatus({ok, text}) {
-  const dotTop = $('apiDotTop'), txtTop = $('apiTextTop');
-  const inline = $('apiStatusInline');
-  if (dotTop) dotTop.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
-  if (txtTop) txtTop.textContent = text || (ok ? 'API 正常' : (ok===false ? 'API 连接失败' : 'API 检测中'));
-  if (inline) {
-    let dot = inline.querySelector('.api-dot');
-    if (!dot) { dot = document.createElement('span'); inline.prepend(dot); }
-    dot.className = 'api-dot ' + (ok===true?'ok':ok===false?'err':'wait');
-    dot.style.cssText = 'display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;';
-    const tip = text ?? (ok ? 'API连接成功' : (ok===false ? 'API连接失败' : '正在检测 API 连接…'));
-    if (!inline.querySelector('.api-inline-text')) {
-      const span = document.createElement('span');
-      span.className = 'api-inline-text';
-      span.textContent = tip;
-      inline.appendChild(span);
-    } else {
-      inline.querySelector('.api-inline-text').textContent = tip;
+const SHEET_NAMES = {
+  USERS: '用户表',
+  STUDENTS: '学生信息表',
+  COURSES: '课程安排表',
+  ATTENDANCE: '课程确认表',
+  CONSULTATION: '面谈记录表',
+  PROGRESS: '学习进度表',
+  FEEDBACK: '反馈提醒表',
+  TEACHER_FEEDBACK: '讲师反馈表',
+  SCHEDULE: '日程表',
+  ATTENDANCERECORD: '出席明细表'
+};
+
+// ========= 工具 =========
+function getSheet(name) {
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const sh = ss.getSheetByName(name);
+  if (!sh) throw new Error('找不到工作表：' + name);
+  return sh;
+}
+
+function headerIndexMap_(sheet) {
+  const header = (sheet.getRange(1,1,1, sheet.getLastColumn()).getValues()[0]||[]).map(s=>String(s).trim());
+  const m = {}; header.forEach((h,i)=>{ if(h) m[h]=i; });
+  return m;
+}
+
+function colMap(row0){ const m={}; row0.forEach((h,i)=>{ m[String(h).trim()]=i; }); return m; }
+function safeVal(idx,row,name,def=''){ return (name in idx) ? (row[idx[name]] ?? def) : def; }
+function safeSet(sheet,rowNo,idx,name,val){ if(name in idx) sheet.getRange(rowNo, idx[name]+1).setValue(val); }
+
+// ========= 调试日志函数 =========
+function debugLog(message, data) {
+  console.log(`[DEBUG] ${message}`, data || '');
+}
+
+// ========= 用户解析 =========
+function getHeaderIdxAndData_(sheet){
+  const values = sheet.getDataRange().getValues();
+  return { idx: colMap(values[0]||[]), values };
+}
+
+function resolveUserId_(idOrUsername){
+  if (!idOrUsername) return '';
+  const sh = getSheet(SHEET_NAMES.USERS);
+  const { idx, values } = getHeaderIdxAndData_(sh);
+  const cId = idx['用户ID'];
+  const cName = ('用户名' in idx) ? idx['用户名'] : -1;
+
+  for (let i=1;i<values.length;i++){
+    if (String(values[i][cId]) === String(idOrUsername)) return String(values[i][cId]||'');
+  }
+  if (cName >= 0){
+    for (let i=1;i<values.length;i++){
+      if (String(values[i][cName]) === String(idOrUsername)) return String(values[i][cId]||'');
     }
   }
+  return '';
 }
 
-/* ================== 用户角色判断工具 ================== */
-function getUserRole(userId) {
-  if (!userId) return 'unknown';
-  const id = String(userId).trim();
-  if (id.startsWith('A')) return 'admin';
-  if (id.startsWith('T')) return 'teacher'; 
-  if (id.startsWith('S')) return 'student';
-  return 'unknown';
-}
-
-function isAdmin(userId) {
-  return getUserRole(userId) === 'admin';
-}
-
-function isTeacher(userId) {
-  return getUserRole(userId) === 'teacher';
-}
-
-function isStudent(userId) {
-  return getUserRole(userId) === 'student';
-}
-
-/* ================== 适配层（统一字段名） ================== */
-function normalizeUser(u = {}, fallbackId = '') {
-  return {
-    userId: u.userId || u.username || u.id || fallbackId || '',
-    name: u.name || u.realName || u.displayName || '',
-    role: u.role || u.identity || '',
-    department: u.department || u.affiliation || u.dept || '',
-    major: u.major || u.subject || ''
-  };
-}
-
-/* ================== API 调用 ================== */
-async function callAPI(action, params = {}) {
-  try {
-    const formData = new URLSearchParams();
-    formData.append('action', action);
-    formData.append('params', JSON.stringify(params));
-
-    const controller = new AbortController();
-    const t = setTimeout(()=>controller.abort(), 8000);
-
-    const res = await fetch(API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: formData,
-      mode: 'cors',
-      signal: controller.signal
-    });
-    clearTimeout(t);
-
-    const text = await res.text();
-    let cleanText = text.trim();
-    const s = cleanText.indexOf('{');
-    const e = cleanText.lastIndexOf('}');
-    if (s !== -1 && e !== -1 && e > s) cleanText = cleanText.substring(s, e + 1);
-    return JSON.parse(cleanText);
-  } catch (err) {
-    return { success:false, message: '网络请求失败: ' + err.message };
-  }
-}
-
-/* ================== 用户界面权限控制 ================== */
-function updateUIForUserRole(userId) {
-  console.log('正在设置用户界面，用户ID:', userId);
-  const role = getUserRole(userId);
-  console.log('用户角色:', role);
-  
-  // 获取三套导航
-  const navStudent = document.getElementById('nav-student');
-  const navTeacher = document.getElementById('nav-teacher'); 
-  const navAdmin = document.getElementById('nav-admin');
-  const overviewSection = document.querySelector('.sidebar-section'); // 今日提醒
-  
-  console.log('导航元素:', {
-    navStudent: !!navStudent,
-    navTeacher: !!navTeacher,
-    navAdmin: !!navAdmin,
-    overviewSection: !!overviewSection
-  });
-  
-  // 先隐藏所有导航
-  if (navStudent) navStudent.style.display = 'none';
-  if (navTeacher) navTeacher.style.display = 'none';
-  if (navAdmin) navAdmin.style.display = 'none';
-  
-  // 根据角色显示对应导航
-  switch(role) {
-    case 'student':
-      if (navStudent) navStudent.style.display = 'block';
-      if (overviewSection) overviewSection.style.display = 'block';
-      console.log('学生用户界面已设置');
-      break;
-      
-    case 'teacher':
-      if (navTeacher) navTeacher.style.display = 'block';
-      if (overviewSection) overviewSection.style.display = 'block';
-      console.log('老师用户界面已设置');
-      break;
-      
-    case 'admin':
-      if (navAdmin) navAdmin.style.display = 'block';
-      if (overviewSection) overviewSection.style.display = 'block';
-      console.log('管理员用户界面已设置');
-      break;
-      
-    default:
-      // 未知角色：隐藏敏感功能
-      if (overviewSection) overviewSection.style.display = 'block';
-      console.log('未知用户角色，限制访问权限');
-  }
-}
-
-/* ================== 导航切换 ================== */
-const navLinks = [];
-function showPage(pageId) {
-  console.log('切换到页面:', pageId);
-  
-  // 隐藏所有页面
-  document.querySelectorAll('.page-content').forEach(p => { 
-    p.classList.remove('active'); 
-    p.style.display = 'none'; 
-  });
-  
-  // 显示目标页面
-  let targetPage = null;
-  
-  // 处理页面ID映射
-  switch(pageId) {
-    case 'calendar':
-      targetPage = document.getElementById('calendarPage');
-      break;
-    case 'mycourses':
-      targetPage = document.getElementById('mycoursesPage');
-      break;
-    case 'myprogress':
-      targetPage = document.getElementById('myprogressPage');
-      break;
-    case 'myprofile':
-      targetPage = document.getElementById('myprofilePage');
-      break;
-    case 'output':
-      targetPage = document.getElementById('outputPage');
-      break;
-    case 'input':
-      targetPage = document.getElementById('inputPage');
-      break;
-    case 'datamanagement':
-      targetPage = document.getElementById('datamanagementPage');
-      break;
-    case 'task':
-      targetPage = document.getElementById('taskPage');
-      break;
-    default:
-      console.warn('未知页面ID:', pageId);
-      targetPage = document.getElementById('calendarPage'); // 默认显示日历
-  }
-  
-  console.log('目标页面元素:', !!targetPage, targetPage?.id);
-  
-  if (targetPage) { 
-    targetPage.style.display = 'block'; 
-    targetPage.classList.add('active');
-    console.log('页面显示成功:', pageId);
-  } else {
-    console.error('找不到页面元素:', pageId);
-  }
-  
-  // 更新导航激活状态
-  navLinks.forEach(a => a.classList.remove('active'));
-  const activeLink = document.querySelector('.nav-link[data-page="'+pageId+'"]');
-  if (activeLink) activeLink.classList.add('active');
-  
-  // 如果是日历页面，更新尺寸
-  if (pageId === 'calendar' && window.calendar) {
-    setTimeout(() => window.calendar.updateSize(), 60);
-  }
-}
-
-/* ================== 初始化导航绑定 ================== */
-function initNavigation() {
-  console.log('初始化导航系统');
-  
-  // 清空之前的绑定
-  navLinks.length = 0;
-  
-  // 绑定所有导航链接（三套导航中的所有链接）
-  const allNavLinks = document.querySelectorAll('.nav-link');
-  console.log('找到导航链接数量:', allNavLinks.length);
-  
-  allNavLinks.forEach(link => {
-    navLinks.push(link);
-    
-    link.addEventListener('click', (e) => {
-      e.preventDefault();
-      const pageId = link.dataset.page;
-      console.log('点击导航:', pageId);
-      
-      // 权限检查
-      if (currentUser && pageId) {
-        const userRole = getUserRole(currentUser.userId);
-        
-        // 学生权限检查
-        if (userRole === 'student') {
-          const allowedPages = ['calendar', 'mycourses', 'myprogress', 'myprofile'];
-          if (!allowedPages.includes(pageId)) {
-            alert('您没有权限访问此功能');
-            return;
-          }
-        }
-        
-        // 老师权限检查
-        if (userRole === 'teacher') {
-          const allowedPages = ['calendar', 'output', 'input', 'datamanagement'];
-          if (!allowedPages.includes(pageId)) {
-            alert('您没有权限访问此功能');
-            return;
-          }
-        }
-        
-        // 管理员权限检查
-        if (userRole === 'admin') {
-          const allowedPages = ['calendar', 'output', 'datamanagement', 'task'];
-          if (!allowedPages.includes(pageId)) {
-            alert('您没有权限访问此功能');
-            return;
-          }
+// ========= API 外壳 =========
+function doPost(e){
+  try{
+    let action, params={};
+    if (e && e.postData){
+      const ct=(e.postData.type||'').toLowerCase();
+      if (ct.includes('application/json')){
+        const body = JSON.parse(e.postData.contents||'{}'); action = body.action; params = body.params||{};
+      }else{
+        action = e.parameter ? e.parameter.action : undefined;
+        if (e.parameter && typeof e.parameter.params==='string'){
+          try{ params = JSON.parse(e.parameter.params); }catch(_){ params={}; }
         }
       }
-      
-      if (pageId) showPage(pageId);
-    });
-  });
-}
+    }else if(e && e.parameter){
+      action = e.parameter.action;
+      if (e.parameter.params){ try{ params = JSON.parse(e.parameter.params); }catch(_){ params={}; } }
+    }else{
+      action='testConnection';
+    }
 
-/* ================== 日历功能 ================== */
-let calendar = null;
+    debugLog('API调用', {action, params});
 
-function initCalendar() {
-  console.log('初始化日历');
-  const el = $('mainCalendar'); 
-  if (!el) {
-    console.error('找不到日历容器元素');
-    return;
-  }
-  
-  const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
-  calendar = new FullCalendar.Calendar(el, {
-    initialView, 
-    locale: 'zh-cn', 
-    firstDay: 1, 
-    height: 'auto',
-    headerToolbar: false, 
-    allDaySlot: false,
-    slotMinTime:'08:00:00', 
-    slotMaxTime:'22:00:00', 
-    slotDuration:'00:30:00', 
-    expandRows:true,
-    datesSet: function(info) {
-      // 当日历视图日期范围改变时，重新加载数据
-      updateCalendarTitle();
-      if (currentUser) {
-        setTimeout(() => {
-          loadCalendarEvents();
-        }, 50);
-      }
-    },
-    eventClick: handleEventClick
-  });
-  
-  // 绑定日历控制按钮
-  const prevBtn = $('prevBtn');
-  const nextBtn = $('nextBtn');
-  const todayBtn = $('todayBtn');
-  const dayBtn = $('dayBtn');
-  const weekBtn = $('weekBtn');
-  const monthBtn = $('monthBtn');
-  const refreshBtn = $('refreshDataBtn');
-  
-  if (prevBtn) prevBtn.onclick = () => calendar.prev();
-  if (nextBtn) nextBtn.onclick = () => calendar.next();
-  if (todayBtn) todayBtn.onclick = () => calendar.today();
-  if (dayBtn) dayBtn.onclick = () => changeView('timeGridDay', dayBtn);
-  if (weekBtn) weekBtn.onclick = () => changeView('timeGridWeek', weekBtn);
-  if (monthBtn) monthBtn.onclick = () => changeView('dayGridMonth', monthBtn);
-  if (refreshBtn) refreshBtn.onclick = refreshData;
+    let result;
+    switch(action){
+      case 'testConnection': result=testConnection(); break;
+      case 'ping': result={success:true,message:'pong',echo: params && params.t, timestamp:new Date().toISOString()}; break;
 
-  calendar.render();
-  updateCalendarTitle();
-  
-  // 初次加载数据
-  if (currentUser) {
-    loadCalendarEvents();
-  }
-  
-  console.log('日历初始化完成');
-}
+      case 'registerByProfile': result=registerByProfile(params); break;
+      case 'loginByUsername': result=loginByUsername(params.username); break;
 
-function updateCalendarTitle() {
-  if (!calendar) return;
-  const view = calendar.view, date = calendar.getDate();
-  const y = date.getFullYear(), m = String(date.getMonth()+1).padStart(2,'0'), d = String(date.getDate()).padStart(2,'0');
-  const titleEl = $('calendarTitle');
-  if (!titleEl) return;
-  
-  if (view.type === 'timeGridDay') {
-    titleEl.textContent = `${y}/${m}/${d}`;
-  } else if (view.type === 'timeGridWeek') {
-    const s = new Date(view.currentStart), e = new Date(view.currentEnd); 
-    e.setDate(e.getDate()-1);
-    titleEl.textContent = `${y}/${String(s.getMonth()+1).padStart(2,'0')}/${String(s.getDate()).padStart(2,'0')} — ${String(e.getMonth()+1).padStart(2,'0')}/${String(e.getDate()).padStart(2,'0')}`;
-  } else {
-    titleEl.textContent = `${y}/${m}`;
+      // 课程日历数据获取
+      case 'getCourseCalendarEvents': result=getCourseCalendarEvents(params); break;
+
+      default: result={success:false, message:'未知的API调用: '+action};
+    }
+    
+    debugLog('API响应', result);
+    return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.JSON);
+  }catch(err){
+    debugLog('API错误', err.toString());
+    return ContentService.createTextOutput(JSON.stringify({success:false,message:'服务器错误: '+err}))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 }
 
-// 更新日历数据加载函数
-async function loadCalendarEvents() {
-  if (!currentUser || !calendar) {
-    console.log('无法加载日历事件: currentUser=', !!currentUser, 'calendar=', !!calendar);
-    return;
+function doGet(e){
+  if (e.parameter && e.parameter.test){
+    return ContentService.createTextOutput(JSON.stringify({success:true,message:'API OK', ts:new Date().toISOString()}))
+      .setMimeType(ContentService.MimeType.JSON);
   }
-  
+  return ContentService.createTextOutput(JSON.stringify({success:true, methods:['GET','POST']}))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+// ========= 健康检查 =========
+function testConnection(){
+  try{
+    const users = getSheet(SHEET_NAMES.USERS);
+    const cnt = Math.max(0, users.getLastRow()-1);
+    return { success:true, message:'连接成功', userCount:cnt, timestamp:new Date().toISOString() };
+  }catch(err){
+    return { success:false, message: String(err), timestamp:new Date().toISOString() };
+  }
+}
+
+// ========= 注册 / 登录 =========
+function registerByProfile(p){
+  try{
+    const { name, email, department, major, role } = p||{};
+    if (!name || !email || !department || !major || !role) return {success:false,message:'请填写姓名、邮箱、所属、专业、身份'};
+    const sh = getSheet(SHEET_NAMES.USERS);
+    const idx = headerIndexMap_(sh);
+    const row = Array(sh.getLastColumn()).fill('');
+
+    // 尽量按列名写入（无列名则跳过）
+    if ('用户ID' in idx) row[idx['用户ID']] = ''; // 由你线下分配
+    if ('姓名'   in idx) row[idx['姓名']] = name;
+    if ('所属'   in idx) row[idx['所属']] = department;
+    if ('专业'   in idx) row[idx['专业']] = major;
+    if ('身份'   in idx) row[idx['身份']] = role;
+    if ('邮箱'   in idx) row[idx['邮箱']] = email;
+
+    sh.appendRow(row);
+    return { success:true, message:'登记成功！请由老师分配"用户ID"后再登录。' };
+  }catch(err){
+    return { success:false, message:'登记失败：'+err };
+  }
+}
+
+function loginByUsername(username){
+  try{
+    if (!username) return {success:false,message:'请输入用户ID'};
+    const sh = getSheet(SHEET_NAMES.USERS);
+    const { idx, values } = getHeaderIdxAndData_(sh);
+    const cId = idx['用户ID'];
+    const cNm = ('用户名' in idx) ? idx['用户名'] : -1;
+
+    let iHit = -1;
+    for (let i=1;i<values.length;i++){
+      if (String(values[i][cId]) === String(username)) { iHit=i; break; }
+      if (cNm>=0 && String(values[i][cNm]) === String(username)) { iHit=i; break; }
+    }
+    if (iHit===-1) return {success:false,message:'用户ID不存在'};
+
+    const r = values[iHit];
+    const u = {
+      username,
+      userId: String(r[idx['用户ID']]||''),
+      name: safeVal(idx,r,'姓名',''),
+      department: safeVal(idx,r,'所属',''),
+      major: safeVal(idx,r,'专业',''),
+      role: safeVal(idx,r,'身份',''),
+      vip: ('VIP' in idx) ? (r[idx['VIP']]||'') : '',
+      email: ('邮箱' in idx) ? (r[idx['邮箱']]||'') : ''
+    };
+    return { success:true, user:u };
+  }catch(err){
+    return { success:false, message:String(err) };
+  }
+}
+
+// ========= 课程日历功能 =========
+
+// 课程属性颜色配置
+const COURSE_ATTR_COLORS = {
+  '大课': '#1976d2',    // 蓝色
+  'VIP': '#d32f2f',     // 红色  
+  '面谈': '#7b1fa2',    // 紫色
+  '必修': '#388e3c',    // 绿色
+  '共通': '#f57c00'     // 橙色
+};
+
+// 批次ID回退颜色（6色哈希）
+const BATCH_COLORS = ['#2196f3', '#4caf50', '#ff9800', '#9c27b0', '#f44336', '#009688'];
+
+// 默认颜色
+const DEFAULT_COLOR = '#94A3B8';
+
+// 获取课程日历事件 - 修复：统一返回格式
+function getCourseCalendarEvents(params) {
   try {
-    console.log('开始加载日历事件');
-    // 获取当前日历视图的日期范围
-    const view = calendar.view;
-    const startDate = formatDateForAPI(view.currentStart);
-    const endDate = formatDateForAPI(view.currentEnd);
+    debugLog('开始获取课程日历事件', params);
     
-    console.log('日期范围:', startDate, 'to', endDate);
+    const { userId, startDate, endDate } = params || {};
     
-    // 调用新的课程日历API
-    const events = await callAPI('getCourseCalendarEvents', { 
-      userId: currentUser.userId,
-      startDate: startDate,
-      endDate: endDate
-    });
+    if (!userId) {
+      return { success: false, message: '用户ID为空' };
+    }
     
-    console.log('API返回的事件数据:', events);
+    // 获取课程安排表数据
+    const courseSheet = getSheet(SHEET_NAMES.COURSES);
+    const courseData = getHeaderIdxAndData_(courseSheet);
+    const courseIdx = courseData.idx;
+    const courseRows = courseData.values;
     
-    // 清除现有事件
-    calendar.removeAllEvents();
+    debugLog('课程表列名', Object.keys(courseIdx));
+    debugLog('课程表行数', courseRows.length);
     
-    // 添加新事件
-    if (Array.isArray(events)) {
-      events.forEach(event => {
-        calendar.addEvent(event);
+    // 获取用户表数据（用于姓名→用户ID映射）
+    const userSheet = getSheet(SHEET_NAMES.USERS);
+    const userData = getHeaderIdxAndData_(userSheet);
+    
+    // 获取当前用户信息
+    const currentUser = getCurrentUserInfo(userId, userData);
+    debugLog('当前用户信息', currentUser);
+    
+    if (!currentUser) {
+      return { success: false, message: '用户信息不存在' };
+    }
+    
+    const events = [];
+    
+    // 解析日期范围
+    const viewStart = startDate ? new Date(startDate) : new Date();
+    const viewEnd = endDate ? new Date(endDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
+    
+    debugLog('日期范围', { viewStart: viewStart.toISOString(), viewEnd: viewEnd.toISOString() });
+    
+    // 遍历课程数据
+    let processedCount = 0;
+    let validEventCount = 0;
+    
+    for (let i = 1; i < courseRows.length; i++) {
+      const row = courseRows[i];
+      processedCount++;
+      
+      // 提取必要字段
+      const slotId = safeVal(courseIdx, row, '槽位ID', '');
+      if (!slotId) {
+        debugLog(`第${i}行：槽位ID为空，跳过`);
+        continue;
+      }
+      
+      const courseName = safeVal(courseIdx, row, '课程名', '');
+      if (!courseName) {
+        debugLog(`第${i}行：课程名为空，跳过`, { slotId });
+        continue;
+      }
+      
+      const startTime = safeVal(courseIdx, row, '开始时间', '');
+      const endTime = safeVal(courseIdx, row, '结束时间', '');
+      if (!startTime || !endTime) {
+        debugLog(`第${i}行：时间信息不完整，跳过`, { slotId, startTime, endTime });
+        continue;
+      }
+      
+      // 获取其他字段
+      const batchId = safeVal(courseIdx, row, '批次ID', '');
+      const courseAttr = safeVal(courseIdx, row, '课程属性', '');
+      const teacher = safeVal(courseIdx, row, '任课老师', '');
+      const singleDate = safeVal(courseIdx, row, '单回日期', '');
+      const dateRange = safeVal(courseIdx, row, '复数区间', '');
+      const weekdays = safeVal(courseIdx, row, '周几', '');
+      const targetMajors = safeVal(courseIdx, row, '面向专业', '');
+      const visibleStudentNames = safeVal(courseIdx, row, '可见学生IDs', '');
+      
+      debugLog(`第${i}行基本信息`, {
+        slotId, courseName, teacher, singleDate, dateRange, weekdays, targetMajors
       });
-      console.log('成功添加', events.length, '个事件');
-    } else {
-      console.log('事件数据不是数组格式');
+      
+      // 可见性过滤
+      if (!isEventVisibleToUser(currentUser, teacher, targetMajors, visibleStudentNames, userData)) {
+        debugLog(`第${i}行：权限过滤，对用户不可见`, { slotId, currentUser: currentUser.name });
+        continue;
+      }
+      
+      // 生成事件日期
+      let eventDates = [];
+      
+      if (singleDate && !dateRange) {
+        // 单次课程
+        const formattedDate = formatDateString(singleDate);
+        if (formattedDate) {
+          eventDates.push(formattedDate);
+          debugLog(`第${i}行：单次课程日期`, { slotId, singleDate, formattedDate });
+        }
+      } else if (dateRange && weekdays) {
+        // 重复课程
+        eventDates = generateRecurringDates(dateRange, weekdays, viewStart, viewEnd);
+        debugLog(`第${i}行：重复课程日期`, { slotId, dateRange, weekdays, eventDates });
+      }
+      
+      if (eventDates.length === 0) {
+        debugLog(`第${i}行：无有效日期，跳过`, { slotId });
+        continue;
+      }
+      
+      // 获取事件颜色
+      const eventColor = getEventColor(courseAttr, batchId);
+      
+      // 为每个日期创建事件
+      eventDates.forEach(date => {
+        if (isDateInRange(date, viewStart, viewEnd)) {
+          events.push({
+            id: `${slotId}_${date}`,
+            title: courseName,
+            start: `${date}T${formatTime(startTime)}`,
+            end: `${date}T${formatTime(endTime)}`,
+            backgroundColor: eventColor,
+            borderColor: eventColor,
+            extendedProps: {
+              slotId: slotId,
+              courseAttr: courseAttr,
+              teacher: teacher
+            }
+          });
+          validEventCount++;
+        }
+      });
     }
     
-    updateTodayStats();
-    
-  } catch (e) { 
-    console.error('加载课程日历失败:', e); 
-  }
-}
-
-// 格式化日期用于API调用
-function formatDateForAPI(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-}
-
-// 更新事件点击处理
-function handleEventClick(info) {
-  const event = info.event;
-  const props = event.extendedProps || {};
-  
-  // 构建弹窗内容
-  const details = [];
-  details.push(`课程名: ${event.title}`);
-  
-  // 格式化时间显示
-  const startTime = event.start;
-  if (startTime) {
-    const timeStr = startTime.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+    debugLog('处理结果统计', {
+      processedRows: processedCount,
+      totalEvents: events.length,
+      validEventCount: validEventCount
     });
-    const endTime = event.end ? event.end.toLocaleString('zh-CN', {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    }) : '';
     
-    details.push(`时间: ${timeStr}${endTime ? '–' + endTime : ''}`);
-  }
-  
-  // 任课老师（有才显示）
-  if (props.teacher) {
-    details.push(`任课老师: ${props.teacher}`);
-  }
-  
-  // 槽位ID（便于回表定位）
-  if (props.slotId) {
-    details.push(`槽位ID: ${props.slotId}`);
-  }
-  
-  alert(details.join('\n'));
-}
-
-// 刷新数据函数
-function refreshData() { 
-  console.log('刷新日历数据');
-  loadCalendarEvents(); 
-}
-
-// 更新日历视图变化时的数据重新加载
-function changeView(viewName, activeBtn) {
-  if (!calendar) return;
-  
-  calendar.changeView(viewName);
-  
-  // 更新按钮状态
-  ['dayBtn','weekBtn','monthBtn'].forEach(id => { 
-    const b = $(id); 
-    if(b) b.classList.remove('active'); 
-  });
-  if (activeBtn) activeBtn.classList.add('active');
-  
-  // 更新标题
-  updateCalendarTitle();
-  
-  // 重新加载数据（因为视图范围改变了）
-  setTimeout(() => {
-    loadCalendarEvents();
-  }, 100);
-}
-
-// 更新今日统计（简化版）
-function updateTodayStats(){
-  // 这里可以根据加载的事件数据统计今日课程数量
-  // 暂时保持原有的占位数据
-  $('todayCourses').textContent = $('todayCourses').textContent || '0';
-  $('todayConsultations').textContent = $('todayConsultations').textContent || '0';
-  $('todayReminders').textContent = $('todayReminders').textContent || '0';
-  $('attendanceRate').textContent = $('attendanceRate').textContent || '—';
-}
-
-/* ================== 登录成功后的初始化流程 ================== */
-async function initializeAfterLogin() {
-  console.log('开始初始化，当前用户:', currentUser);
-  if (!currentUser) {
-    console.error('当前用户为空，无法初始化');
-    return;
-  }
-  
-  // 更新用户界面显示
-  console.log('更新用户界面显示');
-  updateUserInterface();
-  
-  // 根据用户角色设置界面权限
-  console.log('设置用户权限');
-  updateUIForUserRole(currentUser.userId);
-  
-  // 重新绑定导航（确保权限正确应用）
-  console.log('重新绑定导航');
-  initNavigation();
-  
-  // 初始化日历
-  console.log('初始化日历');
-  initCalendar();
-  
-  // 显示默认页面
-  console.log('显示默认页面');
-  showPage('calendar');
-  
-  // 根据角色加载不同的数据和功能
-  const userRole = getUserRole(currentUser.userId);
-  
-  switch(userRole) {
-    case 'student':
-      // 学生：加载课程数据、进度数据等
-      loadStudentData();
-      break;
-      
-    case 'teacher':
-      // 老师：加载老师相关数据
-      loadTeacherData();
-      break;
-      
-    case 'admin':
-      // 管理员：加载管理数据
-      loadAdminData();
-      break;
-  }
-  
-  console.log('初始化完成');
-}
-
-/* ================== 各角色数据加载函数（占位） ================== */
-function loadStudentData() {
-  // 占位：加载学生相关数据
-  console.log('加载学生数据...');
-}
-
-function loadTeacherData() {
-  // 占位：加载老师相关数据
-  console.log('加载老师数据...');
-}
-
-function loadAdminData() {
-  // 占位：加载管理员相关数据
-  console.log('加载管理员数据...');
-}
-
-// 占位函数：部门列表加载
-function loadDepartmentsList() {
-  console.log('加载部门列表...');
-}
-
-/* ================== 登录/注册/登出 ================== */
-let currentUser = null;
-
-function showRegisterForm() {
-  $('loginForm').style.display = 'none';
-  $('registerForm').style.display = 'block';
-  $('loginError').textContent = '';
-  $('registerError').textContent = '';
-}
-
-function showLoginForm() {
-  $('registerForm').style.display = 'none';
-  $('loginForm').style.display = 'block';
-  $('loginError').textContent = '';
-  $('registerError').textContent = '';
-}
-
-async function login() {
-  const username = ($('loginUsername').value || '').trim();
-  const err = $('loginError');
-  if (!username) { err.textContent = '请输入用户ID'; return; }
-  err.style.color = ''; err.textContent = '正在登录…';
-
-  console.log('尝试登录用户:', username);
-  const result = await callAPI('loginByUsername', { username });
-  console.log('登录结果:', result);
-
-  if (result && result.success) {
-    currentUser = normalizeUser(result.user, username);
-    console.log('标准化后的用户数据:', currentUser);
-
-    // 切换到主应用界面
-    console.log('隐藏登录界面，显示主应用');
-    $('loginContainer').style.display = 'none';
-    $('mainApp').style.display = 'block';
+    // 修复：返回统一格式
+    return {
+      success: true,
+      data: events,
+      message: `成功获取${events.length}个课程事件`,
+      debug: {
+        processedRows: processedCount,
+        totalEvents: events.length,
+        dateRange: { startDate, endDate }
+      }
+    };
     
-    // 调试信息
-    console.log('登录界面隐藏状态:', $('loginContainer').style.display);
-    console.log('主应用显示状态:', $('mainApp').style.display);
-    console.log('主应用元素存在:', !!$('mainApp'));
-    
-    try { window.location.hash = '#app'; } catch {}
-
-    // 执行登录后的统一初始化流程
-    await initializeAfterLogin();
-    
-  } else {
-    err.style.color = '#c00';
-    err.textContent = (result && result.message) || '登录失败：用户ID不存在';
-    console.error('登录失败:', result);
+  } catch (err) {
+    debugLog('获取日历数据错误', err.toString());
+    return { success: false, message: '获取日历数据失败: ' + err };
   }
 }
 
-async function registerUser() {
-  const name = ($('registerName').value || '').trim();
-  const email = ($('registerEmail').value || '').trim();
-  const department = $('registerDepartment').value;
-  const role = $('registerRole').value;
-  const err = $('registerError');
+// 获取当前用户信息
+function getCurrentUserInfo(userId, userData) {
+  if (!userId) return null;
   
-  // 获取专业值（可能是下拉框或输入框）
-  let major = '';
-  const majorElement = $('registerMajor');
-  if (majorElement) {
-    major = (majorElement.value || '').trim();
-  }
+  const { idx, values } = userData;
   
-  // 基础验证
-  if (!name || !email || !department || !major || !role) { 
-    err.textContent = '请填写姓名、邮箱、所属、专业、身份'; 
-    return; 
-  }
-  
-  err.style.color = ''; 
-  err.textContent = '正在登记…';
-  
-  const result = await callAPI('registerByProfile', { name, email, department, major, role });
-  
-  if (result && result.success) {
-    err.style.color = 'green';
-    
-    // 根据身份显示不同提示
-    if (role === '老师') {
-      err.textContent = '老师注册成功！请联系管理员分配"用户ID"，之后使用用户ID登录。';
-    } else {
-      err.textContent = '学生注册成功！请联系老师获取"用户ID"，之后使用用户ID登录。';
+  for (let i = 1; i < values.length; i++) {
+    if (String(values[i][idx['用户ID']]) === String(userId)) {
+      return {
+        userId: userId,
+        name: safeVal(idx, values[i], '姓名', ''),
+        role: safeVal(idx, values[i], '身份', ''),
+        major: safeVal(idx, values[i], '专业', ''),
+        department: safeVal(idx, values[i], '所属', '')
+      };
     }
-    
-    // 清空表单
-    $('registerName').value = '';
-    $('registerEmail').value = '';
-    $('registerDepartment').value = '';
-    $('registerRole').value = '';
-    
-    // 重置专业选择
-    const majorElement = $('registerMajor');
-    if (majorElement) {
-      if (majorElement.tagName === 'SELECT') {
-        majorElement.value = '';
-        majorElement.disabled = true;
-      } else {
-        majorElement.value = '';
+  }
+  return null;
+}
+
+// 可见性判断
+function isEventVisibleToUser(user, teacher, targetMajors, visibleStudentNames, userData) {
+  if (!user) return true; // 未登录默认全部可见
+  
+  const { role, name, major, department } = user;
+  
+  // 解析面向专业
+  const majorList = parseMajorList(targetMajors);
+  const isAllMajors = majorList.includes('全部') || majorList.includes('全专业') || majorList.length === 0;
+  
+  // 解析可见学生姓名并映射到用户ID
+  const visibleUserIds = mapNamesToUserIds(visibleStudentNames, userData);
+  
+  debugLog('可见性判断', {
+    userRole: role,
+    userName: name,
+    userMajor: major,
+    teacher: teacher,
+    majorList: majorList,
+    isAllMajors: isAllMajors,
+    visibleUserIds: visibleUserIds
+  });
+  
+  if (role === '学生') {
+    // 学生可见条件：被指名 OR 专业匹配 OR 全专业
+    const visible = visibleUserIds.includes(user.userId) || 
+                   majorList.includes(major) || 
+                   isAllMajors;
+    debugLog('学生可见性结果', visible);
+    return visible;
+  } else if (role === '老师') {
+    // 老师可见条件：任课老师匹配 OR 专业匹配 OR 部门匹配 OR 全专业
+    const visible = name === teacher || 
+                   majorList.includes(major) || 
+                   majorList.includes(department) ||
+                   isAllMajors;
+    debugLog('老师可见性结果', visible);
+    return visible;
+  }
+  
+  debugLog('默认可见（管理员等）', true);
+  return true; // 其他情况默认可见（如管理员）
+}
+
+// 解析专业列表
+function parseMajorList(majorsStr) {
+  if (!majorsStr) return [];
+  return majorsStr.split(/[,，\s、]+/).map(s => s.trim()).filter(Boolean);
+}
+
+// 姓名映射到用户ID
+function mapNamesToUserIds(namesStr, userData) {
+  if (!namesStr) return [];
+  
+  const names = namesStr.split(/[,，\s、]+/).map(s => s.trim()).filter(Boolean);
+  const userIds = [];
+  const { idx, values } = userData;
+  
+  names.forEach(name => {
+    for (let i = 1; i < values.length; i++) {
+      const userName = safeVal(idx, values[i], '姓名', '');
+      const userId = safeVal(idx, values[i], '用户ID', '');
+      const userRole = safeVal(idx, values[i], '身份', '');
+      
+      // 精确匹配姓名，优先学生身份
+      if (userName === name && userRole === '学生' && userId) {
+        userIds.push(userId);
       }
     }
-    
-    setTimeout(showLoginForm, 2000); // 稍微延长显示时间
-  } else {
-    err.style.color = '#c00'; 
-    err.textContent = (result && result.message) || '登记失败';
-  }
-}
-
-function logout() {
-  currentUser = null;
-  $('mainApp').style.display = 'none';
-  $('loginContainer').style.display = 'flex';
-  $('loginUsername').value = '';
-  $('loginError').textContent = '';
-  setApiStatus({ok:null, text:'API 检测中'});
-  try { window.location.hash = '#login'; } catch {}
-  
-  // 清理界面状态
-  document.querySelectorAll('.page-content').forEach(p => { 
-    p.classList.remove('active'); 
-    p.style.display = 'none'; 
   });
   
-  // 重置导航状态
-  navLinks.forEach(a => a.classList.remove('active'));
+  return [...new Set(userIds)]; // 去重
 }
 
-/* ================== 用户界面填充 ================== */
-function updateUserInterface() {
-  if (!currentUser) return;
+// 生成重复课程日期
+function generateRecurringDates(dateRange, weekdays, viewStart, viewEnd) {
+  const dates = [];
   
-  const role = getUserRole(currentUser.userId);
-  const roleDisplayName = {
-    'admin': '管理员',
-    'teacher': '老师', 
-    'student': '学生'
-  }[role] || currentUser.role || '';
-  
-  console.log('填充用户信息:', currentUser.name, roleDisplayName);
-  
-  $('userGreeting').textContent = '欢迎，' + (currentUser.name || currentUser.userId);
-  $('userRole').textContent = '(' + roleDisplayName + ')';
-  
-  // 填充个人资料（如果有对应的输入框）
-  if ($('profileName')) $('profileName').value = currentUser.name || '';
-  if ($('profileId')) $('profileId').value = currentUser.userId || '';
-  if ($('profileDept')) $('profileDept').value = currentUser.department || '';
-  if ($('profileRole')) $('profileRole').value = currentUser.role || '';
-}
-
-/* ================== 注册相关逻辑更新 ================== */
-// 设置专业下拉联动
-function setupMajorDropdown() {
-  const departmentSelect = document.getElementById('registerDepartment');
-  const majorSelect = document.getElementById('registerMajor');
-  
-  if (!departmentSelect || !majorSelect) return;
-  
-  // 专业选项配置
-  const majorOptions = {
-    '理科大学院': ['情报学', '电子电器', '生物化学', '机械'],
-    '文科大学院': ['文学', '历史学', '社会学', '新闻传播学', '社会福祉学', '表象文化', '经营学', '经济学', '日本语教育'],
-    '其他': [] // 其他部门允许自由填写
-  };
-  
-  // 监听部门选择变化
-  departmentSelect.addEventListener('change', function() {
-    const selectedDept = this.value;
-    updateMajorOptions(selectedDept, majorSelect, majorOptions);
-  });
-}
-
-// 更新专业选项
-function updateMajorOptions(department, majorSelect, majorOptions) {
-  // 清空现有选项
-  majorSelect.innerHTML = '<option value="">选择专业</option>';
-  
-  if (!department) {
-    // 没选择部门时，专业也为空
-    majorSelect.disabled = true;
-    return;
-  }
-  
-  if (department === '其他') {
-    // 其他部门：变回输入框
-    const newInput = document.createElement('input');
-    newInput.type = 'text';
-    newInput.id = 'registerMajor';
-    newInput.placeholder = '请输入专业';
-    newInput.style.cssText = majorSelect.style.cssText;
-    
-    majorSelect.parentNode.replaceChild(newInput, majorSelect);
-  } else {
-    // 理科/文科大学院：使用下拉选项
-    majorSelect.disabled = false;
-    const majors = majorOptions[department] || [];
-    
-    majors.forEach(major => {
-      const option = document.createElement('option');
-      option.value = major;
-      option.textContent = major;
-      majorSelect.appendChild(option);
-    });
-  }
-}
-
-/* ================== 手机端抽屉菜单 ================== */
-function setupMobileMenu() {
-  const strip = document.getElementById('menuStrip');
-  const aside = document.querySelector('aside');
-  const main = document.querySelector('main');
-  if (!strip || !aside || !main) return;
-
-  const mq = window.matchMedia('(max-width:600px)');
-  const isMobile = () => mq.matches;
-
-  const isOpen = () => document.body.classList.contains('mobile-menu-open');
-  const refreshCal = () => {
-    try {
-      const cal = window.calendar || window.mainCalendar;
-      if (cal && typeof cal.updateSize === 'function') setTimeout(()=> cal.updateSize(), 80);
-    } catch(_) {}
-  };
-  const open = () => { 
-    document.body.classList.add('mobile-menu-open'); 
-    strip.setAttribute('aria-expanded','true');  
-    strip.querySelector('.label').textContent='收起菜单'; 
-    refreshCal(); 
-  };
-  const close = () => { 
-    document.body.classList.remove('mobile-menu-open'); 
-    strip.setAttribute('aria-expanded','false'); 
-    strip.querySelector('.label').textContent='展开菜单'; 
-    refreshCal(); 
-  };
-
-  strip.addEventListener('click', (e) => {
-    if (!isMobile()) return;
-    e.stopPropagation();
-    isOpen() ? close() : open();
-  });
-
-  main.addEventListener('click', (e) => {
-    if (!isMobile() || !isOpen()) return;
-    const t = e.target;
-    if (aside.contains(t) || strip.contains(t)) return;
-    close();
-  });
-
-  const onChange = () => { if (!mq.matches) close(); };
-  mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
-}
-
-/* ================== 初始化 + API 连接状态检测 ================== */
-document.addEventListener('DOMContentLoaded', async () => {
-  console.log('页面加载完成，开始初始化');
-  
-  // 初始化导航系统
-  initNavigation();
-
-  // 添加专业联动功能
-  setupMajorDropdown();
-
-  // 登录注册退出按钮绑定
-  $('loginBtn')?.addEventListener('click', login);
-  $('registerBtn')?.addEventListener('click', registerUser);
-  $('logoutBtn')?.addEventListener('click', logout);
-  $('showRegisterBtn')?.addEventListener('click', showRegisterForm);
-  $('showLoginBtn')?.addEventListener('click', showLoginForm);
-  $('loginUsername')?.addEventListener('keypress', (e) => { if (e.key === 'Enter') login(); });
-
-  // API 状态检测
-  setApiStatus({ok:null, text:'API 检测中'});
   try {
-    const [r1, r2] = await Promise.allSettled([
-      callAPI('testConnection'),
-      callAPI('ping', {t: Date.now()})
-    ]);
-    const ok = (r1.value && r1.value.success) || (r2.value && r2.value.success);
-    setApiStatus({ok, text: ok ? 'API 连接成功' : 'API 连接异常'});
-    if (!ok) {
-      const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
+    // 解析日期范围
+    const rangeParts = dateRange.split('~');
+    if (rangeParts.length !== 2) {
+      debugLog('日期范围格式错误', dateRange);
+      return dates;
     }
-  } catch (e) {
-    setApiStatus({ok:false, text:'API 连接失败'});
-    const d = $('loginError'); if (d){ d.style.color='#c00'; d.textContent='服务器连接失败，请稍后重试'; }
+    
+    const rangeStart = new Date(rangeParts[0].trim());
+    const rangeEnd = new Date(rangeParts[1].trim());
+    
+    if (isNaN(rangeStart.getTime()) || isNaN(rangeEnd.getTime())) {
+      debugLog('日期解析失败', { dateRange, rangeStart, rangeEnd });
+      return dates;
+    }
+    
+    // 解析周几
+    const weekdayMap = { '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 0 };
+    const targetWeekdays = weekdays.split(/[,，\s、]+/)
+      .map(s => s.trim())
+      .map(s => weekdayMap[s])
+      .filter(d => d !== undefined);
+    
+    if (targetWeekdays.length === 0) {
+      debugLog('周几解析失败', weekdays);
+      return dates;
+    }
+    
+    // 计算实际搜索范围（取交集）
+    const searchStart = new Date(Math.max(rangeStart.getTime(), viewStart.getTime()));
+    const searchEnd = new Date(Math.min(rangeEnd.getTime(), viewEnd.getTime()));
+    
+    // 逐日检查
+    let current = new Date(searchStart);
+    while (current <= searchEnd) {
+      if (targetWeekdays.includes(current.getDay())) {
+        dates.push(formatDateString(current));
+      }
+      current.setDate(current.getDate() + 1);
+    }
+    
+    debugLog('重复课程日期生成完成', { dateRange, weekdays, generatedDates: dates });
+    
+  } catch (err) {
+    debugLog('生成重复日期出错', err.toString());
   }
-
-  // 手机端抽屉功能
-  setupMobileMenu();
   
-  console.log('初始化完成');
-});
+  return dates;
+}
+
+// 检查日期是否在范围内
+function isDateInRange(dateStr, startDate, endDate) {
+  const date = new Date(dateStr);
+  return date >= startDate && date <= endDate;
+}
+
+// 格式化日期字符串
+function formatDateString(date) {
+  try {
+    if (typeof date === 'string') {
+      // 如果已经是字符串，尝试标准化格式
+      const d = new Date(date);
+      if (!isNaN(d.getTime())) {
+        return formatDateString(d);
+      }
+      return date; // 如果无法解析，返回原字符串
+    }
+    
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  } catch (err) {
+    debugLog('日期格式化出错', { date, error: err.toString() });
+    return null;
+  }
+}
+
+// 格式化时间
+function formatTime(timeStr) {
+  if (!timeStr) return '00:00:00';
+  try {
+    const parts = String(timeStr).split(':');
+    if (parts.length >= 2) {
+      const hours = parts[0].padStart(2, '0');
+      const minutes = parts[1].padStart(2, '0');
+      return `${hours}:${minutes}:00`;
+    }
+    return '00:00:00';
+  } catch (err) {
+    debugLog('时间格式化出错', { timeStr, error: err.toString() });
+    return '00:00:00';
+  }
+}
+
+// 获取事件颜色
+function getEventColor(courseAttr, batchId) {
+  // 优先使用课程属性固定色
+  if (courseAttr && COURSE_ATTR_COLORS[courseAttr]) {
+    return COURSE_ATTR_COLORS[courseAttr];
+  }
+  
+  // 其次使用批次ID哈希色
+  if (batchId) {
+    let hash = 0;
+    for (let i = 0; i < String(batchId).length; i++) {
+      hash = ((hash << 5) - hash + String(batchId).charCodeAt(i)) & 0xffffffff;
+    }
+    return BATCH_COLORS[Math.abs(hash) % BATCH_COLORS.length];
+  }
+  
+  // 默认颜色
+  return DEFAULT_COLOR;
+}

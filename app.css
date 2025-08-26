@@ -217,3 +217,51 @@ select {
   appearance: none;
   color: #555657;   /* 这里换成你喜欢的颜色 */
 }
+
+/* 调整表单区域的整体文字和间距 */
+.page-content {
+  font-size: 15px;       /* 默认 13-14px，改大一点 */
+  line-height: 1.6;      /* 增加行高，让段落呼吸 */
+}
+
+/* 输入框和下拉框：放大字号+内边距 */
+.page-content input,
+.page-content select,
+.page-content textarea {
+  font-size: 15px;
+  padding: 6px 8px;      /* 内边距增加，看起来更宽松 */
+  line-height: 1.4;
+}
+
+/* 表单分组的标题 */
+.page-content h3,
+.page-content h4,
+.page-content label {
+  font-size: 16px;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+/* 提交按钮也稍微大一点 */
+.page-content button {
+  font-size: 15px;
+  padding: 6px 14px;
+}
+/* 只在宽屏（≥768px）时放大 */
+@media (min-width: 768px) {
+  .page-content {
+    font-size: 15px;
+    line-height: 1.6;
+  }
+  .page-content input,
+  .page-content select,
+  .page-content textarea {
+    font-size: 15px;
+    padding: 6px 8px;
+  }
+  .page-content button {
+    font-size: 15px;
+    padding: 6px 14px;
+  }
+}
+

@@ -1,4 +1,3 @@
-
 /* =============== 基础配置（按你现有 API） =============== */
 const API_URL = 'https://script.google.com/macros/s/AKfycbybAvJ1PChJbu2WofPrj2-IrZ4Ro07mBlQQ7TymJRtadT0UiXfL1jQbcc3yYuXHaXw/exec';
 
@@ -266,145 +265,32 @@ function updateUserUI() {
   }
 }
 
-function recordClickLog(ev) {
-  try {
-    var key = 'edsched_clickLogs';
-    var ext = ev.extendedProps || {};
-    var item = {
-      slotId: ext.slotId || ev.id || '',
-      title: ev.title || '',
-      start: ev.start ? ev.start.toISOString() : '',
-      end:   ev.end   ? ev.end.toISOString()   : '',
-      userId: (window.currentUser && window.currentUser.userId) || '',
-      ts: new Date().toISOString()
-    };
-    var dayKey = item.start ? item.start.slice(0,10) : new Date().toISOString().slice(0,10);
-    var arr = [];
-    try { arr = JSON.parse(localStorage.getItem(key) || '[]'); } catch(_) {}
-    var dup = arr.some(function(x){
-      return (x.slotId === item.slotId) && (x.userId === item.userId) && (String(x.start).slice(0,10) === dayKey);
-    });
-    if (!dup) {
-      arr.push(item);
-      localStorage.setItem(key, JSON.stringify(arr));
-      alert('已记录本次预约意向。');
-    } else {
-      alert('今天已记录过该课程。');
-    }
-    return true;
-  } catch (e) {
-    alert('记录失败：' + e.message);
-    return false;
-  }
-}
-
-
 /* =============== 日历 =============== */
 function initCalendar() {
   const el = $('mainCalendar'); if (!el) return;
   const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
   const cal = new FullCalendar.Calendar(el, {
     eventClick: function(info) {
-    // 如果点的是“预约”按钮，就不触发弹层
-    var t = info.jsEvent && info.jsEvent.target;
-    if (t && t.closest && t.closest('.fc-book-btn')) return;
-
-    // 点事件其他区域 → 打开详情弹层（如果你已定义了 openCourseDetail）
-    if (typeof openCourseDetail === 'function') {
-      openCourseDetail(info.event);
-    } else {
-      // 兜底：还没接入弹层时，维持原先的 alert 行为
-      var ev = info.event, ext = ev.extendedProps || {};
-      var s = ev.start ? ev.start.toLocaleString('zh-CN') : '';
-      var e = ev.end   ? ev.end.toLocaleString('zh-CN')   : '';
-      alert('课程：' + (ev.title || '') + '\n时间：' + s + ' ~ ' + e);
-    }
-  },
-
-  // 新增：为每个事件渲染一个“预约”按钮（右上角）
-  eventContent: function(arg) {
-  var root = document.createElement('div');
-  root.style.position = 'relative';
-
-  // 月视图给按钮预留空间，避免与标题重叠
-  if (arg.view && arg.view.type === 'dayGridMonth') {
-    root.style.paddingRight = '40px';
-  }
-
-  var title = document.createElement('div');
-  title.textContent = arg.event.title || '';
-  title.style.pointerEvents = 'none';
-  root.appendChild(title);
-
-  // 仅对「面谈 / VIP」显示按钮（不再使用 status === '可预约'）
-  var ext = arg.event.extendedProps || {};
-  var attr = String(ext.attr || '');
-  var bookable = (attr.indexOf('面谈') > -1) || (attr.toUpperCase().indexOf('VIP') > -1);
-
-  if (!bookable) {
-    return { domNodes: [root] };  // 非面谈/VIP，无按钮，只显示标题
-  }
-
-  var btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'fc-book-btn';
-  btn.textContent = (String(ext.status || '') === '已预约') ? '已预约' : '预约';
-  if (ext.status === '已预约') {
-    btn.disabled = true;
-    btn.classList.add('fc-book-btn--done');
-  }
-
-  btn.style.cssText = 'position:absolute;top:2px;right:2px;padding:2px 6px;font-size:' +
-                      ((arg.view && arg.view.type === 'dayGridMonth') ? '11px' : '12px') +
-                      ';line-height:1;border:1px solid #ccc;border-radius:4px;background:#fff;cursor:pointer;';
-
-  btn.addEventListener('click', function(e) {
-    e.stopPropagation();
-    e.preventDefault();
-
-    // 1) 本地记录
-    var ok = recordClickLog(arg.event);
-
-    // 2) 回写表：把课程状态设为“已预约”，失败不影响本地记录
-    (async function(){
-      try {
-        var payload = {
-          slotId: (ext.slotId || arg.event.id || ''),
-          status: '已预约'
-        };
-        var res = await callAPI('updateCourseStatus', payload);
-        // 兼容 {ok:true} 或直接返回对象/数组
-        var okServer = res && (res.ok === true || res.status === 'ok');
-        if (okServer) {
-          // 更新本地事件状态
-          try { arg.event.setExtendedProp('status', '已预约'); } catch(_) {
-            (arg.event.extendedProps || {}).status = '已预约';
-          }
-        }
-      } catch(_) { /* 忽略网络/权限异常 */ }
-      // 无论成功失败，按钮置为已预约态（与本地记录一致）
-      btn.disabled = true;
-      btn.textContent = '已预约';
-      btn.classList.add('fc-book-btn--done');
-    })();
-  });
-
-  root.appendChild(btn);
-  return { domNodes: [root] };
-},
-
-  // —— 下面继续保留你其余既有配置 —— 
-  initialView,
-  locale: 'zh-cn',
-  firstDay: 1,
-  height: 'auto',
-  headerToolbar: false,
-  allDaySlot: false,
-  slotMinTime: '08:00:00',
-  slotMaxTime: '22:00:00',
-  slotDuration: '00:30:00',
-  expandRows: true,
-  datesSet: updateCalendarTitle,
+      const ev = info.event;
+      const ext = ev.extendedProps || {};
+      const t = ev.title || '';
+      const s = ev.start ? ev.start.toLocaleString('zh-CN') : '';
+      const e = ev.end   ? ev.end.toLocaleString('zh-CN')   : '';
+      const teacher = ext.teacher ? `\n任课老师：${ext.teacher}` : '';
+      const sid = ext.slotId ? `\n槽位ID：${ext.slotId}` : '';
+      alert(`课程：${t}\n时间：${s} ~ ${e}${teacher}${sid}`);
+    },
+    initialView,
+    locale: 'zh-cn',
+    firstDay: 1,
+    height: 'auto',
+    headerToolbar: false,
+    allDaySlot: false,
+    slotMinTime:'08:00:00',
+    slotMaxTime:'22:00:00',
+    slotDuration:'00:30:00',
+    expandRows:true,
+    datesSet: updateCalendarTitle,
 
     // ★ 新增：由 FullCalendar 主动拉取你的 API
     events: async function(info, success, failure) {
@@ -423,7 +309,6 @@ function initCalendar() {
       } catch (err) {
         failure && failure(err);
       }
-      
     }
   });
   cal.render();

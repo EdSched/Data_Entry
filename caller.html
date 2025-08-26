@@ -1,83 +1,84 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>下拉框配色测试</title>
+  <title>下拉文字颜色测试</title>
   <style>
     body {
       font-family: sans-serif;
-      padding: 20px;
-      background: #fafafa;
+      background:#f8f8f8;
+      padding:30px;
+      color:#333;
     }
-    h2 { margin-top: 30px; }
-
-    .test-box {
-      margin: 20px 0;
-      padding: 20px;
-      background: #fff;
-      border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+    .row {
+      display:flex;
+      gap:30px;
+      align-items:center;
     }
-
+    label {
+      font-size:14px;
+      display:block;
+      margin-bottom:6px;
+    }
     select {
-      padding: 8px 10px;
-      font-size: 16px;
-      border-radius: 4px;
-      border: 1px solid #ccc;
-      appearance: none;   /* 去掉默认箭头（部分浏览器）*/
+      padding:6px 12px;
+      border:1px solid #ccc;
+      border-radius:4px;
+      font-size:14px;
+      background:#fff;
+      /* 默认黑灰 */
+      color:#444;
     }
-
-    /* 灰 + 粉 */
-    .pink select {
-      color: #333;
+    /* 浅灰版本 */
+    .test-gray {
+      color:#888 !important;
     }
-    .pink select:focus {
-      border-color: #f5c7d0;
-      box-shadow: 0 0 0 3px rgba(245,199,208,0.35);
-      outline: none;
+    /* 粉色版本 */
+    .test-pink {
+      color:#d46a6a !important;
     }
-    .pink select option:checked {
-      background: #f5c7d0;
-      color: #333;
-    }
-
-    /* 黑灰 + 橄榄金 */
-    .gold select {
-      color: #222;
-    }
-    .gold select:focus {
-      border-color: #c9a227;
-      box-shadow: 0 0 0 3px rgba(201,162,39,0.35);
-      outline: none;
-    }
-    .gold select option:checked {
-      background: #c9a227;
-      color: #222;
+    /* 绿金版本 */
+    .test-gold {
+      color:#C9A227 !important; /* 偏绿的金橙色 */
     }
   </style>
 </head>
 <body>
-  <h1>下拉框配色测试</h1>
-
-  <div class="test-box pink">
-    <h2>灰 + 粉 配色</h2>
-    <select>
-      <option>请选择专业</option>
-      <option>社会学</option>
-      <option>历史学</option>
-      <option>经济学</option>
-    </select>
-  </div>
-
-  <div class="test-box gold">
-    <h2>黑灰 + 橄榄金 配色</h2>
-    <select>
-      <option>请选择专业</option>
-      <option>社会学</option>
-      <option>历史学</option>
-      <option>经济学</option>
-    </select>
+  <h2>下拉框文字颜色测试</h2>
+  <div class="row">
+    <div>
+      <label>默认黑灰</label>
+      <select>
+        <option>社会学</option>
+        <option>历史学</option>
+        <option>新闻传播学</option>
+      </select>
+    </div>
+    <div>
+      <label>浅灰</label>
+      <select class="test-gray">
+        <option>社会学</option>
+        <option>历史学</option>
+        <option>新闻传播学</option>
+      </select>
+    </div>
+    <div>
+      <label>粉色</label>
+      <select class="test-pink">
+        <option>社会学</option>
+        <option>历史学</option>
+        <option>新闻传播学</option>
+      </select>
+    </div>
+    <div>
+      <label>绿金</label>
+      <select class="test-gold">
+        <option>社会学</option>
+        <option>历史学</option>
+        <option>新闻传播学</option>
+      </select>
+    </div>
   </div>
 </body>
 </html>

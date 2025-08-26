@@ -208,7 +208,7 @@ aside{ display:flex; }                 /* 桌面/iPad 正常显示侧栏 */
   }
 }
 .fc .fc-day-today {
-  background-color: #f3eae2 !important;  /* 浅灰色 */}
+  background-color: #dee4e0ff !important;  /* 浅灰色 */}
   
 /* 全局覆盖所有下拉框的默认蓝色文字 */
 select {

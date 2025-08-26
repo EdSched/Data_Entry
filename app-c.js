@@ -92,13 +92,22 @@ async function callAPI(action, params = {}) {
 
 /* ================== 用户界面权限控制 ================== */
 function updateUIForUserRole(userId) {
+  console.log('正在设置用户界面，用户ID:', userId);
   const role = getUserRole(userId);
+  console.log('用户角色:', role);
   
   // 获取三套导航
   const navStudent = document.getElementById('nav-student');
   const navTeacher = document.getElementById('nav-teacher'); 
   const navAdmin = document.getElementById('nav-admin');
   const overviewSection = document.querySelector('.sidebar-section'); // 今日提醒
+  
+  console.log('导航元素:', {
+    navStudent: !!navStudent,
+    navTeacher: !!navTeacher,
+    navAdmin: !!navAdmin,
+    overviewSection: !!overviewSection
+  });
   
   // 先隐藏所有导航
   if (navStudent) navStudent.style.display = 'none';
@@ -135,6 +144,8 @@ function updateUIForUserRole(userId) {
 /* ================== 导航切换 ================== */
 const navLinks = [];
 function showPage(pageId) {
+  console.log('切换到页面:', pageId);
+  
   // 隐藏所有页面
   document.querySelectorAll('.page-content').forEach(p => { 
     p.classList.remove('active'); 
@@ -175,9 +186,14 @@ function showPage(pageId) {
       targetPage = document.getElementById('calendarPage'); // 默认显示日历
   }
   
+  console.log('目标页面元素:', !!targetPage, targetPage?.id);
+  
   if (targetPage) { 
     targetPage.style.display = 'block'; 
-    targetPage.classList.add('active'); 
+    targetPage.classList.add('active');
+    console.log('页面显示成功:', pageId);
+  } else {
+    console.error('找不到页面元素:', pageId);
   }
   
   // 更新导航激活状态
@@ -193,16 +209,22 @@ function showPage(pageId) {
 
 /* ================== 初始化导航绑定 ================== */
 function initNavigation() {
+  console.log('初始化导航系统');
+  
   // 清空之前的绑定
   navLinks.length = 0;
   
   // 绑定所有导航链接（三套导航中的所有链接）
-  document.querySelectorAll('.nav-link').forEach(link => {
+  const allNavLinks = document.querySelectorAll('.nav-link');
+  console.log('找到导航链接数量:', allNavLinks.length);
+  
+  allNavLinks.forEach(link => {
     navLinks.push(link);
     
     link.addEventListener('click', (e) => {
       e.preventDefault();
       const pageId = link.dataset.page;
+      console.log('点击导航:', pageId);
       
       // 权限检查
       if (currentUser && pageId) {
@@ -241,12 +263,16 @@ function initNavigation() {
   });
 }
 
-/* ================== 日历功能（简化版） ================== */
+/* ================== 日历功能 ================== */
 let calendar = null;
 
 function initCalendar() {
+  console.log('初始化日历');
   const el = $('mainCalendar'); 
-  if (!el) return;
+  if (!el) {
+    console.error('找不到日历容器元素');
+    return;
+  }
   
   const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
   calendar = new FullCalendar.Calendar(el, {
@@ -260,7 +286,15 @@ function initCalendar() {
     slotMaxTime:'22:00:00', 
     slotDuration:'00:30:00', 
     expandRows:true,
-    datesSet: updateCalendarTitle,
+    datesSet: function(info) {
+      // 当日历视图日期范围改变时，重新加载数据
+      updateCalendarTitle();
+      if (currentUser) {
+        setTimeout(() => {
+          loadCalendarEvents();
+        }, 50);
+      }
+    },
     eventClick: handleEventClick
   });
   
@@ -283,9 +317,14 @@ function initCalendar() {
 
   calendar.render();
   updateCalendarTitle();
-  loadCalendarEvents();
+  
+  // 初次加载数据
+  if (currentUser) {
+    loadCalendarEvents();
+  }
+  
+  console.log('日历初始化完成');
 }
-
 
 function updateCalendarTitle() {
   if (!calendar) return;
@@ -305,17 +344,21 @@ function updateCalendarTitle() {
   }
 }
 
-/* ================== 更新的日历功能 ================== */
-
 // 更新日历数据加载函数
 async function loadCalendarEvents() {
-  if (!currentUser || !calendar) return;
+  if (!currentUser || !calendar) {
+    console.log('无法加载日历事件: currentUser=', !!currentUser, 'calendar=', !!calendar);
+    return;
+  }
   
   try {
+    console.log('开始加载日历事件');
     // 获取当前日历视图的日期范围
     const view = calendar.view;
     const startDate = formatDateForAPI(view.currentStart);
     const endDate = formatDateForAPI(view.currentEnd);
+    
+    console.log('日期范围:', startDate, 'to', endDate);
     
     // 调用新的课程日历API
     const events = await callAPI('getCourseCalendarEvents', { 
@@ -323,6 +366,8 @@ async function loadCalendarEvents() {
       startDate: startDate,
       endDate: endDate
     });
+    
+    console.log('API返回的事件数据:', events);
     
     // 清除现有事件
     calendar.removeAllEvents();
@@ -332,6 +377,9 @@ async function loadCalendarEvents() {
       events.forEach(event => {
         calendar.addEvent(event);
       });
+      console.log('成功添加', events.length, '个事件');
+    } else {
+      console.log('事件数据不是数组格式');
     }
     
     updateTodayStats();
@@ -391,66 +439,12 @@ function handleEventClick(info) {
   alert(details.join('\n'));
 }
 
-
-// 在日历初始化后绑定视图变化监听
-function initCalendar() {
-  const el = $('mainCalendar'); 
-  if (!el) return;
-  
-  const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
-  calendar = new FullCalendar.Calendar(el, {
-    initialView, 
-    locale: 'zh-cn', 
-    firstDay: 1, 
-    height: 'auto',
-    headerToolbar: false, 
-    allDaySlot: false,
-    slotMinTime:'08:00:00', 
-    slotMaxTime:'22:00:00', 
-    slotDuration:'00:30:00', 
-    expandRows:true,
-    datesSet: function(info) {
-      // 当日历视图日期范围改变时，重新加载数据
-      updateCalendarTitle();
-      if (currentUser) {
-        setTimeout(() => {
-          loadCalendarEvents();
-        }, 50);
-      }
-    },
-    eventClick: handleEventClick
-  });
-  
-  // 绑定日历控制按钮
-  const prevBtn = $('prevBtn');
-  const nextBtn = $('nextBtn');
-  const todayBtn = $('todayBtn');
-  const dayBtn = $('dayBtn');
-  const weekBtn = $('weekBtn');
-  const monthBtn = $('monthBtn');
-  const refreshBtn = $('refreshDataBtn');
-  
-  if (prevBtn) prevBtn.onclick = () => calendar.prev();
-  if (nextBtn) nextBtn.onclick = () => calendar.next();
-  if (todayBtn) todayBtn.onclick = () => calendar.today();
-  if (dayBtn) dayBtn.onclick = () => changeView('timeGridDay', dayBtn);
-  if (weekBtn) weekBtn.onclick = () => changeView('timeGridWeek', weekBtn);
-  if (monthBtn) monthBtn.onclick = () => changeView('dayGridMonth', monthBtn);
-  if (refreshBtn) refreshBtn.onclick = refreshData;
-
-  calendar.render();
-  updateCalendarTitle();
-  
-  // 初次加载数据
-  if (currentUser) {
-    loadCalendarEvents();
-  }
-}
-
 // 刷新数据函数
 function refreshData() { 
+  console.log('刷新日历数据');
   loadCalendarEvents(); 
 }
+
 // 更新日历视图变化时的数据重新加载
 function changeView(viewName, activeBtn) {
   if (!calendar) return;
@@ -483,22 +477,33 @@ function updateTodayStats(){
   $('attendanceRate').textContent = $('attendanceRate').textContent || '—';
 }
 
-
 /* ================== 登录成功后的初始化流程 ================== */
 async function initializeAfterLogin() {
-  if (!currentUser) return;
+  console.log('开始初始化，当前用户:', currentUser);
+  if (!currentUser) {
+    console.error('当前用户为空，无法初始化');
+    return;
+  }
   
   // 更新用户界面显示
+  console.log('更新用户界面显示');
   updateUserInterface();
   
   // 根据用户角色设置界面权限
+  console.log('设置用户权限');
   updateUIForUserRole(currentUser.userId);
   
   // 重新绑定导航（确保权限正确应用）
+  console.log('重新绑定导航');
   initNavigation();
   
   // 初始化日历
+  console.log('初始化日历');
   initCalendar();
+  
+  // 显示默认页面
+  console.log('显示默认页面');
+  showPage('calendar');
   
   // 根据角色加载不同的数据和功能
   const userRole = getUserRole(currentUser.userId);
@@ -519,6 +524,8 @@ async function initializeAfterLogin() {
       loadAdminData();
       break;
   }
+  
+  console.log('初始化完成');
 }
 
 /* ================== 各角色数据加载函数（占位） ================== */
@@ -565,14 +572,24 @@ async function login() {
   if (!username) { err.textContent = '请输入用户ID'; return; }
   err.style.color = ''; err.textContent = '正在登录…';
 
+  console.log('尝试登录用户:', username);
   const result = await callAPI('loginByUsername', { username });
+  console.log('登录结果:', result);
 
   if (result && result.success) {
     currentUser = normalizeUser(result.user, username);
+    console.log('标准化后的用户数据:', currentUser);
 
     // 切换到主应用界面
+    console.log('隐藏登录界面，显示主应用');
     $('loginContainer').style.display = 'none';
     $('mainApp').style.display = 'block';
+    
+    // 调试信息
+    console.log('登录界面隐藏状态:', $('loginContainer').style.display);
+    console.log('主应用显示状态:', $('mainApp').style.display);
+    console.log('主应用元素存在:', !!$('mainApp'));
+    
     try { window.location.hash = '#app'; } catch {}
 
     // 执行登录后的统一初始化流程
@@ -581,95 +598,10 @@ async function login() {
   } else {
     err.style.color = '#c00';
     err.textContent = (result && result.message) || '登录失败：用户ID不存在';
+    console.error('登录失败:', result);
   }
 }
 
-async function registerUser() {
-  const name = ($('registerName').value || '').trim();
-  const email = ($('registerEmail').value || '').trim();
-  const department = $('registerDepartment').value;
-  const major = ($('registerMajor').value || '').trim();
-  const role = $('registerRole').value;
-  const err = $('registerError');
-  if (!name || !email || !department || !major || !role) { err.textContent = '请填写姓名、邮箱、所属、专业、身份'; return; }
-  err.style.color=''; err.textContent = '正在登记…';
-  const result = await callAPI('registerByProfile', { name, email, department, major, role });
-  if (result && result.success) {
-    err.style.color='green'; err.textContent='登记成功！请联系老师获取"用户ID"，之后使用用户ID登录。';
-    $('registerName').value=''; $('registerEmail').value=''; $('registerDepartment').value=''; $('registerMajor').value=''; $('registerRole').value='';
-    setTimeout(showLoginForm, 1200);
-  } else {
-    err.style.color='#c00'; err.textContent=(result && result.message) || '登记失败';
-  }
-}
-/* ================== 注册相关逻辑更新 ================== */
-
-// 在 DOMContentLoaded 中添加专业联动逻辑
-document.addEventListener('DOMContentLoaded', async () => {
-  // 原有的初始化代码...
-  
-  // 添加专业联动功能
-  setupMajorDropdown();
-  
-  // 其他原有代码...
-});
-
-// 设置专业下拉联动
-function setupMajorDropdown() {
-  const departmentSelect = document.getElementById('registerDepartment');
-  const majorSelect = document.getElementById('registerMajor');
-  
-  if (!departmentSelect || !majorSelect) return;
-  
-  // 专业选项配置
-  const majorOptions = {
-    '理科大学院': ['情报学', '电子电器', '生物化学', '机械'],
-    '文科大学院': ['文学', '历史学', '社会学', '新闻传播学', '社会福祉学', '表象文化', '经营学', '经济学', '日本语教育'],
-    '其他': [] // 其他部门允许自由填写
-  };
-  
-  // 监听部门选择变化
-  departmentSelect.addEventListener('change', function() {
-    const selectedDept = this.value;
-    updateMajorOptions(selectedDept, majorSelect, majorOptions);
-  });
-}
-
-// 更新专业选项
-function updateMajorOptions(department, majorSelect, majorOptions) {
-  // 清空现有选项
-  majorSelect.innerHTML = '<option value="">选择专业</option>';
-  
-  if (!department) {
-    // 没选择部门时，专业也为空
-    majorSelect.disabled = true;
-    return;
-  }
-  
-  if (department === '其他') {
-    // 其他部门：变回输入框
-    const newInput = document.createElement('input');
-    newInput.type = 'text';
-    newInput.id = 'registerMajor';
-    newInput.placeholder = '请输入专业';
-    newInput.style.cssText = majorSelect.style.cssText;
-    
-    majorSelect.parentNode.replaceChild(newInput, majorSelect);
-  } else {
-    // 理科/文科大学院：使用下拉选项
-    majorSelect.disabled = false;
-    const majors = majorOptions[department] || [];
-    
-    majors.forEach(major => {
-      const option = document.createElement('option');
-      option.value = major;
-      option.textContent = major;
-      majorSelect.appendChild(option);
-    });
-  }
-}
-
-// 更新注册函数
 async function registerUser() {
   const name = ($('registerName').value || '').trim();
   const email = ($('registerEmail').value || '').trim();
@@ -728,6 +660,7 @@ async function registerUser() {
     err.textContent = (result && result.message) || '登记失败';
   }
 }
+
 function logout() {
   currentUser = null;
   $('mainApp').style.display = 'none';
@@ -758,6 +691,8 @@ function updateUserInterface() {
     'student': '学生'
   }[role] || currentUser.role || '';
   
+  console.log('填充用户信息:', currentUser.name, roleDisplayName);
+  
   $('userGreeting').textContent = '欢迎，' + (currentUser.name || currentUser.userId);
   $('userRole').textContent = '(' + roleDisplayName + ')';
   
@@ -766,6 +701,62 @@ function updateUserInterface() {
   if ($('profileId')) $('profileId').value = currentUser.userId || '';
   if ($('profileDept')) $('profileDept').value = currentUser.department || '';
   if ($('profileRole')) $('profileRole').value = currentUser.role || '';
+}
+
+/* ================== 注册相关逻辑更新 ================== */
+// 设置专业下拉联动
+function setupMajorDropdown() {
+  const departmentSelect = document.getElementById('registerDepartment');
+  const majorSelect = document.getElementById('registerMajor');
+  
+  if (!departmentSelect || !majorSelect) return;
+  
+  // 专业选项配置
+  const majorOptions = {
+    '理科大学院': ['情报学', '电子电器', '生物化学', '机械'],
+    '文科大学院': ['文学', '历史学', '社会学', '新闻传播学', '社会福祉学', '表象文化', '经营学', '经济学', '日本语教育'],
+    '其他': [] // 其他部门允许自由填写
+  };
+  
+  // 监听部门选择变化
+  departmentSelect.addEventListener('change', function() {
+    const selectedDept = this.value;
+    updateMajorOptions(selectedDept, majorSelect, majorOptions);
+  });
+}
+
+// 更新专业选项
+function updateMajorOptions(department, majorSelect, majorOptions) {
+  // 清空现有选项
+  majorSelect.innerHTML = '<option value="">选择专业</option>';
+  
+  if (!department) {
+    // 没选择部门时，专业也为空
+    majorSelect.disabled = true;
+    return;
+  }
+  
+  if (department === '其他') {
+    // 其他部门：变回输入框
+    const newInput = document.createElement('input');
+    newInput.type = 'text';
+    newInput.id = 'registerMajor';
+    newInput.placeholder = '请输入专业';
+    newInput.style.cssText = majorSelect.style.cssText;
+    
+    majorSelect.parentNode.replaceChild(newInput, majorSelect);
+  } else {
+    // 理科/文科大学院：使用下拉选项
+    majorSelect.disabled = false;
+    const majors = majorOptions[department] || [];
+    
+    majors.forEach(major => {
+      const option = document.createElement('option');
+      option.value = major;
+      option.textContent = major;
+      majorSelect.appendChild(option);
+    });
+  }
 }
 
 /* ================== 手机端抽屉菜单 ================== */
@@ -817,8 +808,13 @@ function setupMobileMenu() {
 
 /* ================== 初始化 + API 连接状态检测 ================== */
 document.addEventListener('DOMContentLoaded', async () => {
+  console.log('页面加载完成，开始初始化');
+  
   // 初始化导航系统
   initNavigation();
+
+  // 添加专业联动功能
+  setupMajorDropdown();
 
   // 登录注册退出按钮绑定
   $('loginBtn')?.addEventListener('click', login);
@@ -847,4 +843,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // 手机端抽屉功能
   setupMobileMenu();
+  
+  console.log('初始化完成');
 });

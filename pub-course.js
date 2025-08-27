@@ -30,7 +30,19 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     callAPI('publishSlots', payload).then(res => {
+      coursename,          // 课程名
+  attr: courseAttr,    // 课程属性
+  teacher,
+  singledate,          // 或者用 daterange: `${rangeStart}~${rangeEnd}`
+  starttime, endtime,
+  weekdays, count, breakmins,
+  majors: [major],     // ← dep&& !major 时已把 major=dep
+  visiblestudentids,   // ← 若空则默认 [major]
+  campus, classmode, classroom, onlinelink, handouturl,
+  schedulestatus
+}).then(r => {
       alert(res.success ? '发布成功' : '发布失败：' + res.message);
     });
   });
 });
+

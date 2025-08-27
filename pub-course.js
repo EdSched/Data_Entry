@@ -19,7 +19,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const courseAttr = selects1[0]?.value || '';
     const dep        = document.getElementById('pubDepartment')?.value || (selects1[1]?.value || '');
     let   major      = document.getElementById('pubMajor')?.value || (selects1[2]?.value || '');
-    const scheduleStatus = selects1[3]?.value || '';
+    const scheduleStatus = document.querySelector('#pub-course fieldset:nth-of-type(1) select:last-of-type')?.value || '';
+    payload.schedulestatus = scheduleStatus;
+
 
     // 规则1：选了所属且专业为空 → 用所属填充
     // 1) 取所属

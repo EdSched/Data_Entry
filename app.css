@@ -17,6 +17,7 @@
 .api-dot.err{background:#ef4444}
 .api-dot.wait{background:#f59e0b}
 
+
 /* 主容器与卡片 */
 /* 使用自定义 --vh，避免 iOS 100vh 被地址栏压缩；并允许内容溢出时自然增高 */
 .app{min-height:calc(var(--vh, 1vh)*100 - var(--topbar));height:auto;display:flex}
@@ -367,7 +368,9 @@ button {
     margin: 0;
   }
 }
-
+body {
+  font-family: 'Noto Sans SC', sans-serif;
+}
 
 
 

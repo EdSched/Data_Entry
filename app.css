@@ -343,6 +343,58 @@ summary::-webkit-details-marker {
   }
 }
 
+/* ===== 课程安排：标题层级 & 表单布局（最小补丁） ===== */
+
+/* 让“课程安排”这类区块标题更醒目，层级在“我的发布”下一节 */
+.section-title {
+  font-size: 20px;          /* 原来偏小 → 提升 */
+  line-height: 1.35;
+  font-weight: 700;
+  margin: 16px 0 10px;
+}
+
+/* 手风琴小节的标题‘可点击’，保留你原有交互，仅放大 */
+.acc-title {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+/* 表单：通用一行布局 */
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+
+/* 标签占位更稳、对齐更好看 */
+.form-row label {
+  min-width: 88px;          /* 手机也不会太挤 */
+  font-weight: 600;
+}
+
+/* 可拉伸的输入区 */
+.form-row .grow { flex: 1; }
+
+/* 短输入（数字/周几/回数/分钟等） */
+input.short, select.short { width: 110px; }
+input.xs,    select.xs    { width: 80px;  }
+
+/* 长输入（备注/链接） */
+input.long, textarea.long, .full-width { width: 100%; }
+
+/* 让“周几 + 回数”这种小字段紧凑在一行 */
+.form-row.compact { gap: 8px; }
+
+/* 手机端：自动换行、缩标签 */
+@media (max-width: 600px) {
+  .section-title { font-size: 19px; }
+  .acc-title     { font-size: 17px; }
+  .form-row { flex-wrap: wrap; }
+  .form-row label { min-width: 72px; }
+  input.short, select.short { width: 96px; }
+  input.xs,    select.xs    { width: 74px; }
+}
 
 
 

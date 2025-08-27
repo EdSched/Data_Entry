@@ -487,3 +487,21 @@ document.addEventListener('DOMContentLoaded', async () => {
     mq.addEventListener ? mq.addEventListener('change', onChange) : mq.addListener(onChange);
   })();
 });
+// 绑定“课程安排 → 发布”按钮，提交前处理所属/专业空值逻辑
+const pubBtn = document.querySelector('#pub-course [data-module="publish-course"] .btn.btn-primary');
+if (pubBtn) {
+  pubBtn.addEventListener('click', () => {
+    const depEl   = document.getElementById('pubDepartment');
+    const majorEl = document.getElementById('pubMajor');
+    const dep   = depEl ? (depEl.value || '') : '';
+    let   major = majorEl ? (majorEl.value || '') : '';
+
+    // 关键三行：如果选了所属而专业留空，就用所属填充专业
+    if (dep && !major) major = dep;
+
+    // 这里继续做你的发布数据收集与调用
+    // 例如：const payload = {..., department: dep, major};
+    // callAPI('publishCourse', payload).then(...)
+    console.log('发布前所属/专业：', dep, major);
+  });
+}

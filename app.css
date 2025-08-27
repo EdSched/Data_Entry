@@ -283,7 +283,24 @@ summary::-webkit-details-marker {
     font-size: 18px !important;   /* 视需要改 16~20 */
     line-height: 1.2;
   }
-
+.calendar-head {
+    flex-wrap: wrap;  /* 允许子元素换行 */
+  }
+  .calendar-head .seg {
+    order: 2;         /* 放到标题之后 */
+    width: 100%;      /* 独占一行 */
+    justify-content: flex-start; /* 左对齐（可改成center/space-between） */
+    margin-top: 6px;
+  }
+  .calendar-head .calendar-title {
+    order: 1;
+    flex: 1;          /* 占满剩余空间，和 seg 分开 */
+  }
+  .calendar-head .calendar-ctrl {
+    order: 3;         /* 控制按钮排在最后一行 */
+    width: 100%;      /* 独占一行 */
+    justify-content: flex-start;
+  }
   /* 分段按钮容器（“日 / 周 / 月”） */
   .calendar-ctrl .seg {
     gap: 6px;                      /* 按钮间距小一点，避免挤出容器 */
@@ -299,10 +316,9 @@ summary::-webkit-details-marker {
 
   /* FullCalendar 自身在手机上的基础字号（网格、时间轴等） */
   #mainCalendar .fc {
-    font-size: 12px;               /* 如需再小/大可调 11~13 */
+    font-size: 11px;               /* 如需再小/大可调 11~13 */
   }
 }
-
 
 /* === Mobile: 让内容真正居中，去掉残留的左间距 === */
 @media (max-width: 600px) {
@@ -342,6 +358,3 @@ summary::-webkit-details-marker {
     margin: 0;
   }
 }
-
-
-

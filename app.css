@@ -414,3 +414,31 @@ nav a.active{
   display:flex;
   gap:12px;
 }
+/* 我的发布：form 下的 fieldset 横向并排（桌面端） */
+#outputPage .form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;  /* 两列 */
+  gap: 24px;                       /* 行列间距 */
+}
+
+#outputPage .form-grid fieldset {
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  padding: 12px 16px;
+  background: #fafafa;
+  min-width: 0;
+}
+
+#outputPage .form-grid legend {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+/* 手机端：单列展示（更舒适） */
+@media (max-width: 768px) {
+  #outputPage .form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+

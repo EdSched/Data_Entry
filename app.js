@@ -429,6 +429,30 @@ document.addEventListener('DOMContentLoaded', async () => {
     depSel.addEventListener('change', apply);
   })();
 
+  // —— 发布对象：所属 → 专业（可不选 + 全选）——
+(function () {
+  const depSel   = document.getElementById('pubDepartment');
+  const majorSel = document.getElementById('pubMajor');
+  if (!depSel || !majorSel) return;
+
+  const fill = (arr) => {
+    majorSel.innerHTML =
+      '<option value="">（可不选）</option>' +
+      '<option value="全部">全选</option>' +
+      (arr || []).map(v => `<option value="${v}">${v}</option>`).join('');
+  };
+
+  const apply = () => {
+    const dep  = depSel.value || '';
+    const list = MAJOR_OPTIONS[dep];
+    fill(Array.isArray(list) ? list : []);
+  };
+
+  apply();
+  depSel.addEventListener('change', apply);
+})();
+
+
   // API 健康检查
   setApiStatus({ok:null, text:'API 检测中'});
   try {

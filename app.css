@@ -303,32 +303,6 @@ summary::-webkit-details-marker {
   }
 }
 
-/* ==== 修正 iOS Safari 把按钮文字渲染成系统蓝的问题 ==== */
-/* 登录按钮（以及你以后设成主色的按钮） */
-#loginBtn,
-.btn-primary {
-  background: var(--accent);          /* 你在 :root 里定义的主色 */
-  color:  #555657 ！important;             /* 强制白字 */
-  -webkit-text-fill-color: #fff;      /* iOS WebKit 特别指定 */
-  border-color: var(--accent);
-}
-
-/* 所有普通按钮的默认文字颜色改回正文色，避免继承系统蓝 */
-button,
-.btn {
-  color: var(--fg);                   /* 你的正文色 */
-}
-
-/* 如果还有个“描边按钮”保留主色文本 */
-.btn.btn-outline {
-  color: var(--accent);
-}
-
-/* 保险：去掉 iOS 默认外观干扰（不影响圆角、阴影） */
-button {
-  -webkit-appearance: none;
-  appearance: none;
-}
 
 /* === Mobile: 让内容真正居中，去掉残留的左间距 === */
 @media (max-width: 600px) {

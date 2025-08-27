@@ -360,24 +360,24 @@ summary::-webkit-details-marker {
 }
 
 /* ====== 左侧导航：将选中高亮改为浅灰（全局 nav a.active） ====== */
-nav a.active{
+nav a.active {
   background:#e5e7eb !important;  /* 浅灰底 */
   color:#111 !important;          /* 深灰字 */
 }
 
-/* ====== 仅「我的发布」页面：手风琴标题与间距 ====== */
-#outputPage .accordion-item{
+/* ====== 全局：手风琴标题与间距 ====== */
+.accordion-item {
   margin-bottom:18px;              /* 每个手风琴之间留白 */
   border-radius:8px;
   overflow:hidden;
 }
-#outputPage .accordion-title{
+.accordion-title {
   font-size:18px;                  /* 标题变大 */
   font-weight:600;
   padding:14px 18px;
   background:#f8f9fa;
 }
-#outputPage .module-body{
+.module-body {
   padding:18px;
   border-top:1px solid var(--border);
 }

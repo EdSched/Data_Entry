@@ -22,7 +22,34 @@ document.addEventListener('DOMContentLoaded', () => {
     const scheduleStatus = selects1[3]?.value || '';
 
     // 规则1：选了所属且专业为空 → 用所属填充
-    if (dep && !major) major = dep;
+    // 1) 取所属
+const dep = document.getElementById('pubDepartment')?.value || '';
+
+// 2) 取“多选专业”
+const majorSel = document.getElementById('pubMajor');
+const selectedMajors = majorSel && !majorSel.disabled
+  ? Array.from(majorSel.selectedOptions).map(o => o.value).filter(Boolean)
+  : [];
+
+// 3) 生成要提交的 majors（M列）：
+//    - 所属=全部 或 未选 → ['全部']
+//    - 所属=文/理 + 专业有选 → [选中的多个专业]
+//    - 所属=文/理 + 专业未选 → [所属]（表示该院全部专业）
+let majorsOut;
+if (!dep || dep === '全部') {
+  majorsOut = ['全部'];
+} else if (selectedMajors.length > 0) {
+  majorsOut = selectedMajors;
+} else {
+  majorsOut = [dep];
+}
+
+// 4) 可见学生IDs（N列）默认等于 majorsOut（老师若填了名单，你的逻辑优先生效）
+let visibleIds = [];
+const raw = document.querySelector('#pub-course input[placeholder="学生姓名或ID"]')?.value.trim() || '';
+if (raw) visibleIds = raw.split(/[,\s，、]+/).filter(Boolean);
+if (visibleIds.length === 0) visibleIds = majorsOut;
+
 
     // 可见学生IDs：优先用“学生姓名/ID”输入；为空则默认=所属/专业
     const studentRaw = fs1.querySelector('input[placeholder="学生姓名或ID"]')?.value.trim() || '';
@@ -80,7 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
       starttime:  startTime,
       endtime:    endTime,
       breakmins:  breakMins,
-      majors:     [major],          // 面向所属/专业（合列）
+      majors: majorsOut,
       visiblestudentids: visibleIds, // N列默认=所属/专业
       campus,
       classmode:  classMode,

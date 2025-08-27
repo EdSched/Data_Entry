@@ -308,7 +308,7 @@ summary::-webkit-details-marker {
 #loginBtn,
 .btn-primary {
   background: var(--accent);          /* 你在 :root 里定义的主色 */
-  color: #fff !important;             /* 强制白字 */
+  color:  #555657 ！important;             /* 强制白字 */
   -webkit-text-fill-color: #fff;      /* iOS WebKit 特别指定 */
   border-color: var(--accent);
 }

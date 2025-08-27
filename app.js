@@ -430,6 +430,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   })();
 
   // —— 发布对象：所属 → 专业（可不选 + 全选）——
+// —— 发布对象：所属 → 专业（多选；所属=全部/未选时禁用专业）——
 (function () {
   const depSel   = document.getElementById('pubDepartment');
   const majorSel = document.getElementById('pubMajor');
@@ -437,15 +438,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const fill = (arr) => {
     majorSel.innerHTML =
-      '<option value="">（可不选，可多选）</option>' +
+      '<option value="" disabled>（可不选，可多选）</option>' +
       (arr || []).map(v => `<option value="${v}">${v}</option>`).join('');
   };
 
   const disableMajor = (flag) => {
     majorSel.disabled = !!flag;
     if (flag) {
-      majorSel.value = '';
-      // 取消所有选择
+      // 清空已选
       Array.from(majorSel.options).forEach(o => o.selected = false);
     }
   };
@@ -453,20 +453,28 @@ document.addEventListener('DOMContentLoaded', async () => {
   const apply = () => {
     const dep  = depSel.value || '';
     if (!dep || dep === '全部') {
-      // 全选/未选所属：禁用专业
-      fill([]);          // 只保留“可不选”的那一行
-      disableMajor(true);
+      fill([]);              // 只保留提示行
+      disableMajor(true);    // 全选/未选所属：禁用专业
       return;
     }
-    // 文/理：填充该院专业 & 启用
     const list = MAJOR_OPTIONS[dep];
     fill(Array.isArray(list) ? list : []);
     disableMajor(false);
   };
 
+  // 关键：让多选无需按 Ctrl/⌘，点一下就切换选中
+  majorSel.addEventListener('mousedown', (e) => {
+    const opt = e.target;
+    if (opt && opt.tagName === 'OPTION' && !opt.disabled) {
+      e.preventDefault();           // 阻止原生“清空其他选项”的行为
+      opt.selected = !opt.selected; // 切换选中
+    }
+  });
+
   apply();
   depSel.addEventListener('change', apply);
 })();
+
 
   // API 健康检查
   setApiStatus({ok:null, text:'API 检测中'});

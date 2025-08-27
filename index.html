@@ -199,17 +199,19 @@
                           </select>
                         </label>
                         <label>任课老师<input type="text" placeholder="老师姓名或ID"/></label>
-                        <label>发布对象所属
+                       <label>发布对象所属
   <select id="pubDepartment">
     <option value="">请选择</option>
     <option value="文科大学院">文科大学院</option>
     <option value="理科大学院">理科大学院</option>
+    <option value="全部">全选（所有学生）</option>
   </select>
 </label>
+
+<!-- 专业：改为多选 & 不含“全选” -->
 <label>发布对象专业
-  <select id="pubMajor">
-    <option value="">（可不选）</option>
-    <option value="全部">全选</option>
+  <select id="pubMajor" multiple>
+    <option value="">（可不选，可多选）</option>
   </select>
 </label>
 <label>学生姓名<input type="text" placeholder="学生姓名或ID"/></label>

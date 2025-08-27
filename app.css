@@ -358,3 +358,59 @@ summary::-webkit-details-marker {
     margin: 0;
   }
 }
+
+/* ====== 左侧导航：将选中高亮改为浅灰（全局 nav a.active） ====== */
+nav a.active{
+  background:#e5e7eb !important;  /* 浅灰底 */
+  color:#111 !important;          /* 深灰字 */
+}
+
+/* ====== 仅「我的发布」页面：手风琴标题与间距 ====== */
+#outputPage .accordion-item{
+  margin-bottom:18px;              /* 每个手风琴之间留白 */
+  border-radius:8px;
+  overflow:hidden;
+}
+#outputPage .accordion-title{
+  font-size:18px;                  /* 标题变大 */
+  font-weight:600;
+  padding:14px 18px;
+  background:#f8f9fa;
+}
+#outputPage .module-body{
+  padding:18px;
+  border-top:1px solid var(--border);
+}
+
+/* ====== 仅「我的发布」页面：统一表单控件为下划线风格 ====== */
+#outputPage .form-grid label{
+  display:block;
+  margin:16px 0 8px;
+  font-size:14px;
+  color:#555;
+}
+#outputPage .form-grid input,
+#outputPage .form-grid select,
+#outputPage .form-grid textarea{
+  width:100%;
+  border:none;                     /* 去掉四边框 */
+  border-bottom:1px solid #ccc;    /* 只留下划线 */
+  background:transparent;
+  font-size:15px;
+  padding:6px 2px;
+  line-height:1.4;
+  outline:none;
+  box-shadow:none;
+}
+#outputPage .form-grid input:focus,
+#outputPage .form-grid select:focus,
+#outputPage .form-grid textarea:focus{
+  border-bottom-color:#333;        /* 聚焦时更深 */
+}
+
+/* 可选：按钮组与按钮微调（保持你原有配色） */
+#outputPage .form-actions{
+  margin-top:20px;
+  display:flex;
+  gap:12px;
+}

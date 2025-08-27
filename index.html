@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -170,14 +171,21 @@
                     <form class="form-grid">
                       <fieldset>
                         <legend>基本信息</legend>
-                        <label>课程名<input type="text" placeholder="例如：高数冲刺班"/></label>
+                        <label>课程名<input type="text" placeholder="例如：社会学专业课"/></label>
                         <label>课程属性
                           <select>
                             <option value="">请选择</option>
-                            <option>VIP</option><option>面谈</option><option>选修</option><option>共通</option>
+                            <option>大课</option><option>VIP</option><option>面谈</option><option>选修</option><option>共通</option>
                           </select>
                         </label>
                         <label>任课老师<input type="text" placeholder="老师姓名或ID"/></label>
+                        <label>发布对象
+                          <select>
+                            <option value="">请选择</option>
+                            <option>理科大学院</option><option>文科大学院</option>
+                          </select>
+                        <label>学生姓名<input type="text" placeholder="学生姓名或ID"/></label>
+                        </label>
                       </fieldset>
 
                       <fieldset>
@@ -197,10 +205,16 @@
                         <label>上课形式
                           <select>
                             <option value="">请选择</option>
-                            <option>线上</option><option>线下</option><option>混合</option>
+                            <option>线上</option><option>线下</option><option>线上＋线下</option>
                           </select>
                         </label>
-                        <label>校区<input type="text" placeholder="如：本部"/></label>
+                        <label>校区
+                          <select>
+                            <option value="">请选择</option>
+                            <option>高马校区</option><option>市谷校区</option>
+                          </select>
+                        </label>
+                
                         <label>教室<input type="text" placeholder="如：A-301"/></label>
                         <label>线上链接<input type="url" placeholder="https://..."/></label>
                       </fieldset>

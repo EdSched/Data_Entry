@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>我的发布 - 示例</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      margin: 40px;
+      background: #fafafa;
+      color: #333;
+    }
+
+    /* ===== 导航模拟 ===== */
+    nav {
+      margin-bottom: 24px;
+    }
+    nav a {
+      display: inline-block;
+      padding: 8px 14px;
+      margin-right: 8px;
+      text-decoration: none;
+      color: #333;
+      border-radius: 6px;
+    }
+    nav a.active {
+      background: #e5e7eb; /* 浅灰色 */
+      color: #111;
+    }
+
+    /* ===== 手风琴 ===== */
+    .accordion-item {
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 18px; /* 每个之间留空 */
+      overflow: hidden;
+      background: #fff;
+    }
+    .accordion-title {
+      font-size: 18px;
+      font-weight: 600;
+      padding: 14px 18px;
+      cursor: pointer;
+      background: #f8f9fa;
+    }
+    .accordion-title:hover {
+      background: #f0f0f0;
+    }
+    .module-body {
+      padding: 18px;
+      border-top: 1px solid #ddd;
+    }
+
+    /* ===== 表单统一样式：下划线风格 ===== */
+    .form-grid label {
+      display: block;
+      margin: 16px 0 8px;
+      font-size: 14px;
+      color: #555;
+    }
+    .form-grid input,
+    .form-grid select,
+    .form-grid textarea {
+      width: 100%;
+      border: none;
+      border-bottom: 1px solid #ccc; /* 下划线 */
+      background: transparent;
+      font-size: 15px;
+      padding: 6px 2px;
+      outline: none;
+    }
+    .form-grid input:focus,
+    .form-grid select:focus,
+    .form-grid textarea:focus {
+      border-bottom-color: #333;
+    }
+
+    .form-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 12px;
+    }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .btn-primary {
+      background: #fab041;
+      color: #fff;
+    }
+    .btn:hover {
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 模拟左边导航 -->
+  <nav>
+    <a href="#">我的日历</a>
+    <a href="#" class="active">我的发布</a>
+    <a href="#">我的录入</a>
+  </nav>
+
+  <!-- 1) 课程安排 -->
+  <details class="accordion-item" open>
+    <summary class="accordion-title">课程安排（含 VIP 面谈）</summary>
+    <div class="module-body">
+      <form class="form-grid">
+        <label>课程名 <input type="text" placeholder="例如：社会学专业课"/></label>
+        <label>课程属性
+          <select>
+            <option value="">请选择</option>
+            <option>大课</option><option>VIP</option><option>面谈</option><option>选修</option><option>共通</option>
+          </select>
+        </label>
+        <label>任课老师 <input type="text" placeholder="老师姓名或ID"/></label>
+        <label>发布对象
+          <select>
+            <option value="">请选择</option>
+            <option>理科大学院</option><option>文科大学院</option>
+          </select>
+        </label>
+        <label>学生姓名 <input type="text" placeholder="学生姓名或ID"/></label>
+        <label>单回日期 <input type="date"/></label>
+        <label>开始时间 <input type="time"/></label>
+        <label>结束时间 <input type="time"/></label>
+        <label>讲义（URL或文本） <input type="text" placeholder="可填链接或简单备注"/></label>
+        <div class="form-actions">
+          <button type="button" class="btn">预览</button>
+          <button type="button" class="btn btn-primary">发布</button>
+        </div>
+      </form>
+    </div>
+  </details>
+
+  <!-- 2) 进度提醒 -->
+  <details class="accordion-item">
+    <summary class="accordion-title">进度提醒</summary>
+    <div class="module-body">
+      <form class="form-grid">
+        <label>对象 <input type="text" placeholder="如：理科·电子电器 / 2025春班"/></label>
+        <label>提醒主题 <input type="text" placeholder="例如：第4周学习进度上报"/></label>
+        <label>提醒内容 <textarea rows="3" placeholder="要点、格式、提交方式…"></textarea></label>
+        <label>提醒时间 <input type="datetime-local"/></label>
+        <label>重复
+          <select>
+            <option>一次性</option><option>每周</option><option>每月</option>
+          </select>
+        </label>
+        <div class="form-actions">
+          <button type="button" class="btn">预览</button>
+          <button type="button" class="btn btn-primary">发布提醒</button>
+        </div>
+      </form>
+    </div>
+  </details>
+
+  <!-- 3) 作业布置 -->
+  <details class="accordion-item">
+    <summary class="accordion-title">作业布置</summary>
+    <div class="module-body">
+      <form class="form-grid">
+        <label>面向课程/班级 <input type="text" placeholder="如：高数冲刺班 / 2025春班"/></label>
+        <label>作业标题 <input type="text" placeholder="例如：第3讲习题（选做2题）"/></label>
+        <label>说明 <textarea rows="3" placeholder="题目来源、提交规范、评分规则…"></textarea></label>
+        <label>截止日期 <input type="date"/></label>
+        <label>截止时间 <input type="time"/></label>
+        <label>附件/链接 <input type="url" placeholder="https://...（可选）"/></label>
+        <div class="form-actions">
+          <button type="button" class="btn">保存草稿</button>
+          <button type="button" class="btn btn-primary">发布作业</button>
+        </div>
+      </form>
+    </div>
+  </details>
+
+  <!-- 4) 通知发布 -->
+  <details class="accordion-item">
+    <summary class="accordion-title">通知发布</summary>
+    <div class="module-body">
+      <form class="form-grid">
+        <label>通知对象 <input type="text" placeholder="如：全体学生 / 理科·生物化学"/></label>
+        <label>标题 <input type="text" placeholder="例如：本周教室临时调整"/></label>
+        <label>正文 <textarea rows="4" placeholder="正文内容…"></textarea></label>
+        <label>附件/链接 <input type="url" placeholder="https://...（可选）"/></label>
+        <div class="form-actions">
+          <button type="button" class="btn">预览</button>
+          <button type="button" class="btn btn-primary">发布通知</button>
+        </div>
+      </form>
+    </div>
+  </details>
+
+</body>
+</html>

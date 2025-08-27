@@ -200,17 +200,19 @@
                         </label>
                         <label>任课老师<input type="text" placeholder="老师姓名或ID"/></label>
                         <label>发布对象所属
-                           <select id="registerDepartment"></select>
-                            <option value="">请选择</option>
-                            <option value="文科大学院">文科大学院</option>
-                            <option value="理科大学院">理科大学院</option>
-                          </select>
-                          </label>
-                          <label>发布对象专业
-                            <div id="majorRow"><select id="registerMajorSelect">
-                              <option value="">选择专业</option>
-                            </select>
-                        <label>学生姓名<input type="text" placeholder="学生姓名或ID"/></label>
+  <select id="pubDepartment">
+    <option value="">请选择</option>
+    <option value="文科大学院">文科大学院</option>
+    <option value="理科大学院">理科大学院</option>
+  </select>
+</label>
+<label>发布对象专业
+  <select id="pubMajor">
+    <option value="">（可不选）</option>
+    <option value="全部">全选</option>
+  </select>
+</label>
+<label>学生姓名<input type="text" placeholder="学生姓名或ID"/></label>
                         </label>
                       </fieldset>
 

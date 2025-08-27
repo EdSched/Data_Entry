@@ -437,21 +437,36 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   const fill = (arr) => {
     majorSel.innerHTML =
-      '<option value="">（可不选）</option>' +
-      '<option value="全部">全选</option>' +
+      '<option value="">（可不选，可多选）</option>' +
       (arr || []).map(v => `<option value="${v}">${v}</option>`).join('');
+  };
+
+  const disableMajor = (flag) => {
+    majorSel.disabled = !!flag;
+    if (flag) {
+      majorSel.value = '';
+      // 取消所有选择
+      Array.from(majorSel.options).forEach(o => o.selected = false);
+    }
   };
 
   const apply = () => {
     const dep  = depSel.value || '';
+    if (!dep || dep === '全部') {
+      // 全选/未选所属：禁用专业
+      fill([]);          // 只保留“可不选”的那一行
+      disableMajor(true);
+      return;
+    }
+    // 文/理：填充该院专业 & 启用
     const list = MAJOR_OPTIONS[dep];
     fill(Array.isArray(list) ? list : []);
+    disableMajor(false);
   };
 
   apply();
   depSel.addEventListener('change', apply);
 })();
-
 
   // API 健康检查
   setApiStatus({ok:null, text:'API 检测中'});

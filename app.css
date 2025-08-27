@@ -382,46 +382,40 @@ nav a.active{
   border-top:1px solid var(--border);
 }
 
-/* ====== 仅「我的发布」页面：统一表单控件为下划线风格 ====== */
-#outputPage .form-grid label{
-  display:block;
-  margin:16px 0 8px;
-  font-size:14px;
-  color:#555;
+/* ====== 全局：统一表单控件为下划线风格 ====== */
+.form-grid label {
+  display: block;
+  margin: 16px 0 8px;
+  font-size: 14px;
+  color: #555;
 }
-#outputPage .form-grid input,
-#outputPage .form-grid select,
-#outputPage .form-grid textarea{
-  width:100%;
-  border:none;                     /* 去掉四边框 */
-  border-bottom:1px solid #ccc;    /* 只留下划线 */
-  background:transparent;
-  font-size:15px;
-  padding:6px 2px;
-  line-height:1.4;
-  outline:none;
-  box-shadow:none;
+.form-grid input,
+.form-grid select,
+.form-grid textarea {
+  width: 100%;
+  border: none;                     /* 去掉四边框 */
+  border-bottom: 1px solid #ccc;    /* 只留下划线 */
+  background: transparent;
+  font-size: 15px;
+  padding: 6px 2px;
+  line-height: 1.4;
+  outline: none;
+  box-shadow: none;
 }
-#outputPage .form-grid input:focus,
-#outputPage .form-grid select:focus,
-#outputPage .form-grid textarea:focus{
-  border-bottom-color:#333;        /* 聚焦时更深 */
+.form-grid input:focus,
+.form-grid select:focus,
+.form-grid textarea:focus {
+  border-bottom-color: #333;        /* 聚焦时更深 */
 }
 
-/* 可选：按钮组与按钮微调（保持你原有配色） */
-#outputPage .form-actions{
-  margin-top:20px;
-  display:flex;
-  gap:12px;
-}
-/* 我的发布：form 下的 fieldset 横向并排（桌面端） */
-#outputPage .form-grid {
+/* ====== 全局：fieldset 横向并排（桌面端） ====== */
+.form-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;  /* 两列 */
-  gap: 24px;                       /* 行列间距 */
+  grid-template-columns: 1fr 1fr;   /* 两列 */
+  gap: 24px;                        /* 行列间距 */
 }
 
-#outputPage .form-grid fieldset {
+.form-grid fieldset {
   border: 1px solid #ddd;
   border-radius: 6px;
   padding: 12px 16px;
@@ -429,14 +423,15 @@ nav a.active{
   min-width: 0;
 }
 
-#outputPage .form-grid legend {
+.form-grid legend {
+  grid-column: 1 / -1;              /* legend 占满整行 */
   font-weight: 600;
   margin-bottom: 8px;
 }
 
 /* 手机端：单列展示（更舒适） */
 @media (max-width: 768px) {
-  #outputPage .form-grid {
+  .form-grid {
     grid-template-columns: 1fr;
   }
 }

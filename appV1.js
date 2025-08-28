@@ -276,7 +276,7 @@ function initCalendar() {
   const el = $('mainCalendar'); if (!el) return;
   const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
   const cal = new FullCalendar.Calendar(el, {
-    eventClick: function(info) {
+   eventClick: function(info) {
       const ev = info.event;
       const ext = ev.extendedProps || {};
       const t = ev.title || '';

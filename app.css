@@ -278,33 +278,30 @@ summary::-webkit-details-marker {
 }
 /* ==== 仅限手机端，收紧日历头部字号与按钮尺寸 ==== */
 @media (max-width: 600px) {
-  .calendar-head {
+  .calendar-head { flex-wrap: wrap; }
+
+  /* 控制区允许换行 */
+  .calendar-head .calendar-ctrl {
+    order: 2;
+    width: 100%;
+    display: flex;
     flex-wrap: wrap;
   }
 
-  /* 标题 */
-  .calendar-head .calendar-title {
-    order: 1;
-    flex: 1;
-    font-size: 18px !important;
-    line-height: 1.2;
-  }
-
-  /* 控制按钮（前进/后退/刷新） */
-  .calendar-head .calendar-ctrl {
-    order: 2;
-    flex-wrap: wrap;   /* 允许内部换行 */
-    width: 100%;
-  }
-
-  /* 分段按钮容器（日/周/月） */
+  /* 第一行：分段切换（日 / 周 / 月） */
   .calendar-ctrl .seg {
-    flex-basis: 100%;  /* 独占一整行 */
+    order: 1;
+    flex-basis: 100%;
     margin-top: 6px;
-    justify-content: flex-start;
+    justify-content: center; /* 需要左对齐就改成 flex-start */
     gap: 6px;
   }
 
+  /* 第二行：前/今天/后/刷新 */
+  .calendar-ctrl > .btn {
+    order: 2;
+  }
+}
   /* 按钮本体 */
   .calendar-ctrl .seg .seg-btn {
     font-size: 13px !important;

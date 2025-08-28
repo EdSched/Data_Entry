@@ -1,5 +1,5 @@
 /* =============== 基础配置（按你现有 API） =============== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbybAvJ1PChJbu2WofPrj2-IrZ4Ro07mBlQQ7TymJRtadT0UiXfL1jQbcc3yYuXHaXw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwew2T6Scwk5HGbNcf4wh-gmcXyJW6YULKGHEvyNQLA5SQ-fjB_epdNbSxdbb0Se2w/exec';
 
 // 所属 → 专业（学科逻辑顺序，互不混合）
 const MAJOR_OPTIONS = {

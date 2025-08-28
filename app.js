@@ -190,16 +190,6 @@ if (department !== '其他' && !major) {
   err.textContent = '请选择一个专业'; 
   return;
 }
-  if (!name || !email || !department || !role) {
-    err.textContent = '请填写姓名、邮箱、所属、身份';
-    return;
-  }
-  if (department === '其他' && !major) {
-    err.textContent = '所属为“其他”时，请填写专业'; return;
-  }
-  if (department !== '其他' && !major) {
-    err.textContent = '请选择一个专业'; return;
-  }
   err.style.color=''; err.textContent='正在登记…';
   const r = await callAPI('registerByProfile', { name, email, department, major, role });
   if (r && r.success) {

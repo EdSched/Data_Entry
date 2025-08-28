@@ -303,11 +303,21 @@ summary::-webkit-details-marker {
     min-width: 42px;
     line-height: 1.1;
   }
-  .calendar-ctrl .btn {
-    padding-top: 1px !important;
-    padding-bottom: 1px !important;
+  /* 1) 按钮排布别“挤在中间” */
+  .calendar-head .calendar-ctrl {
+    justify-content: flex-start !important;  /* 想平均分散可改 space-between */
+    gap: 6px;
   }
-}
+  /* 2) 真正让按钮变矮：覆盖 line-height / min-height / padding */
+  .calendar-ctrl .btn,
+  .calendar-ctrl .btn.btn-outline {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    line-height: 1.1 !important;   /* 关键：不让文字把高度撑大 */
+    min-height: 0 !important;      /* 关键：清掉全局的最小高度 */
+    height: auto !important;       /* 保底 */
+    box-sizing: border-box;
+  }
 
   /* FullCalendar 自身在手机上的基础字号（网格、时间轴等） */
   #mainCalendar .fc {

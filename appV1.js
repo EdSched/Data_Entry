@@ -80,7 +80,13 @@ function adaptEvents(rows) {
         canBook: r.canBook === true || r.canBook === '是',
         status: r.status || r.scheduleStatus || '',
         description: r.description || r.notes || r.note || '',
-      }
+         slotId:    item['槽位ID']     || item.slotId,
+         status:    item['课程状态']   || item.courseStatus, // ★
+         attr:      item['课程属性']   || item.courseAttr,   // ★
+         startTime: item['开始时间']   || item.startTime,
+         endTime:   item['结束时间']   || item.endTime,
+         teacher:   item['任课老师']   || item.teacher
+        }
     };
   }).filter(e => e.start);
 }
@@ -278,23 +284,38 @@ function initCalendar() {
       const e = ev.end   ? ev.end.toLocaleString('zh-CN')   : '';
       const teacher = ext.teacher ? `\n任课老师：${ext.teacher}` : '';
       const sid = ext.slotId ? `\n槽位ID：${ext.slotId}` : '';
-      alert(`课程：${t}\n时间：${s} ~ ${e}${teacher}${sid}`);
+      
       const me = window.currentUser || {};
-  const attr = ext.attr || '';
-  
-  if (me.roleNorm === 'student' && (attr === 'VIP' || attr === '面谈')) {
-    const wantBook = confirm(`${ev.title}\n\n这是可预约课程，是否要预约？\n点击"确定"预约，"取消"查看详情`);
-    if (wantBook && window.bookingModule) {
-      const eventInfo = {
-        slotId: ext.slotId || ev.id,
-        title: ev.title,
-        date: ev.start ? ev.start.toISOString().slice(0, 10) : '',
-        attr: attr
-      };
-      window.bookingModule.showBookingDialog(eventInfo);
-      return; // 预约流程，不显示原来的详情
-    }
-  }
+      const roleToken = (me.roleNorm || me.role || '').trim();
+      
+      // 角色：兼容「学生 / student / Student」
+      const isStudent = ['学生','student','Student'].includes(roleToken);
+      
+      // 属性：兼容字段名 & 去空白
+      const attrRaw = ext.attr || ext.courseAttr || ext['课程属性'] || '';
+      const attrNorm = String(attrRaw).replace(/\s+/g, ''); // 'V I P' / 全角空格都能过
+      const status = (ext.status || ext.courseStatus || ext['课程状态'] || '').trim();
+
+      // 最终条件：学生 + 可预约 + (VIP|面谈)
+      if (isStudent && status === '可预约' && (attrNorm === 'VIP' || attrNorm === '面谈')) {
+        const wantBook = confirm(`${ev.title}\n\n这是可预约课程，是否要预约？\n点击"确定"预约，"取消"查看详情`);
+        if (wantBook && window.bookingModule) {
+          const eventInfo = {
+            slotId:   ext.slotId || ev.id,
+            title:    ev.title,
+            date:     ev.start ? ev.start.toISOString().slice(0,10) : '',
+            attr:     attrNorm,
+            // 传给弹窗的时间窗（可选，但有就更稳）
+            slotStart: ext.startTime || ext.slotStart || ext['开始时间'] || '',
+            slotEnd:   ext.endTime   || ext.slotEnd   || ext['结束时间'] || ''
+          };
+          window.bookingModule.showBookingDialog(eventInfo);
+          return; // 预约流程，不再弹原 alert
+        }
+      }
+      
+      // 默认显示详情
+      alert(`课程：${t}\n时间：${s} ~ ${e}${teacher}${sid}`);
     },
     initialView,
     locale: 'zh-cn',

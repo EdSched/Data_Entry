@@ -100,6 +100,10 @@ document.addEventListener('DOMContentLoaded', () => {
         return err('请选择"发布对象所属/专业"，或填写"学生姓名或ID"。两者不能同时为空。');
       }
 
+// 在 // —— 组装 payload —— // 之前加上
+console.log('所属:', dep);
+console.log('多选专业原始options:', majorSel ? Array.from(majorSel.options).map(o => ({value: o.value, selected: o.selected, text: o.textContent})) : 'majorSel不存在');
+console.log('处理后的M:', M);
       // —— 组装 payload —— //
       const payload = {
         coursename: courseName,

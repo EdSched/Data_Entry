@@ -309,6 +309,12 @@ summary::-webkit-details-marker {
     min-width: 42px;
     line-height: 1.1;
   }
+  .calendar-ctrl .btn {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+}
+  
 }
 
   /* FullCalendar 自身在手机上的基础字号（网格、时间轴等） */

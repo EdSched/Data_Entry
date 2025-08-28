@@ -310,8 +310,8 @@ summary::-webkit-details-marker {
     line-height: 1.1;
   }
   .calendar-ctrl .btn {
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
+    padding-top: 3px !important;
+    padding-bottom: 3px !important;
   }
 }
   

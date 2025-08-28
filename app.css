@@ -81,7 +81,7 @@ input[type="checkbox"] {
 }
 .seg-btn:last-child{border-right:0}
 .seg-btn:hover{background:#f8f8f8}
-.seg-btn.active{background:#333;color:#fff}
+.seg-btn.active{background:#C2C4C2;color:#fff}
 
 #mainCalendar{margin-top:20px;}
 

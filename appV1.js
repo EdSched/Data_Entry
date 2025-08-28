@@ -276,7 +276,7 @@ function initCalendar() {
   const el = $('mainCalendar'); if (!el) return;
   const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
   const cal = new FullCalendar.Calendar(el, {
-   eventClick: function(info) {
+  eventClick: function(info) {
       const ev = info.event;
       const ext = ev.extendedProps || {};
       const t = ev.title || '';
@@ -296,8 +296,8 @@ function initCalendar() {
       const attrNorm = String(attrRaw).replace(/\s+/g, ''); // 'V I P' / 全角空格都能过
       const status = (ext.status || ext.courseStatus || ext['课程状态'] || '').trim();
 
-      // 最终条件：学生 + 可预约 + (VIP|面谈)
-      if (isStudent && status === '可预约' && (attrNorm === 'VIP' || attrNorm === '面谈')) {
+      // 最终条件：学生 + (VIP|面谈)
+      if (isStudent && (attrNorm === 'VIP' || attrNorm === '面谈')) {
         const wantBook = confirm(`${ev.title}\n\n这是可预约课程，是否要预约？\n点击"确定"预约，"取消"查看详情`);
         if (wantBook && window.bookingModule) {
           const eventInfo = {

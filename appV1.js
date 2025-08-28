@@ -170,21 +170,24 @@ async function login() {
     err.textContent = (r && r.message) || '登录失败：用户ID不存在';
   }
 }
-async function registerUser() {
-  const name = ($('registerName').value||'').trim();
-  const email = ($('registerEmail').value||'').trim();
-  const department = $('registerDepartment').value;
-  // —— 采集“专业”：文/理 → 下拉；其他 → 自由填写 —— //
-  const majorSel  = document.getElementById('registerMajorSelect');
-  const majorFree = document.getElementById('registerMajorFree');
-  const major = (department === '其他')
-    ? (majorFree ? majorFree.value.trim() : '')
-    : (majorSel  ? majorSel.value.trim()  : '');
+// appV1.js — 注册处理（最小改动版）
+async function registerUser(evt){
+  evt?.preventDefault?.();
+  const $ = id => document.getElementById(id);
 
-  // —— 校验 —— //
+  // 1) 先取值（所有校验之前）
+  const err        = $('registerError');
+  const name       = $('registerName').value.trim();
+  const email      = $('registerEmail').value.trim();
+  const department = $('registerDepartment').value.trim();
+  const role       = $('registerRole').value.trim();
+  const majorSel   = $('registerMajorSelect')?.value?.trim() || '';
+  const majorFree  = $('registerMajorFree')?.value?.trim() || '';
+  const major      = (department === '其他') ? majorFree : majorSel;
+
+  // 2) 单一入口校验（去掉你之前分散的三段）
   if (!name || !email || !department || !role) {
-    err.textContent = '请填写姓名、邮箱、所属、身份';
-    return;
+    err.textContent = '请填写姓名、邮箱、所属、身份'; return;
   }
   if (department === '其他' && !major) {
     err.textContent = '所属为“其他”时，请填写专业'; return;
@@ -192,25 +195,23 @@ async function registerUser() {
   if (department !== '其他' && !major) {
     err.textContent = '请选择一个专业'; return;
   }
-  const role = $('registerRole').value;
-  const err = $('registerError');
-  if (!name || !email || !department || !major || !role) { err.textContent='请填写姓名、邮箱、所属、专业、身份'; return; }
-  err.style.color=''; err.textContent='正在登记…';
+
+  // 3) 提示并提交
+  err.style.color = '';
+  err.textContent = '正在登记…';
   const r = await callAPI('registerByProfile', { name, email, department, major, role });
+
   if (r && r.success) {
     err.style.color = 'green';
-    // —— 成功提示：老师/学生分开 —— //
-    if ((role || '').indexOf('老师') > -1) {
-      err.textContent = '已完成注册，等待管理员分配用户ID';
-    } else {
-      err.textContent = '已完成注册，等待老师分配ID';
-    }
-    // （是否清空表单、是否跳回登录，按你原有代码保留）
+    err.textContent = (role.indexOf('老师') > -1)
+      ? '已完成注册，等待管理员分配用户ID'
+      : '已完成注册，等待老师分配ID';
   } else {
     err.style.color = '#c00';
     err.textContent = (r && r.message) ? r.message : '登记失败（无返回信息）';
   }
 }
+
 function logout() {
   currentUser = null;
   $('mainApp').style.display = 'none';
@@ -276,7 +277,7 @@ function initCalendar() {
   const el = $('mainCalendar'); if (!el) return;
   const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
   const cal = new FullCalendar.Calendar(el, {
-  eventClick: function(info) {
+    eventClick: function(info) {
       const ev = info.event;
       const ext = ev.extendedProps || {};
       const t = ev.title || '';
@@ -296,8 +297,8 @@ function initCalendar() {
       const attrNorm = String(attrRaw).replace(/\s+/g, ''); // 'V I P' / 全角空格都能过
       const status = (ext.status || ext.courseStatus || ext['课程状态'] || '').trim();
 
-      // 最终条件：学生 + (VIP|面谈)
-      if (isStudent && (attrNorm === 'VIP' || attrNorm === '面谈')) {
+      // 最终条件：学生 + 可预约 + (VIP|面谈)
+      if (isStudent && status === '可预约' && (attrNorm === 'VIP' || attrNorm === '面谈')) {
         const wantBook = confirm(`${ev.title}\n\n这是可预约课程，是否要预约？\n点击"确定"预约，"取消"查看详情`);
         if (wantBook && window.bookingModule) {
           const eventInfo = {

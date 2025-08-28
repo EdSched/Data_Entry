@@ -165,6 +165,8 @@ async function login() {
   }
 }
 async function registerUser() {
+  const role = $('registerRole').value;
+const err = $('registerError');
   const name = ($('registerName').value||'').trim();
   const email = ($('registerEmail').value||'').trim();
   const department = $('registerDepartment').value;
@@ -186,8 +188,6 @@ async function registerUser() {
   if (department !== '其他' && !major) {
     err.textContent = '请选择一个专业'; return;
   }
-  const role = $('registerRole').value;
-  const err = $('registerError');
   if (!name || !email || !department || !major || !role) { err.textContent='请填写姓名、邮箱、所属、专业、身份'; return; }
   err.style.color=''; err.textContent='正在登记…';
   const r = await callAPI('registerByProfile', { name, email, department, major, role });

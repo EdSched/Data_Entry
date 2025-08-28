@@ -278,41 +278,41 @@ summary::-webkit-details-marker {
 }
 /* ==== 仅限手机端，收紧日历头部字号与按钮尺寸 ==== */
 @media (max-width: 600px) {
-  /* 日历标题（例如 2025/08/27） */
-  .calendar-head .calendar-title {
-    font-size: 18px !important;   /* 视需要改 16~20 */
-    line-height: 1.2;
-  }
-.calendar-head {
-    flex-wrap: wrap;  /* 允许子元素换行 */
-  }
-  .calendar-head .seg {
-    order: 2;         /* 放到标题之后 */
-    width: 100%;      /* 独占一行 */
-    justify-content: flex-start; /* 左对齐（可改成center/space-between） */
-    margin-top: 6px;
-  }
-  .calendar-head .calendar-title {
-    order: 1;
-    flex: 1;          /* 占满剩余空间，和 seg 分开 */
-  }
-  .calendar-head .calendar-ctrl {
-    order: 3;         /* 控制按钮排在最后一行 */
-    width: 100%;      /* 独占一行 */
-    justify-content: flex-start;
-  }
-  /* 分段按钮容器（“日 / 周 / 月”） */
-  .calendar-ctrl .seg {
-    gap: 6px;                      /* 按钮间距小一点，避免挤出容器 */
+  .calendar-head {
+    flex-wrap: wrap;
   }
 
-  /* 分段按钮本体 */
+  /* 标题 */
+  .calendar-head .calendar-title {
+    order: 1;
+    flex: 1;
+    font-size: 18px !important;
+    line-height: 1.2;
+  }
+
+  /* 控制按钮（前进/后退/刷新） */
+  .calendar-head .calendar-ctrl {
+    order: 2;
+    flex-wrap: wrap;   /* 允许内部换行 */
+    width: 100%;
+  }
+
+  /* 分段按钮容器（日/周/月） */
+  .calendar-ctrl .seg {
+    flex-basis: 100%;  /* 独占一整行 */
+    margin-top: 6px;
+    justify-content: flex-start;
+    gap: 6px;
+  }
+
+  /* 按钮本体 */
   .calendar-ctrl .seg .seg-btn {
-    font-size: 13px !important;    /* 关键：把受全局放大的按钮字收回 */
-    padding: 6px 10px !important;  /* 收窄内边距，避免溢出 */
-    min-width: 42px;               /* 给按钮一个最小宽，保证“周/日”不换行 */
+    font-size: 13px !important;
+    padding: 6px 10px !important;
+    min-width: 42px;
     line-height: 1.1;
   }
+}
 
   /* FullCalendar 自身在手机上的基础字号（网格、时间轴等） */
   #mainCalendar .fc {

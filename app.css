@@ -305,11 +305,15 @@ summary::-webkit-details-marker {
   }
   /* 1) 按钮排布别“挤在中间” */
   .calendar-head .calendar-ctrl {
-    justify-content: flex-start !important;  /* 想平均分散可改 space-between */
+    justify-content: space-between !important; 
     gap: 6px;
   }
   /* 2) 真正让按钮变矮：覆盖 line-height / min-height / padding */
-  .calendar-ctrl .btn,
+  .calendar-ctrl .btn {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+    min-width: 48px;   /* 想统一固定宽度的话加这一行 */
+  }
   .calendar-ctrl .btn.btn-outline {
     padding-top: 2px !important;
     padding-bottom: 2px !important;

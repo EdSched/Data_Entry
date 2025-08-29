@@ -141,7 +141,7 @@
                 <details class="accordion-item" open>
                   <summary class="accordion-title"><span>我的课程</span></summary>
                   <div class="module-body">
-                    <div class="muted">占位：后续接 listVisibleSlots / 讲义链接 / 作业提交等。</div>
+                    <div id="myConfirmationsWrap" class="muted">（我的预约/确认记录会显示在这里）</div>
                   </div>
                 </details>
               </section>
@@ -470,94 +470,87 @@
             </section>
           </div>
 
-          <!-- 数据管理（保留 H2，整個數據分析在一個手風琴裡） -->
+         <!-- 数据管理（保留 H2，整個數據分析在一個手風琴裡） -->
           <div id="datamanagementPage" class="page-content" style="display:none;">
             <section class="card">
               <h2 style="margin:0 0 12px 0;">数据管理</h2>
 
-              <section class="accordion-list" aria-label="数据分析">
-                <details class="accordion-item" open>
-                  <summary class="accordion-title"><span>数据分析</span></summary>
-                  <div class="module-body">
+              <section class="accordion-list" aria-label="数据管理">
+  <!-- 课程管理 -->
+  <details class="accordion-item" open>
+    <summary class="accordion-title"><span>课程管理</span></summary>
+    <div class="module-body">
+      <div class="form-grid" style="margin:8px 0;">
+        <fieldset>
+          <legend>时间范围</legend>
+          <label>开始日期 <input type="date" id="dmCourseStart"></label>
+          <label>结束日期 <input type="date" id="dmCourseEnd"></label>
+          <button type="button" id="dmCourseReload" class="btn" style="margin-left:8px;">加载</button>
+        </fieldset>
+      </div>
+      <div id="dmCourseTableWrap" class="muted">（确认记录将显示在这里）</div>
+    </div>
+  </details>
 
-                    <!-- 筛选区（補 form-grid） -->
-                    <div class="dm-filters form-grid">
-                      <fieldset style="margin:8px 0;">
-                        <legend>学生选择</legend>
-                        <label style="display:block;margin:6px 0;">
-                          选择所属：
-                          <select name="dmDept" id="dmDept">
-                            <option value="">（选择所属部门）</option>
-                            <option>文科大学院</option><option>理科大学院</option>
-                          </select>
-                        </label>
-                        <label style="display:block;margin:6px 0;">
-                          选择专业：
-                          <select name="dmMajor" id="dmMajor">
-                            <option value="">（选择专业）</option>
-                            <option>机械</option><option>电子电器</option><option>生物化学</option><option>情报学</option>
-                            <option>文学</option><option>历史学</option><option>社会学</option>
-                          </select>
-                        </label>
-                      </fieldset>
+  <!-- 学生管理（占位） -->
+  <details class="accordion-item">
+    <summary class="accordion-title"><span>学生管理</span></summary>
+    <div class="module-body">
+      <div class="muted">（预留：按学生维度的预约/签到/进度一览）</div>
+    </div>
+  </details>
 
-                      <fieldset style="margin:8px 0;">
-                        <legend>时间范围</legend>
-                        <label style="display:inline-block;margin:6px 12px 6px 0;">开始月份：<input type="month" id="dmStart"></label>
-                        <label style="display:inline-block;margin:6px 0;">结束月份：<input type="month" id="dmEnd"></label>
-                      </fieldset>
+  <!-- 数据分析（保留原有内容） -->
+  <details class="accordion-item">
+    <summary class="accordion-title"><span>数据分析</span></summary>
+    <div class="module-body">
+      
+      <!-- 筛选区（补 form-grid） -->
+      <div class="dm-filters form-grid">
+        <fieldset style="margin:8px 0;">
+          <legend>学生选择</legend>
+          <label style="display:block;margin:6px 0;">
+            选择所属：
+            <select name="dmDept" id="dmDept">
+              <option value="">（选择所属部门）</option>
+              <option>文科大学院</option><option>理科大学院</option>
+            </select>
+          </label>
+          <label style="display:block;margin:6px 0;">
+            选择专业：
+            <select name="dmMajor" id="dmMajor">
+              <option value="">（选择专业）</option>
+              <option>机械</option><option>电子电器</option><option>生物化学</option><option>情报学</option>
+              <option>文学</option><option>历史学</option><option>社会学</option>
+            </select>
+          </label>
+        </fieldset>
 
-                      <fieldset style="margin:8px 0;">
-                        <legend>数据类型</legend>
-                        <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 出勤情况</label>
-                        <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 作业情况</label>
-                        <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 面谈记录</label>
-                        <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 学习进度</label>
-                      </fieldset>
-                    </div>
+        <fieldset style="margin:8px 0;">
+          <legend>时间范围</legend>
+          <label style="display:inline-block;margin:6px 12px 6px 0;">开始月份：<input type="month" id="dmStart"></label>
+          <label style="display:inline-block;margin:6px 0;">结束月份：<input type="month" id="dmEnd"></label>
+        </fieldset>
 
-                    <!-- 三个动作按钮（仍在同一手风琴框里） -->
-                    <div class="dm-actions" style="margin:12px 0;">
-                      <button type="button" id="dmViewBtn">数据查看</button>
-                      <button type="button" id="dmPreviewBtn" style="margin-left:8px;">报告预览</button>
-                      <button type="button" id="dmExportBtn" style="margin-left:8px;">生成报告</button>
-                      <button type="reset" style="margin-left:8px;">重置</button>
-                    </div>
+        <fieldset style="margin:8px 0;">
+          <legend>数据类型</legend>
+          <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 出勤情况</label>
+          <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 作业情况</label>
+          <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 面谈记录</label>
+          <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 学习进度</label>
+        </fieldset>
+      </div>
 
-                    <!-- 三个结果面板（作為大框內的子手風琴） -->
-                    <div class="dm-panels" style="margin:12px 0;">
-                      <details class="dm-panel accordion-item">
-                        <summary class="accordion-title"><strong>数据查看（结果区占位）</strong></summary>
-                        <div class="module-body" style="padding:8px 0;">
-                          <table class="table demo" style="width:100%;border-collapse:collapse;">
-                            <thead><tr><th>姓名</th><th>课程</th><th>出勤</th><th>作业</th><th>进度</th></tr></thead>
-                            <tbody>
-                              <tr><td>张三</td><td>高数冲刺班</td><td>3/4</td><td>2/3</td><td>一般</td></tr>
-                              <tr><td>李四</td><td>线性代数</td><td>4/4</td><td>3/3</td><td>良好</td></tr>
-                            </tbody>
-                          </table>
-                        </div>
-                      </details>
-
-                      <details class="dm-panel accordion-item" style="margin-top:8px;">
-                        <summary class="accordion-title"><strong>报告预览（占位）</strong></summary>
-                        <div class="module-body" style="padding:8px 0;">
-                          <p>（这里展示将要导出的报告封面与关键图表的示意）</p>
-                        </div>
-                      </details>
-
-                      <details class="dm-panel accordion-item" style="margin-top:8px;">
-                        <summary class="accordion-title"><strong>生成报告（占位）</strong></summary>
-                        <div class="module-body" style="padding:8px 0;">
-                          <p>（这里显示导出状态与下载链接的示意）</p>
-                        </div>
-                      </details>
-                    </div>
-
-                  </div>
-                </details>
-  
-            </section>
+      <!-- 三个动作按钮（仍在同一手风琴框里） -->
+      <div class="dm-actions" style="margin:12px 0;">
+        <button type="button" id="dmViewBtn">数据查看</button>
+        <button type="button" id="dmPreviewBtn" style="margin-left:8px;">报告预览</button>
+        <button type="button" id="dmExportBtn" style="margin-left:8px;">生成报告</button>
+        <button type="reset" style="margin-left:8px;">重置</button>
+      </div>      
+    </div>
+  </details>
+</section>
           </div>
         </main>
       </div>

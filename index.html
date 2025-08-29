@@ -397,8 +397,81 @@
                     <form class="form-grid">
                       <fieldset>
                         <legend>基本资料</legend>
-                        <label>学生姓名<input type="text" placeholder="输入或选择学生"/></label>
-                        <label>所属/专业<input type="text" placeholder="如：理科·电子电器"/></label>
+  <form id="si-form" novalidate>
+    <div class="form-row">
+      <label for="si-name">姓名</label>
+      <input type="text" id="si-name" name="name" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-status">状态</label>
+      <input type="text" id="si-status" name="status" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-target-entry">希望入学时间</label>
+      <input type="text" id="si-target-entry" name="target_entry" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-deadline">截至日期</label>
+      <input type="text" id="si-deadline" name="deadline" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-teacher">负责老师</label>
+      <input type="text" id="si-teacher" name="teacher" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-lang-class">语言课</label>
+      <input type="text" id="si-lang-class" name="lang_class" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-jp-score">日语成绩</label>
+      <input type="text" id="si-jp-score" name="jp_score" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-en-score">英語成绩</label>
+      <input type="text" id="si-en-score" name="en_score" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-grad-school">毕业学校</label>
+      <input type="text" id="si-grad-school" name="grad_school" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-grad-major">毕业专业</label>
+      <input type="text" id="si-grad-major" name="grad_major" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-thesis">毕业论文</label>
+      <input type="text" id="si-thesis" name="thesis" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-gpa">GPA</label>
+      <input type="text" id="si-gpa" name="gpa" />
+    </div>
+
+    <div class="form-row">
+      <label for="si-extra">其他履历</label>
+      <input type="text" id="si-extra" name="extra" />
+    </div>
+
+    <!-- 可选：若你已有用户ID，可留一个隐藏或文本位，后续我用它做主键 -->
+    <!-- <input type="text" id="si-userid" name="userid" placeholder="可选：学生ID"> -->
+
+    <div class="form-actions">
+      <button type="button" id="si-save">登记</button>
+      <button type="reset" id="si-reset">重置</button>
+      <span id="si-msg" aria-live="polite"></span>
+    </div>
+  </form>
                       </fieldset>
                       <fieldset>
                         <legend>进度与评语</legend>

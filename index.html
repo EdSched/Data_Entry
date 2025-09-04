@@ -472,22 +472,8 @@
       <span id="si-msg" aria-live="polite"></span>
     </div>
   </form>
-                      </fieldset>
-                      <fieldset>
-                        <legend>进度与评语</legend>
-                        <label>阶段/章节<input type="text" placeholder="例如：微积分·极限"/></label>
-                        <label>掌握度
-                          <select><option>待跟进</option><option>一般</option><option>良好</option><option>优秀</option></select>
-                        </label>
-                        <label>阶段得分<input type="number" placeholder="可选"/></label>
-                        <label>评语<textarea rows="3" placeholder="具体建议/困难点…"></textarea></label>
-                      </fieldset>
-                      <div class="form-actions">
-                        <button type="button" class="btn">保存</button>
-                      </div>
-                    </form>
-                  </div>
-                </details>
+  </div>
+</details>
 
                 <!-- 3) 面谈记录 -->
                 <details id="in-consult" class="accordion-item">
@@ -569,9 +555,47 @@
   <details class="accordion-item">
     <summary class="accordion-title"><span>学生管理</span></summary>
     <div class="module-body">
-      <div class="muted">（预留：按学生维度的预约/签到/进度一览）</div>
+     <!-- 学生信息｜老师查看列表 -->
+<section id="tab-student-list-teacher" data-hook="si-teacher-list">
+  <h3>学生信息</h3>
+
+  <div class="toolbar">
+    <label>姓名前缀
+      <input type="text" id="si-filter-name" placeholder="例如：张 / Li" />
+    </label>
+    <label>负责老师
+      <input type="text" id="si-filter-teacher" placeholder="老师姓名" />
+    </label>
+    <button type="button" id="si-filter-go">筛选</button>
+    <button type="button" id="si-refresh">刷新</button>
+  </div>
+
+  <table id="si-list" class="table">
+    <thead>
+      <tr>
+        <th>姓名</th>
+        <th>状态</th>
+        <th>希望入学时间</th>
+        <th>截至日期</th>
+        <th>负责老师</th>
+        <th>语言课</th>
+        <th>日语成绩</th>
+        <th>英語成绩</th>
+        <th>毕业学校</th>
+        <th>毕业专业</th>
+        <th>毕业论文</th>
+        <th>GPA</th>
+        <th>其他履历</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- 后续由 JS 渲染 -->
+    </tbody>
+  </table>
+</section>
     </div>
   </details>
+
 
   <!-- 数据分析（保留原有内容） -->
   <details class="accordion-item">

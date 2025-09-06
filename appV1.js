@@ -80,33 +80,15 @@ function adaptEvents(rows) {
         canBook: r.canBook === true || r.canBook === '是',
         status: r.status || r.scheduleStatus || '',
         description: r.description || r.notes || r.note || '',
-      }
+         slotId:    item['槽位ID']     || item.slotId,
+         status:    item['课程状态']   || item.courseStatus, // ★
+         attr:      item['课程属性']   || item.courseAttr,   // ★
+         startTime: item['开始时间']   || item.startTime,
+         endTime:   item['结束时间']   || item.endTime,
+         teacher:   item['任课老师']   || item.teacher
+        }
     };
   }).filter(e => e.start);
-}
-
-// === Mapping Cache (optional) ===
-window.mappingCache = { ready: false, data: {}, version: null };
-
-async function initMapping() {
-  if (window.mappingCache.ready) return window.mappingCache;
-  const url = buildApiUrl({ action: 'getMapping' }); // 按你现有的 API URL 构造器替换
-  const res = await fetch(url, { credentials: 'include' });
-  const json = await res.json();
-  if (json && json.ok) {
-    window.mappingCache.data = json.mapping || {};
-    window.mappingCache.version = json.mapping_version || 'unknown';
-    window.mappingCache.ready = true;
-  } else {
-    console.warn('getMapping failed:', json);
-  }
-  return window.mappingCache;
-}
-
-/** 便捷取列名（若你需要在前端用到原始列名时） */
-function col(table, key) {
-  const m = (window.mappingCache.data[table] || {}).columns || {};
-  return m[key] || null;
 }
 
 /* =============== API =============== */
@@ -169,13 +151,13 @@ function showLoginForm() {
   $('registerError').textContent = '';
 }
 async function login() {
-  const username = ($('loginUsername').value || '').trim();
+  const userid = ($('loginUserid').value || '').trim();
   const err = $('loginError');
-  if (!username) { err.textContent = '请输入用户ID'; return; }
+  if (!userid) { err.textContent = '请输入用户ID'; return; }
   err.style.color=''; err.textContent='正在登录…';
-  const r = await callAPI('loginByUsername', { username });
+  const r = await callAPI('loginByUserid', { userid });
   if (r && r.success) {
-    currentUser = normalizeUser(r.user, username);
+    currentUser = normalizeUser(r.user, userid);
     $('loginContainer').style.display = 'none';
     $('mainApp').style.display = 'block';
     try{ window.location.hash = '#app'; }catch{}
@@ -188,48 +170,49 @@ async function login() {
     err.textContent = (r && r.message) || '登录失败：用户ID不存在';
   }
 }
-async function registerUser() {
-  const name = ($('registerName').value||'').trim();
-  const email = ($('registerEmail').value||'').trim();
-  const department = $('registerDepartment').value;
-  // —— 采集“专业”：文/理 → 下拉；其他 → 自由填写 —— //
-  const majorSel  = document.getElementById('registerMajorSelect');
-  const majorFree = document.getElementById('registerMajorFree');
-  const major = (department === '其他')
-    ? (majorFree ? majorFree.value.trim() : '')
-    : (majorSel  ? majorSel.value.trim()  : '');
 
-  // —— 校验 —— //
-const role = $('registerRole').value;
-const err = $('registerError');
-if (!name || !email || !department || !major || !role) { 
-  err.textContent='请填写姓名、邮箱、所属、专业、身份'; 
-  return; 
-}
-if (department === '其他' && !major) {
-  err.textContent = '所属为"其他"时，请填写专业'; 
-  return;
-}
-if (department !== '其他' && !major) {
-  err.textContent = '请选择一个专业'; 
-  return;
-}
-  err.style.color=''; err.textContent='正在登记…';
+// appV1.js — 注册处理（最小改动版）
+async function registerUser(evt){
+  evt?.preventDefault?.();
+  const $ = id => document.getElementById(id);
+
+  // 1) 先取值（所有校验之前）
+  const err        = $('registerError');
+  const name       = $('registerName').value.trim();
+  const email      = $('registerEmail').value.trim();
+  const department = $('registerDepartment').value.trim();
+  const role       = $('registerRole').value.trim();
+  const majorSel   = $('registerMajorSelect')?.value?.trim() || '';
+  const majorFree  = $('registerMajorFree')?.value?.trim() || '';
+  const major      = (department === '其他') ? majorFree : majorSel;
+
+  // 2) 单一入口校验（去掉你之前分散的三段）
+  if (!name || !email || !department || !role) {
+    err.textContent = '请填写姓名、邮箱、所属、身份'; return;
+  }
+  if (department === '其他' && !major) {
+    err.textContent = '所属为“其他”时，请填写专业'; return;
+  }
+  if (department !== '其他' && !major) {
+    err.textContent = '请选择一个专业'; return;
+  }
+
+  // 3) 提示并提交
+  err.style.color = '';
+  err.textContent = '正在登记…';
   const r = await callAPI('registerByProfile', { name, email, department, major, role });
+
   if (r && r.success) {
     err.style.color = 'green';
-    // —— 成功提示：老师/学生分开 —— //
-    if ((role || '').indexOf('老师') > -1) {
-      err.textContent = '已完成注册，等待管理员分配用户ID';
-    } else {
-      err.textContent = '已完成注册，等待老师分配ID';
-    }
-    // （是否清空表单、是否跳回登录，按你原有代码保留）
+    err.textContent = (role.indexOf('老师') > -1)
+      ? '已完成注册，等待管理员分配用户ID'
+      : '已完成注册，等待老师分配ID';
   } else {
     err.style.color = '#c00';
     err.textContent = (r && r.message) ? r.message : '登记失败（无返回信息）';
   }
 }
+
 function logout() {
   currentUser = null;
   $('mainApp').style.display = 'none';
@@ -256,6 +239,13 @@ function showPage(pageIdRaw) {
   const active = document.querySelector(`.nav-link[data-page="${pageIdRaw}"]`);
   if (active) active.classList.add('active');
   if (pageId === 'calendar' && window.calendar) setTimeout(()=>window.calendar.updateSize(), 60);
+  
+  // 添加预约功能调用
+  if (pageId === 'mycourses' && window.bookingModule) {
+    setTimeout(() => {
+      window.bookingModule.loadMyConfirmations();
+    }, 100);
+  }
 }
 function updateUserUI() {
   if (!currentUser) return;
@@ -296,6 +286,37 @@ function initCalendar() {
       const e = ev.end   ? ev.end.toLocaleString('zh-CN')   : '';
       const teacher = ext.teacher ? `\n任课老师：${ext.teacher}` : '';
       const sid = ext.slotId ? `\n槽位ID：${ext.slotId}` : '';
+      
+      const me = window.currentUser || {};
+      const roleToken = (me.roleNorm || me.role || '').trim();
+      
+      // 角色：兼容「学生 / student / Student」
+      const isStudent = ['学生','student','Student'].includes(roleToken);
+      
+      // 属性：兼容字段名 & 去空白
+      const attrRaw = ext.attr || ext.courseAttr || ext['课程属性'] || '';
+      const attrNorm = String(attrRaw).replace(/\s+/g, ''); // 'V I P' / 全角空格都能过
+      const status = (ext.status || ext.courseStatus || ext['课程状态'] || '').trim();
+
+      // 最终条件：学生 + 可预约 + (VIP|面谈)
+      if (isStudent && status === '可预约' && (attrNorm === 'VIP' || attrNorm === '面谈')) {
+        const wantBook = confirm(`${ev.title}\n\n这是可预约课程，是否要预约？\n点击"确定"预约，"取消"查看详情`);
+        if (wantBook && window.bookingModule) {
+          const eventInfo = {
+            slotId:   ext.slotId || ev.id,
+            title:    ev.title,
+            date:     ev.start ? ev.start.toISOString().slice(0,10) : '',
+            attr:     attrNorm,
+            // 传给弹窗的时间窗（可选，但有就更稳）
+            slotStart: ext.startTime || ext.slotStart || ext['开始时间'] || '',
+            slotEnd:   ext.endTime   || ext.slotEnd   || ext['结束时间'] || ''
+          };
+          window.bookingModule.showBookingDialog(eventInfo);
+          return; // 预约流程，不再弹原 alert
+        }
+      }
+      
+      // 默认显示详情
       alert(`课程：${t}\n时间：${s} ~ ${e}${teacher}${sid}`);
     },
     initialView,
@@ -415,7 +436,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('logoutBtn')?.addEventListener('click', logout);
   $('showRegisterBtn')?.addEventListener('click', showRegisterForm);
   $('showLoginBtn')?.addEventListener('click', showLoginForm);
-  $('loginUsername')?.addEventListener('keypress', (e)=>{ if (e.key==='Enter') login(); });
+  $('loginUserid')?.addEventListener('keypress', (e)=>{ if (e.key==='Enter') login(); });
+
 
   // —— 注册表单：所属部门 → 专业 联动（极简，不记历史）——
   (function () {

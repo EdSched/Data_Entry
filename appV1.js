@@ -156,7 +156,7 @@ async function login() {
   if (!userid) { err.textContent = '请输入用户ID'; return; }
   err.style.color=''; err.textContent='正在登录…';
   const r = await callAPI('loginByUserid', { userid });
-  if (r && r.success) {
+  if (r && (r.success || r.ok)) {
     currentUser = normalizeUser(r.user, userid);
     $('loginContainer').style.display = 'none';
     $('mainApp').style.display = 'block';
@@ -202,7 +202,7 @@ async function registerUser(evt){
   err.textContent = '正在登记…';
   const r = await callAPI('registerByProfile', { name, email, department, major, role });
 
-  if (r && r.success) {
+  if (r && (r.success || r.ok)) {
     err.style.color = 'green';
     err.textContent = (role.indexOf('老师') > -1)
       ? '已完成注册，等待管理员分配用户ID'

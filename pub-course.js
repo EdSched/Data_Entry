@@ -149,3 +149,30 @@ console.log('处理后的M:', M);
     }
   });
 });
+
+// ===== 干跑模式：params.debug === true 时只返回诊断，不写表 =====
+if (params && (params.debug === true || params.debug === 'true')) {
+  const p = params || {};
+  const sh = getSheet(SHEET_NAMES.COURSES);
+  const lastCol = sh.getLastColumn();
+  const headers = lastCol ? sh.getRange(1,1,1,lastCol).getValues()[0].map(v=>String(v||'').trim()) : [];
+  const idx = headerIndexMap_(sh, SHEET_NAMES.COURSES);
+
+  // 这就是发布时用到的全部脚本key
+  const keysUsed = [
+    'coursename','attr','teacher','singledate','daterange','weekdays','count',
+    'starttime','endtime','majors','visiblestudentids','classmode','campus',
+    'classroom','onlinelink','handouturl','schedulestatus','slotid','batchid','createdat'
+  ];
+  const notMapped = keysUsed.filter(k => !idx[k]);
+
+  return {
+    success: false,
+    debug: true,
+    note: '干跑返回。未写表，仅供排查',
+    headers,
+    idx,
+    payload: p,
+    notMapped
+  };
+}

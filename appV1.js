@@ -522,6 +522,61 @@ document.addEventListener('DOMContentLoaded', async () => {
   depSel.addEventListener('change', apply);
 })();
 
+// 录入提交
+async function bindStudentInfoForm() {
+  const saveBtn = document.getElementById('si-save');
+  if (!saveBtn) return;
+  saveBtn.addEventListener('click', async ()=>{
+    const payload = {
+      userid:            document.getElementById('si-userid')?.value?.trim(),   // 你若没放，就让老师填
+      name:              document.getElementById('si-name')?.value?.trim(),
+      locationstatus:    document.getElementById('si-status')?.value?.trim(),
+      enrollmentdate:    document.getElementById('si-target-entry')?.value?.trim(),
+      servicedeadline:   document.getElementById('si-deadline')?.value?.trim(),
+      responsibleteacher:document.getElementById('si-teacher')?.value?.trim(),
+      languagecourse:    document.getElementById('si-lang-class')?.value?.trim(),
+      japanese_score:    document.getElementById('si-jp-score')?.value?.trim(),
+      english_score:     document.getElementById('si-en-score')?.value?.trim(),
+      graduatedschool:   document.getElementById('si-grad-school')?.value?.trim(),
+      graduation_major:  document.getElementById('si-grad-major')?.value?.trim(),
+      graduation_thesis: document.getElementById('si-thesis')?.value?.trim(),
+      gpa:               document.getElementById('si-gpa')?.value?.trim(),
+      other_resume:      document.getElementById('si-extra')?.value?.trim(),
+      visiblerules:      document.getElementById('si-vis-rules')?.value?.trim()
+    };
+    const r = await callAPI('upsertStudentInfo', payload);
+    alert(r.ok ? '已登记' : ('失败：'+(r.msg||'')));
+    if (r.ok) refreshStudentInfoList();
+  });
+}
+
+// 列表加载（老师/管理员视角）
+async function refreshStudentInfoList() {
+  const viewer = currentUser || {};
+  const params = {
+    action: 'listStudentInfo',
+    viewer_userid: viewer.userid,
+    viewer_role: viewer.role,
+    viewer_major: viewer.major,
+    viewer_affiliation: viewer.affiliation,
+    viewer_name: viewer.name
+  };
+  const r = await callAPI('listStudentInfo', params);
+  if (!(r && r.ok)) return;
+  const tbody = document.querySelector('#si-list tbody');
+  if (!tbody) return;
+  tbody.innerHTML = r.items.map(it=>(
+    `<tr>
+      <td>${it.name||''}</td><td>${it.locationstatus||''}</td>
+      <td>${it.enrollmentdate||''}</td><td>${it.servicedeadline||''}</td>
+      <td>${it.responsibleteacher||''}</td><td>${it.languagecourse||''}</td>
+      <td>${it.japanese_score||''}</td><td>${it.english_score||''}</td>
+      <td>${it.graduatedschool||''}</td><td>${it.graduation_major||''}</td>
+      <td>${it.graduation_thesis||''}</td><td>${it.gpa||''}</td>
+      <td>${it.other_resume||''}</td>
+    </tr>`
+  )).join('');
+}
 
   // API 健康检查
   setApiStatus({ok:null, text:'API 检测中'});

@@ -1,4 +1,4 @@
-// pub-course.js —— 课程安排发布（修复版：统一M/N列逻辑）
+// pub-course.js —— 课程安排发布（完整版：使用英文key）
 document.addEventListener('DOMContentLoaded', () => {
   const rootSel = '#pub-course [data-module="publish-course"]';
 
@@ -55,7 +55,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (studentRaw) {
         N = studentRaw.split(/[,\s，、]+/).map(s => s.trim()).filter(Boolean);
       }
-      // 注意：绝不把 M 自动抄进 N
 
       // —— 时间与重复 —— //
       const dates = fs2.querySelectorAll('input[type="date"]');
@@ -66,7 +65,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       const weekdays = fs2.querySelector('input[placeholder="如：一,三,五"]')?.value.trim() || '';
       const countStr = fs2.querySelector('input[type="number"]')?.value || '';
-      const count = countStr ? Number(countStr) : '';
+      const count = countStr ? Number(countStr) : null;
 
       const times = fs2.querySelectorAll('input[type="time"]');
       const startTime = times[0]?.value || '';
@@ -100,52 +99,106 @@ document.addEventListener('DOMContentLoaded', () => {
         return err('请选择"发布对象所属/专业"，或填写"学生姓名或ID"。两者不能同时为空。');
       }
 
-// 在 // —— 组装 payload —— // 之前加上
-console.log('所属:', dep);
-console.log('多选专业原始options:', majorSel ? Array.from(majorSel.options).map(o => ({value: o.value, selected: o.selected, text: o.textContent})) : 'majorSel不存在');
-console.log('处理后的M:', M);
-      // —— 组装 payload —— //
+      // 调试日志
+      console.log('📝 课程发布数据收集:');
+      console.log('所属:', dep);
+      console.log('多选专业:', majorSel ? Array.from(majorSel.options).map(o => ({value: o.value, selected: o.selected, text: o.textContent})) : 'majorSel不存在');
+      console.log('处理后的M:', M);
+      console.log('处理后的N:', N);
+
+      // —— 组装 payload（使用英文脚本key） —— //
       const payload = {
         coursename: courseName,
         attr: courseAttr,
-        teacher,
+        teacher: teacher,
         singledate: singleDate,
         daterange: dateRange,
-        weekdays,
-        count,
+        weekdays: weekdays,
+        count: count,
         starttime: startTime,
         endtime: endTime,
-        breakmins: breakMins,
-        majors: M,                    // M列 → majors
-        visiblestudentids: N,         // N列 → visiblestudentids
-        campus,
+        majors: M.join(','),              // 数组转字符串
+        visiblestudentids: N.join(','),   // 数组转字符串
         classmode: classMode,
-        classroom,
+        campus: campus,
+        classroom: classroom,
         onlinelink: onlineLink,
         handouturl: handoutUrl,
-        schedulestatus: scheduleStatus
+        coursestatus: scheduleStatus,
+        breakmins: breakMins
       };
+
+      console.log('🚀 发送到后端的payload:', payload);
 
       // —— 调用后端 —— //
       btn.disabled = true;
       const oldText = btn.textContent;
       btn.textContent = '发布中…';
       
-      const res = await callAPI('publishSlots', payload);
-      
-      btn.disabled = false;
-      btn.textContent = oldText;
-
-      if (res && res.success) {
-        alert('发布成功');
-        try { 
-          window.calendar && window.calendar.refetchEvents && window.calendar.refetchEvents(); 
-        } catch {}
-      } else {
-        alert('发布失败：' + (res && res.message ? res.message : '未知错误'));
+      try {
+        const res = await callAPI('publishCourse', payload);
+        
+        console.log('📡 后端返回结果:', res);
+        
+        if (res && res.success) {
+          alert('课程发布成功！');
+          
+          // 清空表单
+          clearForm(root);
+          
+          // 刷新日历
+          try { 
+            window.calendar && window.calendar.refetchEvents && window.calendar.refetchEvents(); 
+          } catch (e) {
+            console.log('日历刷新失败:', e);
+          }
+        } else {
+          const errorMsg = '发布失败：' + (res && res.message ? res.message : '未知错误');
+          alert(errorMsg);
+          console.error('发布失败，后端返回:', res);
+        }
+      } catch (apiError) {
+        alert('网络请求失败：' + apiError.message);
+        console.error('API调用异常:', apiError);
       }
+      
     } catch (e) {
       alert('脚本异常：' + (e && e.message ? e.message : e));
+      console.error('脚本异常:', e);
+    } finally {
+      // 确保按钮状态恢复
+      btn.disabled = false;
+      btn.textContent = oldText || '发布';
     }
   });
+
+  // 清空表单的辅助函数
+  function clearForm(root) {
+    try {
+      // 清空所有输入框
+      root.querySelectorAll('input').forEach(input => {
+        if (input.type !== 'submit' && input.type !== 'button') {
+          input.value = '';
+        }
+      });
+      
+      // 重置所有下拉框
+      root.querySelectorAll('select').forEach(select => {
+        select.selectedIndex = 0;
+        // 清空多选的选中状态
+        Array.from(select.options).forEach(option => {
+          option.selected = false;
+        });
+      });
+      
+      // 清空文本域
+      root.querySelectorAll('textarea').forEach(textarea => {
+        textarea.value = '';
+      });
+      
+      console.log('✅ 表单已清空');
+    } catch (e) {
+      console.warn('表单清空失败:', e);
+    }
+  }
 });

@@ -1,5 +1,5 @@
 /* =============== 基础配置（按你现有 API） =============== */
-const API_URL = 'https://script.google.com/macros/s/AKfycbybAvJ1PChJbu2WofPrj2-IrZ4Ro07mBlQQ7TymJRtadT0UiXfL1jQbcc3yYuXHaXw/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbwew2T6Scwk5HGbNcf4wh-gmcXyJW6YULKGHEvyNQLA5SQ-fjB_epdNbSxdbb0Se2w/exec';
 
 // 所属 → 专业（学科逻辑顺序，互不混合）
 const MAJOR_OPTIONS = {
@@ -46,10 +46,10 @@ function setApiStatus({ok, text}) {
 /* =============== 统一/适配 =============== */
 function normalizeUser(u = {}, fallbackId = '') {
   return {
-    userId: u.userId || u.username || u.id || fallbackId || '',
+    userId: u.userid || u.userId || u.username || u.id || fallbackId || '',
     name: u.name || u.realName || u.displayName || '',
     role: u.role || u.identity || '',
-    department: u.department || u.affiliation || u.dept || '',
+    department: u.affiliation || u.department || u.dept || '',
     major: u.major || u.subject || ''
   };
 }
@@ -62,27 +62,17 @@ function normalizeRole(user){
 }
 function adaptEvents(rows) {
   if (!Array.isArray(rows)) return [];
-  const pad = v => {
-    const s = String(v ?? '');
-    return /^\d:\d{2}$/.test(s) ? ('0' + s) : s; // 9:00 -> 09:00
-  };
-  return rows.map(r => {
-    const date = r.date || r.singleDate || r.day || '';
-    const start = r.start || (date && r.startTime ? `${date}T${pad(r.startTime)}` : null);
-    const end   = r.end   || (date && r.endTime   ? `${date}T${pad(r.endTime)}`   : null);
-    return {
-      id: r.id || r.slotId || r.slotID || `${date}-${r.startTime||''}-${r.title||r.courseName||''}`,
-      title: r.title || r.courseName || r.attr || '未命名',
-      start, end,
-      backgroundColor: r.backgroundColor || r.bgColor || undefined,
-      borderColor: r.borderColor || undefined,
-      extendedProps: {
-        canBook: r.canBook === true || r.canBook === '是',
-        status: r.status || r.scheduleStatus || '',
-        description: r.description || r.notes || r.note || '',
-      }
-    };
-  }).filter(e => e.start);
+  
+  // 后端已返回标准 FullCalendar 格式，只做基本过滤和清理
+  return rows.filter(r => r && r.start && r.title).map(r => ({
+    id: r.id,
+    title: r.title,
+    start: r.start,
+    end: r.end,
+    backgroundColor: r.backgroundColor,
+    borderColor: r.borderColor,
+    extendedProps: r.extendedProps || {}
+  }));
 }
 
 /* =============== API =============== */
@@ -145,13 +135,13 @@ function showLoginForm() {
   $('registerError').textContent = '';
 }
 async function login() {
-  const username = ($('loginUsername').value || '').trim();
+  const userid = ($('loginUsername').value || '').trim();
   const err = $('loginError');
-  if (!username) { err.textContent = '请输入用户ID'; return; }
+  if (!userid) { err.textContent = '请输入用户ID'; return; }
   err.style.color=''; err.textContent='正在登录…';
-  const r = await callAPI('loginByUsername', { username });
-  if (r && r.success) {
-    currentUser = normalizeUser(r.user, username);
+  const r = await callAPI('loginByUserid', { userid });
+  if (r && (r.success || r.ok)) {
+    currentUser = normalizeUser(r.user, userid);
     $('loginContainer').style.display = 'none';
     $('mainApp').style.display = 'block';
     try{ window.location.hash = '#app'; }catch{}
@@ -161,51 +151,105 @@ async function login() {
     loadCalendarEvents();
   } else {
     err.style.color='#c00';
-    err.textContent = (r && r.message) || '登录失败：用户ID不存在';
+    err.textContent = (r && (r.message || r.msg)) || '登录失败：用户ID不存在';
   }
 }
-async function registerUser() {
-  const name = ($('registerName').value||'').trim();
-  const email = ($('registerEmail').value||'').trim();
-  const department = $('registerDepartment').value;
-  // —— 采集“专业”：文/理 → 下拉；其他 → 自由填写 —— //
-  const majorSel  = document.getElementById('registerMajorSelect');
-  const majorFree = document.getElementById('registerMajorFree');
-  const major = (department === '其他')
-    ? (majorFree ? majorFree.value.trim() : '')
-    : (majorSel  ? majorSel.value.trim()  : '');
 
-  // —— 校验 —— //
-const role = $('registerRole').value;
-const err = $('registerError');
-if (!name || !email || !department || !major || !role) { 
-  err.textContent='请填写姓名、邮箱、所属、专业、身份'; 
-  return; 
-}
-if (department === '其他' && !major) {
-  err.textContent = '所属为"其他"时，请填写专业'; 
-  return;
-}
-if (department !== '其他' && !major) {
-  err.textContent = '请选择一个专业'; 
-  return;
-}
-  err.style.color=''; err.textContent='正在登记…';
-  const r = await callAPI('registerByProfile', { name, email, department, major, role });
-  if (r && r.success) {
-    err.style.color = 'green';
-    // —— 成功提示：老师/学生分开 —— //
-    if ((role || '').indexOf('老师') > -1) {
-      err.textContent = '已完成注册，等待管理员分配用户ID';
-    } else {
-      err.textContent = '已完成注册，等待老师分配ID';
-    }
-    // （是否清空表单、是否跳回登录，按你原有代码保留）
-  } else {
+// appV1.js — 注册处理（最小改动版）
+// 带完整调试功能的注册函数
+async function registerUser(evt){
+  evt?.preventDefault?.();
+  console.log('🔥 注册函数开始执行');
+  
+  const $ = id => document.getElementById(id);
+
+  // 1) 获取所有表单元素和错误显示元素
+  const err        = $('registerError');
+  const name       = $('registerName').value.trim();
+  const email      = $('registerEmail').value.trim();
+  const department = $('registerDepartment').value.trim();
+  const role       = $('registerRole').value.trim();
+  const majorSel   = $('registerMajorSelect')?.value?.trim() || '';
+  const majorFree  = $('registerMajorFree')?.value?.trim() || '';
+  const major      = (department === '其他') ? majorFree : majorSel;
+
+  console.log('📝 收集到的表单数据:', {
+    name, email, department, role, 
+    majorSel, majorFree, major,
+    '所属是否为其他': department === '其他'
+  });
+
+  // 2) 数据验证
+  if (!name || !email || !department || !role) {
+    console.log('❌ 基础字段验证失败');
     err.style.color = '#c00';
-    err.textContent = (r && r.message) ? r.message : '登记失败（无返回信息）';
+    err.textContent = '请填写姓名、邮箱、所属、身份'; 
+    return;
+  }
+  
+  if (department === '其他' && !major) {
+    console.log('❌ 其他部门但未填写专业');
+    err.style.color = '#c00';
+    err.textContent = '所属为"其他"时，请填写专业'; 
+    return;
+  }
+  
+  if (department !== '其他' && !major) {
+    console.log('❌ 非其他部门但未选择专业');
+    err.style.color = '#c00';
+    err.textContent = '请选择一个专业'; 
+    return;
+  }
+
+  console.log('✅ 数据验证通过，准备调用API');
+
+  // 3) 显示加载状态
+  err.style.color = '';
+  err.textContent = '正在登记…';
+  
+  // 4) 准备API参数
+  const apiParams = { name, email, department, major, role };
+  console.log('🚀 调用注册API，参数:', apiParams);
+  console.log('🌐 API地址:', API_URL);
+
+  try {
+    // 5) 调用API
+    const startTime = Date.now();
+    const r = await callAPI('registerByProfile', apiParams);
+    const endTime = Date.now();
+    
+    console.log(`📡 API调用完成，耗时: ${endTime - startTime}ms`);
+    console.log('📥 API返回结果:', r);
+    
+    // 6) 处理返回结果
+    if (r && r.success) {  // 注册API只检查 success，不检查 ok
+      console.log('✅ 注册成功');
+      err.style.color = 'green';
+      err.textContent = (role.indexOf('老师') > -1)
+        ? '已完成注册，等待管理员分配用户ID'
+        : '已完成注册，等待老师分配ID';
+    } else {
+      console.log('❌ 注册失败');
+      console.log('失败原因:', r ? r.message : '无返回信息');
+      
+      err.style.color = '#c00';
+      let msg = (r && r.message) ? r.message : '登记失败（无返回信息）';  // 只使用 message
+      
+      // 显示调试信息（如果有）
+      if (r && r.debug) {
+        console.log('🔍 调试信息:', r.debug);
+        msg += '\n调试信息: ' + JSON.stringify(r.debug, null, 2);
+      }
+      
+      err.textContent = msg;
+    }
+  } catch (error) {
+    console.error('💥 注册过程发生异常:', error);
+    err.style.color = '#c00';
+    err.textContent = '网络错误: ' + error.message;
   }
 }
+
 function logout() {
   currentUser = null;
   $('mainApp').style.display = 'none';
@@ -232,6 +276,13 @@ function showPage(pageIdRaw) {
   const active = document.querySelector(`.nav-link[data-page="${pageIdRaw}"]`);
   if (active) active.classList.add('active');
   if (pageId === 'calendar' && window.calendar) setTimeout(()=>window.calendar.updateSize(), 60);
+  
+  // 添加预约功能调用
+  if (pageId === 'mycourses' && window.bookingModule) {
+    setTimeout(() => {
+      window.bookingModule.loadMyConfirmations();
+    }, 100);
+  }
 }
 function updateUserUI() {
   if (!currentUser) return;
@@ -265,15 +316,16 @@ function initCalendar() {
   const initialView = window.matchMedia('(max-width: 768px)').matches ? 'timeGridDay' : 'timeGridWeek';
   const cal = new FullCalendar.Calendar(el, {
     eventClick: function(info) {
-      const ev = info.event;
-      const ext = ev.extendedProps || {};
-      const t = ev.title || '';
-      const s = ev.start ? ev.start.toLocaleString('zh-CN') : '';
-      const e = ev.end   ? ev.end.toLocaleString('zh-CN')   : '';
-      const teacher = ext.teacher ? `\n任课老师：${ext.teacher}` : '';
-      const sid = ext.slotId ? `\n槽位ID：${ext.slotId}` : '';
-      alert(`课程：${t}\n时间：${s} ~ ${e}${teacher}${sid}`);
-    },
+  const ev = info.event;
+  const ext = ev.extendedProps || {};
+  const title = ev.title || '';
+  const start = ev.start ? ev.start.toLocaleString('zh-CN') : '';
+  const end = ev.end ? ev.end.toLocaleString('zh-CN') : '';
+  const teacher = ext.teacher ? `\n任课老师：${ext.teacher}` : '';
+  const slotId = ext.slotId ? `\n槽位ID：${ext.slotId}` : '';
+  
+  alert(`课程：${title}\n时间：${start} ~ ${end}${teacher}${slotId}`);
+},
     initialView,
     locale: 'zh-cn',
     firstDay: 1,
@@ -298,8 +350,9 @@ function initCalendar() {
         };
         const res  = await callAPI('listVisibleSlots', params);
         const rows = Array.isArray(res) ? res : (res && res.data) ? res.data : [];
-        // 你的后端已按 FullCalendar 事件结构返回，可直接给 success
-        success(rows);
+        const adaptedRows = adaptEvents(rows);
+        success(adaptedRows);
+
       } catch (err) {
         failure && failure(err);
       }
@@ -326,25 +379,7 @@ async function loadCalendarEvents() {
   if (!calendar) return;
   // 新：统一交给 FullCalendar 触发拉取逻辑
   try { calendar.refetchEvents(); } catch {}
-
-  // 旧逻辑（保留以备回退）
-  /*
-  const view = calendar.view;
-  const viewStart = view.currentStart ? view.currentStart.toISOString().slice(0,10) : '';
-  const viewEnd   = view.currentEnd   ? view.currentEnd.toISOString().slice(0,10)   : '';
-  const params = {
-    userId: (currentUser && currentUser.userId) ? currentUser.userId : '',
-    viewStart, viewEnd,
-    debugNoAuth: !currentUser
-  };
-  const res = await callAPI('listVisibleSlots', params);
-  const rows = Array.isArray(res) ? res : (res?.data || []);
-  calendar.removeAllEvents();
-  rows.forEach(ev => calendar.addEvent(ev));
-  updateTodayStats();
-  */
 }
-
 
 
 
@@ -391,7 +426,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   $('logoutBtn')?.addEventListener('click', logout);
   $('showRegisterBtn')?.addEventListener('click', showRegisterForm);
   $('showLoginBtn')?.addEventListener('click', showLoginForm);
-  $('loginUsername')?.addEventListener('keypress', (e)=>{ if (e.key==='Enter') login(); });
+  $('loginUserid')?.addEventListener('keypress', (e)=>{ if (e.key==='Enter') login(); });
+
 
   // —— 注册表单：所属部门 → 专业 联动（极简，不记历史）——
   (function () {
@@ -475,7 +511,6 @@ document.addEventListener('DOMContentLoaded', async () => {
   apply();
   depSel.addEventListener('change', apply);
 })();
-
 
   // API 健康检查
   setApiStatus({ok:null, text:'API 检测中'});

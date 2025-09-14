@@ -132,7 +132,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // —— 调用后端 —— //
       btn.disabled = true;
-      const oldText = btn.textContent;
+      const oldText = '发布';
       btn.textContent = '发布中…';
       
       try {

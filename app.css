@@ -459,3 +459,220 @@ nav a.active {
     grid-template-columns: 1fr;
   }
 }
+/* ============================================================
+   首要确认 Dashboard — 追加到 app.css 末尾
+   ============================================================ */
+
+/* 页面标题 */
+.dashboard-title {
+  margin: 0 0 20px 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+}
+
+/* 桌面：两列网格；手机：单列（各面板变抽屉） */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+@media (max-width: 600px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}
+
+/* ---- 面板（桌面=卡片；手机=折叠抽屉） ---- */
+.dash-panel {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+/* 面板头部 */
+.dash-panel-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  border-bottom: 1px solid var(--border);
+  cursor: default;
+}
+
+/* 手机端：面板头部可点击展开 */
+@media (max-width: 600px) {
+  .dash-panel {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+    border-bottom: 1px solid var(--border);
+  }
+  .dash-panel-header {
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+  .dash-panel-header::after {
+    content: '›';
+    margin-left: auto;
+    font-size: 18px;
+    color: #aaa;
+    transition: transform 0.2s;
+    transform: rotate(90deg);
+  }
+  .dash-panel.collapsed .dash-panel-header::after {
+    transform: rotate(0deg);
+  }
+  .dash-panel.collapsed .task-list {
+    display: none;
+  }
+}
+
+/* 彩色圆点（分类色） */
+.dash-panel-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.dot-self    { background: #60A5FA; } /* 蓝 — 自分のこと */
+.dot-teacher { background: #34D399; } /* 绿 — 对老师/来自老师 */
+.dot-student { background: #FBBF24; } /* 黄 — 来自学生/学生 */
+.dot-admin   { background: #A78BFA; } /* 紫 — 对管理员 */
+.dot-notice  { background: #F472B6; } /* 粉 — 通知/其他 */
+
+/* 分类标签 */
+.dash-panel-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+/* 未读数量徽章 */
+.dash-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: #ef4444;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+/* 数量为0时隐藏 */
+.dash-badge[data-count="0"],
+.dash-badge:empty {
+  display: none;
+}
+
+/* ---- 任务列表 ---- */
+.task-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 单条任务行 */
+.task-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.15s;
+}
+.task-item:last-child {
+  border-bottom: none;
+}
+.task-item:hover {
+  background: #fafafa;
+}
+
+/* 完成状态：沉底 + 划线 */
+.task-item[data-done="true"] {
+  order: 999; /* flex/grid内不能直接排序，用JS移到末尾 */
+  opacity: 0.45;
+}
+.task-item[data-done="true"] .task-title {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+/* 勾选按钮 */
+.task-check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 1.5px solid #ccc;
+  border-radius: 50%;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: relative;
+}
+.task-check:hover {
+  border-color: #22c55e;
+  background: #f0fdf4;
+}
+/* 勾选后：绿色实心 + ✓ */
+.task-item[data-done="true"] .task-check {
+  background: #22c55e;
+  border-color: #22c55e;
+}
+.task-item[data-done="true"] .task-check::after {
+  content: '';
+  width: 5px;
+  height: 9px;
+  border: 2px solid #fff;
+  border-top: none;
+  border-left: none;
+  transform: rotate(45deg) translateY(-1px);
+  display: block;
+}
+
+/* 任务内容区 */
+.task-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.task-title {
+  font-size: 14px;
+  color: var(--text);
+  line-height: 1.4;
+  word-break: break-all;
+}
+.task-meta {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* ---- 侧栏"首要确认"红色导航 ---- */
+.nav-link.nav-primary {
+  color: #dc2626 !important;
+  font-weight: 600;
+}
+.nav-link.nav-primary.active {
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+.nav-link.nav-primary:hover {
+  background: #fff5f5 !important;
+}

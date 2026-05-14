@@ -649,6 +649,352 @@
   </details>
 </section>
           </div>
+                        <!-- ============================================================
+     首要确认页面（三个角色各一个，JS 按角色显示对应的）
+     插入位置：datamanagementPage 的 </div> 后，</main> 之前
+     ============================================================ -->
+
+<!-- ★ 学生：首要确认 -->
+<div id="dashboardStudentPage" class="page-content" style="display:none;">
+  <section class="card">
+    <h2 class="dashboard-title">首要确认</h2>
+
+    <div class="dashboard-grid">
+
+      <!-- A. 自分のこと -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-self"></span>
+          <span class="dash-panel-label">自分のこと</span>
+          <span class="dash-badge" id="stu-self-badge">3</span>
+        </div>
+        <ul class="task-list" id="stu-self-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">提交语言成绩证明</span>
+              <span class="task-meta">截止 05/20 · 学习进度</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">联系目标教授（邮件）</span>
+              <span class="task-meta">截止 05/25 · 出愿准备</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">确认出愿计划表</span>
+              <span class="task-meta">截止 05/30 · 出愿报名</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- B. 对老师 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-teacher"></span>
+          <span class="dash-panel-label">对老师</span>
+          <span class="dash-badge" id="stu-teacher-badge">2</span>
+        </div>
+        <ul class="task-list" id="stu-teacher-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">提交第4回作业</span>
+              <span class="task-meta">截止 05/16 · 社会学专业课</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">预约本月面谈时间</span>
+              <span class="task-meta">本月内 · 负责老师：田中先生</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- C. 对管理员 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-admin"></span>
+          <span class="dash-panel-label">对管理员</span>
+          <span class="dash-badge" id="stu-admin-badge">1</span>
+        </div>
+        <ul class="task-list" id="stu-admin-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">确认6月课程安排</span>
+              <span class="task-meta">截止 05/31 · 课程确认</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- D. 收到的通知 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-notice"></span>
+          <span class="dash-panel-label">收到的通知</span>
+          <span class="dash-badge" id="stu-notice-badge">2</span>
+        </div>
+        <ul class="task-list" id="stu-notice-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">【老师】5/18课程调整至线上</span>
+              <span class="task-meta">05/14 · 田中先生</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">【管理员】6月续费提醒</span>
+              <span class="task-meta">05/13 · 管理员</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+
+<!-- ★ 老师：首要确认 -->
+<div id="dashboardTeacherPage" class="page-content" style="display:none;">
+  <section class="card">
+    <h2 class="dashboard-title">首要确认</h2>
+
+    <div class="dashboard-grid">
+
+      <!-- A. 对自己 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-self"></span>
+          <span class="dash-panel-label">对自己</span>
+          <span class="dash-badge" id="tch-self-badge">2</span>
+        </div>
+        <ul class="task-list" id="tch-self-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">今日课程：社会学专业课 14:00</span>
+              <span class="task-meta">今天 · A-301教室</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">确认本周课程出席记录</span>
+              <span class="task-meta">截止 05/16 · 课程确认表</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- B. 来自学生 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-student"></span>
+          <span class="dash-panel-label">来自学生</span>
+          <span class="dash-badge" id="tch-student-badge">3</span>
+        </div>
+        <ul class="task-list" id="tch-student-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">张三 提交了第4回作业</span>
+              <span class="task-meta">05/14 · 社会学专业课</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">李四 申请面谈预约（5/18 15:00）</span>
+              <span class="task-meta">05/13 · 待确认</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">王五 提交请假申请</span>
+              <span class="task-meta">05/14 · 5/16课程</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- C. 对管理员 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-admin"></span>
+          <span class="dash-panel-label">对管理员</span>
+          <span class="dash-badge" id="tch-admin-badge">2</span>
+        </div>
+        <ul class="task-list" id="tch-admin-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">提交张三5月学习情况反馈</span>
+              <span class="task-meta">截止 05/20 · 讲师反馈表</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">确认6月课程排期</span>
+              <span class="task-meta">截止 05/25 · 课程安排</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- D. 来自其他老师/TA -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-notice"></span>
+          <span class="dash-panel-label">来自其他老师 / TA</span>
+          <span class="dash-badge" id="tch-other-badge">1</span>
+        </div>
+        <ul class="task-list" id="tch-other-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">【TA·小林】5/16 补课协调确认</span>
+              <span class="task-meta">05/13 · 需回应</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+</div>
+
+
+<!-- ★ 管理员：首要确认 -->
+<div id="dashboardAdminPage" class="page-content" style="display:none;">
+  <section class="card">
+    <h2 class="dashboard-title">首要确认</h2>
+
+    <div class="dashboard-grid">
+
+      <!-- A. 教务 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-self"></span>
+          <span class="dash-panel-label">教务</span>
+          <span class="dash-badge" id="adm-kyoumu-badge">3</span>
+        </div>
+        <ul class="task-list" id="adm-kyoumu-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">确认6月课程安排表</span>
+              <span class="task-meta">截止 05/20 · 课程安排</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">处理田中老师排课变更申请</span>
+              <span class="task-meta">05/14 · 待审批</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">更新5月出席明细表</span>
+              <span class="task-meta">截止 05/18 · 出席明细</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- B. 教研 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-teacher"></span>
+          <span class="dash-panel-label">教研</span>
+          <span class="dash-badge" id="adm-kyoken-badge">2</span>
+        </div>
+        <ul class="task-list" id="adm-kyoken-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">汇总5月讲师反馈报告</span>
+              <span class="task-meta">截止 05/25 · 讲师反馈表</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">跟进社会学课程质量评估</span>
+              <span class="task-meta">截止 05/28 · 教研</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- C. 教学 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-admin"></span>
+          <span class="dash-panel-label">教学</span>
+          <span class="dash-badge" id="adm-kyogaku-badge">2</span>
+        </div>
+        <ul class="task-list" id="adm-kyogaku-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">跟进张三学习进度节点</span>
+              <span class="task-meta">截止 05/22 · 学习进度表</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">确认本月面谈记录录入完毕</span>
+              <span class="task-meta">截止 05/31 · 面谈记录表</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <!-- D. 学生动态 -->
+      <div class="dash-panel">
+        <div class="dash-panel-header">
+          <span class="dash-panel-dot dot-notice"></span>
+          <span class="dash-panel-label">学生动态</span>
+          <span class="dash-badge" id="adm-student-badge">2</span>
+        </div>
+        <ul class="task-list" id="adm-student-list">
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">李四 6月续费待确认</span>
+              <span class="task-meta">截止 05/31 · 缴费</span>
+            </div>
+          </li>
+          <li class="task-item" data-done="false">
+            <button class="task-check" aria-label="完成"></button>
+            <div class="task-body">
+              <span class="task-title">王五 提交状态变更申请</span>
+              <span class="task-meta">05/13 · 待处理</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+</div>
         </main>
       </div>
     </div>

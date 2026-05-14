@@ -4,13 +4,10 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"/>
   <title>大学院管理平台</title>
-  <!-- FullCalendar -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.8/index.global.min.js"></script>
-
   <link rel="stylesheet" href="app.css"/>
 </head>
 <body>
-  <!-- 登录界面（保持你原有布局） -->
+  <!-- 登录界面 -->
   <div id="loginContainer" class="login-container">
     <div class="login-box">
       <h1>大学院管理平台</h1>
@@ -19,7 +16,6 @@
         <button type="button" id="loginBtn">登录</button>
         <div class="link-text" id="showRegisterBtn">还没有账号？登记信息</div>
         <div id="loginError" class="error-message"></div>
-        <!-- 登录框里的 API 状态提示 -->
         <div id="apiStatusInline" class="api-inline"><span class="api-dot wait" style="display:inline-block;border-radius:50%;width:8px;height:8px;margin-right:6px;"></span>正在检测 API 连接…</div>
       </div>
 
@@ -32,15 +28,10 @@
           <option value="理科大学院">理科大学院</option>
           <option value="其他">其他</option>
         </select>
-
-        <!-- 专业（下拉/自由二选一，随所属部门联动） -->
         <div id="majorRow">
-          <select id="registerMajorSelect">
-            <option value="">选择专业</option>
-          </select>
+          <select id="registerMajorSelect"><option value="">选择专业</option></select>
           <input type="text" id="registerMajorFree" placeholder="专业（自由填写）" style="display:none;" />
         </div>
-        
         <select id="registerRole">
           <option value="">选择身份</option>
           <option value="学生">学生</option>
@@ -53,7 +44,7 @@
     </div>
   </div>
 
-  <!-- 主应用包裹（登录后显示） -->
+  <!-- 主应用 -->
   <div id="mainApp" style="display:none;">
     <header class="topbar">
       <div class="brand">大学院管理平台</div>
@@ -71,38 +62,25 @@
     <div class="app">
       <div class="wrap">
         <aside>
-          <div class="sidebar-section">
-            <h3>今日提醒</h3>
-            <div class="stats-grid">
-              <div class="stat-item"><div class="stat-number" id="todayCourses">0</div><div class="stat-label">课程</div></div>
-              <div class="stat-item"><div class="stat-number" id="todayConsultations">0</div><div class="stat-label">面谈</div></div>
-              <div class="stat-item"><div class="stat-number" id="todayReminders">0</div><div class="stat-label">作业</div></div>
-              <div class="stat-item"><div class="stat-number" id="attendanceRate">—</div><div class="stat-label">出勤率</div></div>
-            </div>
-          </div>
-
-          <!-- 学生导航（默认先隐藏；下轮JS按角色显示） -->
+          <!-- 学生导航 -->
           <nav id="nav-student" style="display:none;">
             <a href="#" class="nav-link nav-primary" data-page="dashboardStudent"><span>首要确认</span></a>
-            <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
             <a href="#" class="nav-link" data-page="mycourses"><span>我的课程</span></a>
             <a href="#" class="nav-link" data-page="myprogress"><span>我的进度</span></a>
             <a href="#" class="nav-link" data-page="myprofile"><span>我的信息</span></a>
           </nav>
 
-          <!-- 老师导航（默认显示） -->
-          <nav id="nav-teacher">
+          <!-- 老师导航 -->
+          <nav id="nav-teacher" style="display:none;">
             <a href="#" class="nav-link nav-primary" data-page="dashboardTeacher"><span>首要确认</span></a>
-            <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
             <a href="#" class="nav-link" data-page="output"><span>我的发布</span></a>
             <a href="#" class="nav-link" data-page="input"><span>我的录入</span></a>
             <a href="#" class="nav-link" data-page="datamanagement"><span>数据管理</span></a>
           </nav>
 
-          <!-- 管理员导航（默认先隐藏；下轮JS按角色显示） -->
+          <!-- 管理员导航 -->
           <nav id="nav-admin" style="display:none;">
             <a href="#" class="nav-link nav-primary" data-page="dashboardAdmin"><span>首要确认</span></a>
-            <a href="#" class="nav-link active" data-page="calendar"><span>我的日历</span></a>
             <a href="#" class="nav-link" data-page="output"><span>我的发布</span></a>
             <a href="#" class="nav-link" data-page="datamanagement"><span>数据管理</span></a>
             <a href="#" class="nav-link" data-page="task"><span>我的任务</span></a>
@@ -115,32 +93,262 @@
         </div>
 
         <main>
-          <!-- 日历页面（保持原样，不改） -->
-          <div id="calendarPage" class="page-content active">
+
+          <!-- ★ 学生：首要确认 -->
+          <div id="dashboardStudentPage" class="page-content" style="display:none;">
             <section class="card">
-              <div class="calendar-head">
-                <div class="calendar-title" id="calendarTitle">我的日历</div>
-                <div class="calendar-ctrl">
-                  <button id="prevBtn" class="btn btn-outline">‹</button>
-                  <button id="todayBtn" class="btn btn-outline">今天</button>
-                  <button id="nextBtn" class="btn btn-outline">›</button>
-                  <div class="seg">
-                    <button id="dayBtn" class="seg-btn">日</button>
-                    <button id="weekBtn" class="seg-btn active">周</button>
-                    <button id="monthBtn" class="seg-btn">月</button>
+              <h2 class="dashboard-title">首要确认</h2>
+              <div class="dashboard-grid">
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-self"></span>
+                    <span class="dash-panel-label">自分のこと</span>
+                    <span class="dash-badge" id="stu-self-badge">3</span>
                   </div>
-                  <button class="btn btn-outline" id="refreshDataBtn">刷新</button>
+                  <ul class="task-list" id="stu-self-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">提交语言成绩证明</span><span class="task-meta">截止 05/20 · 学习进度</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">联系目标教授（邮件）</span><span class="task-meta">截止 05/25 · 出愿准备</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">确认出愿计划表</span><span class="task-meta">截止 05/30 · 出愿报名</span></div>
+                    </li>
+                  </ul>
                 </div>
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-teacher"></span>
+                    <span class="dash-panel-label">对老师</span>
+                    <span class="dash-badge" id="stu-teacher-badge">2</span>
+                  </div>
+                  <ul class="task-list" id="stu-teacher-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">提交第4回作业</span><span class="task-meta">截止 05/16 · 社会学专业课</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">预约本月面谈时间</span><span class="task-meta">本月内 · 负责老师：田中先生</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-admin"></span>
+                    <span class="dash-panel-label">对管理员</span>
+                    <span class="dash-badge" id="stu-admin-badge">1</span>
+                  </div>
+                  <ul class="task-list" id="stu-admin-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">确认6月课程安排</span><span class="task-meta">截止 05/31 · 课程确认</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-notice"></span>
+                    <span class="dash-panel-label">收到的通知</span>
+                    <span class="dash-badge" id="stu-notice-badge">2</span>
+                  </div>
+                  <ul class="task-list" id="stu-notice-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">【老师】5/18课程调整至线上</span><span class="task-meta">05/14 · 田中先生</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">【管理员】6月续费提醒</span><span class="task-meta">05/13 · 管理员</span></div>
+                    </li>
+                  </ul>
+                </div>
+
               </div>
-              <div id="mainCalendar" style="min-height:560px;"></div>
             </section>
           </div>
 
-          <!-- 学生：我的课程（改為手風琴結構） -->
+          <!-- ★ 老师：首要确认 -->
+          <div id="dashboardTeacherPage" class="page-content" style="display:none;">
+            <section class="card">
+              <h2 class="dashboard-title">首要确认</h2>
+              <div class="dashboard-grid">
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-self"></span>
+                    <span class="dash-panel-label">对自己</span>
+                    <span class="dash-badge" id="tch-self-badge">2</span>
+                  </div>
+                  <ul class="task-list" id="tch-self-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">今日课程：社会学专业课 14:00</span><span class="task-meta">今天 · A-301教室</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">确认本周课程出席记录</span><span class="task-meta">截止 05/16 · 课程确认表</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-student"></span>
+                    <span class="dash-panel-label">来自学生</span>
+                    <span class="dash-badge" id="tch-student-badge">3</span>
+                  </div>
+                  <ul class="task-list" id="tch-student-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">张三 提交了第4回作业</span><span class="task-meta">05/14 · 社会学专业课</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">李四 申请面谈预约（5/18 15:00）</span><span class="task-meta">05/13 · 待确认</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">王五 提交请假申请</span><span class="task-meta">05/14 · 5/16课程</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-admin"></span>
+                    <span class="dash-panel-label">对管理员</span>
+                    <span class="dash-badge" id="tch-admin-badge">2</span>
+                  </div>
+                  <ul class="task-list" id="tch-admin-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">提交张三5月学习情况反馈</span><span class="task-meta">截止 05/20 · 讲师反馈表</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">确认6月课程排期</span><span class="task-meta">截止 05/25 · 课程安排</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-notice"></span>
+                    <span class="dash-panel-label">来自其他老师 / TA</span>
+                    <span class="dash-badge" id="tch-other-badge">1</span>
+                  </div>
+                  <ul class="task-list" id="tch-other-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">【TA·小林】5/16 补课协调确认</span><span class="task-meta">05/13 · 需回应</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+            </section>
+          </div>
+
+          <!-- ★ 管理员：首要确认 -->
+          <div id="dashboardAdminPage" class="page-content" style="display:none;">
+            <section class="card">
+              <h2 class="dashboard-title">首要确认</h2>
+              <div class="dashboard-grid">
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-self"></span>
+                    <span class="dash-panel-label">教务</span>
+                    <span class="dash-badge" id="adm-kyoumu-badge">3</span>
+                  </div>
+                  <ul class="task-list" id="adm-kyoumu-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">确认6月课程安排表</span><span class="task-meta">截止 05/20 · 课程安排</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">处理田中老师排课变更申请</span><span class="task-meta">05/14 · 待审批</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">更新5月出席明细表</span><span class="task-meta">截止 05/18 · 出席明细</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-teacher"></span>
+                    <span class="dash-panel-label">教研</span>
+                    <span class="dash-badge" id="adm-kyoken-badge">2</span>
+                  </div>
+                  <ul class="task-list" id="adm-kyoken-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">汇总5月讲师反馈报告</span><span class="task-meta">截止 05/25 · 讲师反馈表</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">跟进社会学课程质量评估</span><span class="task-meta">截止 05/28 · 教研</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-admin"></span>
+                    <span class="dash-panel-label">教学</span>
+                    <span class="dash-badge" id="adm-kyogaku-badge">2</span>
+                  </div>
+                  <ul class="task-list" id="adm-kyogaku-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">跟进张三学习进度节点</span><span class="task-meta">截止 05/22 · 学习进度表</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">确认本月面谈记录录入完毕</span><span class="task-meta">截止 05/31 · 面谈记录表</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+                <div class="dash-panel">
+                  <div class="dash-panel-header">
+                    <span class="dash-panel-dot dot-notice"></span>
+                    <span class="dash-panel-label">学生动态</span>
+                    <span class="dash-badge" id="adm-student-badge">2</span>
+                  </div>
+                  <ul class="task-list" id="adm-student-list">
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">李四 6月续费待确认</span><span class="task-meta">截止 05/31 · 缴费</span></div>
+                    </li>
+                    <li class="task-item" data-done="false">
+                      <button class="task-check" aria-label="完成"></button>
+                      <div class="task-body"><span class="task-title">王五 提交状态变更申请</span><span class="task-meta">05/13 · 待处理</span></div>
+                    </li>
+                  </ul>
+                </div>
+
+              </div>
+            </section>
+          </div>
+
+          <!-- 学生：我的课程 -->
           <div id="mycoursesPage" class="page-content" style="display:none;">
             <section class="card">
               <h2 style="margin:0 0 12px 0;">我的课程</h2>
-              <section class="accordion-list" aria-label="我的课程">
+              <section class="accordion-list">
                 <details class="accordion-item" open>
                   <summary class="accordion-title"><span>我的课程</span></summary>
                   <div class="module-body">
@@ -151,11 +359,11 @@
             </section>
           </div>
 
-          <!-- 学生：我的进度（改為手風琴結構） -->
+          <!-- 学生：我的进度 -->
           <div id="myprogressPage" class="page-content" style="display:none;">
             <section class="card">
               <h2 style="margin:0 0 12px 0;">我的进度</h2>
-              <section class="accordion-list" aria-label="我的进度">
+              <section class="accordion-list">
                 <details class="accordion-item" open>
                   <summary class="accordion-title"><span>我的进度</span></summary>
                   <div class="module-body">
@@ -166,11 +374,11 @@
             </section>
           </div>
 
-          <!-- 学生：我的信息（改為手風琴結構） -->
+          <!-- 学生：我的信息 -->
           <div id="myprofilePage" class="page-content" style="display:none;">
             <section class="card">
               <h2 style="margin:0 0 12px 0;">我的信息</h2>
-              <section class="accordion-list" aria-label="我的信息">
+              <section class="accordion-list">
                 <details class="accordion-item" open>
                   <summary class="accordion-title"><span>我的信息</span></summary>
                   <div class="module-body">
@@ -181,13 +389,11 @@
             </section>
           </div>
 
-          <!-- 我的发布（保留原樣） -->
+          <!-- 我的发布 -->
           <div id="outputPage" class="page-content" style="display:none;">
             <section class="card">
               <h2 style="margin:0 0 12px 0;">我的发布</h2>
-
               <section class="accordion-list" aria-label="我的发布">
-                <!-- 1) 课程安排（含 VIP 面谈） -->
                 <details id="pub-course" class="accordion-item">
                   <summary class="accordion-title"><span>课程安排（含 VIP 面谈）</span></summary>
                   <div class="module-body" data-module="publish-course">
@@ -196,36 +402,25 @@
                         <legend>基本信息</legend>
                         <label>课程名<input type="text" placeholder="例如：社会学专业课"/></label>
                         <label>课程属性
-                          <select>
-                            <option value="">请选择</option>
-                            <option>大课</option><option>VIP</option><option>面谈</option><option>选修</option><option>共通</option>
-                          </select>
+                          <select><option value="">请选择</option><option>大课</option><option>VIP</option><option>面谈</option><option>选修</option><option>共通</option></select>
                         </label>
                         <label>任课老师<input type="text" placeholder="老师姓名或ID"/></label>
-                       <label>发布对象所属
-  <select id="pubDepartment">
-    <option value="">请选择</option>
-    <option value="文科大学院">文科大学院</option>
-    <option value="理科大学院">理科大学院</option>
-    <option value="全部">全选（所有学生）</option>
-  </select>
-</label>
-
-<label>发布对象专业
-  <select id="pubMajor" multiple size="6">
-    <option value="" disabled>（可不选，可多选）</option>
-  </select>
-</label>
-<label>学生姓名<input type="text" placeholder="学生姓名或ID"/></label>
-                        </label>
-                        <label>课程状态
-                          <select>
-                            <option value=""></option>
-                            <option>可预约</option><option>可定课</option><option>正常开启</option>
+                        <label>发布对象所属
+                          <select id="pubDepartment">
+                            <option value="">请选择</option>
+                            <option value="文科大学院">文科大学院</option>
+                            <option value="理科大学院">理科大学院</option>
+                            <option value="全部">全选（所有学生）</option>
                           </select>
                         </label>
+                        <label>发布对象专业
+                          <select id="pubMajor" multiple size="6"><option value="" disabled>（可不选，可多选）</option></select>
+                        </label>
+                        <label>学生姓名<input type="text" placeholder="学生姓名或ID"/></label>
+                        <label>课程状态
+                          <select><option value=""></option><option>可预约</option><option>可定课</option><option>正常开启</option></select>
+                        </label>
                       </fieldset>
-
                       <fieldset>
                         <legend>时间与重复</legend>
                         <label>单回日期<input type="date"/></label>
@@ -237,66 +432,42 @@
                         <label>结束时间<input type="time"/></label>
                         <label>休息时间<input type="text" placeholder="如：10分钟（可选）"/></label>
                       </fieldset>
-
                       <fieldset>
                         <legend>上课形式与地点</legend>
-                        <label>上课形式
-                          <select>
-                            <option value="">请选择</option>
-                            <option>线上</option><option>线下</option><option>线上＋线下</option>
-                          </select>
-                        </label>
-                        <label>校区
-                          <select>
-                            <option value="">请选择</option>
-                            <option>高马校区</option><option>市谷校区</option>
-                          </select>
-                        </label>
-                
+                        <label>上课形式<select><option value="">请选择</option><option>线上</option><option>线下</option><option>线上＋线下</option></select></label>
+                        <label>校区<select><option value="">请选择</option><option>高马校区</option><option>市谷校区</option></select></label>
                         <label>教室<input type="text" placeholder="如：A-301"/></label>
                         <label>线上链接<input type="url" placeholder="https://..."/></label>
                       </fieldset>
-
                       <fieldset>
                         <legend>讲义/备注</legend>
                         <label>讲义（URL或文本）<input type="text" placeholder="可填链接或简单备注"/></label>
                       </fieldset>
-
-                      <div class="form-actions">
-                        <button type="button" class="btn btn-primary">发布</button>
-                      </div>
+                      <div class="form-actions"><button type="button" class="btn btn-primary">发布</button></div>
                     </form>
                   </div>
                 </details>
 
-                <!-- 2) 进度提醒 -->
                 <details id="pub-reminder" class="accordion-item">
                   <summary class="accordion-title"><span>进度提醒</span></summary>
                   <div class="module-body" data-module="publish-reminder">
                     <form class="form-grid">
                       <fieldset>
                         <legend>对象与提醒内容</legend>
-                        <label>对象（专业/班级/名单）<input type="text" placeholder="如：理科大院·电子电器 / 2025春班"/></label>
+                        <label>对象<input type="text" placeholder="如：理科大院·电子电器 / 2025春班"/></label>
                         <label>提醒主题<input type="text" placeholder="例如：第4周学习进度上报"/></label>
                         <label>提醒内容<textarea rows="3" placeholder="要点、格式、提交方式…"></textarea></label>
                       </fieldset>
                       <fieldset>
                         <legend>时间与频率</legend>
                         <label>提醒时间<input type="datetime-local"/></label>
-                        <label>重复
-                          <select>
-                            <option>一次性</option><option>每周</option><option>每月</option>
-                          </select>
-                        </label>
+                        <label>重复<select><option>一次性</option><option>每周</option><option>每月</option></select></label>
                       </fieldset>
-                      <div class="form-actions">
-                        <button type="button" class="btn btn-primary">发布提醒</button>
-                      </div>
+                      <div class="form-actions"><button type="button" class="btn btn-primary">发布提醒</button></div>
                     </form>
                   </div>
                 </details>
 
-                <!-- 3) 作业布置 -->
                 <details id="pub-homework" class="accordion-item">
                   <summary class="accordion-title"><span>作业布置</span></summary>
                   <div class="module-body" data-module="publish-homework">
@@ -318,14 +489,13 @@
                   </div>
                 </details>
 
-                <!-- 4) 通知发布 -->
                 <details id="pub-notice" class="accordion-item">
                   <summary class="accordion-title"><span>通知发布</span></summary>
                   <div class="module-body" data-module="publish-notice">
                     <form class="form-grid">
                       <fieldset>
                         <legend>通知对象</legend>
-                        <label>对象（全体/专业/班级/名单）<input type="text" placeholder="如：全体学生 / 理科·生物化学"/></label>
+                        <label>对象<input type="text" placeholder="如：全体学生 / 理科·生物化学"/></label>
                       </fieldset>
                       <fieldset>
                         <legend>通知内容</legend>
@@ -344,13 +514,11 @@
             </section>
           </div>
 
-          <!-- 我的录入（保留原樣） -->
+          <!-- 我的录入 -->
           <div id="inputPage" class="page-content" style="display:none;">
             <section class="card">
               <h2 style="margin:0 0 12px 0;">我的录入</h2>
-
               <section class="accordion-list" aria-label="我的录入">
-                <!-- 1) 上课出席 / 作业记录 -->
                 <details id="in-attendance" class="accordion-item">
                   <summary class="accordion-title"><span>上课出席 / 作业记录</span></summary>
                   <div class="module-body" data-module="input-attendance">
@@ -363,122 +531,49 @@
                       <fieldset>
                         <legend>学生名单（示意）</legend>
                         <table class="table demo" style="width:100%;border-collapse:collapse;">
-                          <thead>
-                            <tr><th>姓名</th><th>出席</th><th>作业</th><th>备注</th></tr>
-                          </thead>
+                          <thead><tr><th>姓名</th><th>出席</th><th>作业</th><th>备注</th></tr></thead>
                           <tbody>
-                            <tr>
-                              <td>张三</td>
-                              <td><input type="checkbox"/></td>
-                              <td>
-                                <select><option>未交</option><option>已交</option><option>迟交</option></select>
-                              </td>
-                              <td><input type="text" placeholder="可选"/></td>
-                            </tr>
-                            <tr>
-                              <td>李四</td>
-                              <td><input type="checkbox"/></td>
-                              <td>
-                                <select><option>未交</option><option>已交</option><option>迟交</option></select>
-                              </td>
-                              <td><input type="text" placeholder="可选"/></td>
-                            </tr>
+                            <tr><td>张三</td><td><input type="checkbox"/></td><td><select><option>未交</option><option>已交</option><option>迟交</option></select></td><td><input type="text" placeholder="可选"/></td></tr>
+                            <tr><td>李四</td><td><input type="checkbox"/></td><td><select><option>未交</option><option>已交</option><option>迟交</option></select></td><td><input type="text" placeholder="可选"/></td></tr>
                           </tbody>
                         </table>
                       </fieldset>
-                      <div class="form-actions">
-                        <button type="button" class="btn">保存记录</button>
-                      </div>
+                      <div class="form-actions"><button type="button" class="btn">保存记录</button></div>
                     </form>
                   </div>
                 </details>
 
-                <!-- 2) 学生信息 / 学习进度记录 -->
                 <details id="in-student-progress" class="accordion-item">
                   <summary class="accordion-title"><span>学生信息 / 学习进度记录</span></summary>
                   <div class="module-body" data-module="input-student-progress">
                     <form class="form-grid">
                       <fieldset>
                         <legend>基本资料</legend>
-  <form id="si-form" novalidate>
-    <div class="form-row">
-      <label for="si-name">姓名</label>
-      <input type="text" id="si-name" name="name" />
-    </div>
+                        <form id="si-form" novalidate>
+                          <div class="form-row"><label for="si-name">姓名</label><input type="text" id="si-name" name="name"/></div>
+                          <div class="form-row"><label for="si-status">状态</label><input type="text" id="si-status" name="status"/></div>
+                          <div class="form-row"><label for="si-target-entry">希望入学时间</label><input type="text" id="si-target-entry" name="target_entry"/></div>
+                          <div class="form-row"><label for="si-deadline">截至日期</label><input type="text" id="si-deadline" name="deadline"/></div>
+                          <div class="form-row"><label for="si-teacher">负责老师</label><input type="text" id="si-teacher" name="teacher"/></div>
+                          <div class="form-row"><label for="si-lang-class">语言课</label><input type="text" id="si-lang-class" name="lang_class"/></div>
+                          <div class="form-row"><label for="si-jp-score">日语成绩</label><input type="text" id="si-jp-score" name="jp_score"/></div>
+                          <div class="form-row"><label for="si-en-score">英語成绩</label><input type="text" id="si-en-score" name="en_score"/></div>
+                          <div class="form-row"><label for="si-grad-school">毕业学校</label><input type="text" id="si-grad-school" name="grad_school"/></div>
+                          <div class="form-row"><label for="si-grad-major">毕业专业</label><input type="text" id="si-grad-major" name="grad_major"/></div>
+                          <div class="form-row"><label for="si-thesis">毕业论文</label><input type="text" id="si-thesis" name="thesis"/></div>
+                          <div class="form-row"><label for="si-gpa">GPA</label><input type="text" id="si-gpa" name="gpa"/></div>
+                          <div class="form-row"><label for="si-extra">其他履历</label><input type="text" id="si-extra" name="extra"/></div>
+                          <div class="form-actions">
+                            <button type="button" id="si-save">登记</button>
+                            <button type="reset" id="si-reset">重置</button>
+                            <span id="si-msg" aria-live="polite"></span>
+                          </div>
+                        </form>
+                      </fieldset>
+                    </form>
+                  </div>
+                </details>
 
-    <div class="form-row">
-      <label for="si-status">状态</label>
-      <input type="text" id="si-status" name="status" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-target-entry">希望入学时间</label>
-      <input type="text" id="si-target-entry" name="target_entry" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-deadline">截至日期</label>
-      <input type="text" id="si-deadline" name="deadline" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-teacher">负责老师</label>
-      <input type="text" id="si-teacher" name="teacher" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-lang-class">语言课</label>
-      <input type="text" id="si-lang-class" name="lang_class" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-jp-score">日语成绩</label>
-      <input type="text" id="si-jp-score" name="jp_score" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-en-score">英語成绩</label>
-      <input type="text" id="si-en-score" name="en_score" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-grad-school">毕业学校</label>
-      <input type="text" id="si-grad-school" name="grad_school" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-grad-major">毕业专业</label>
-      <input type="text" id="si-grad-major" name="grad_major" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-thesis">毕业论文</label>
-      <input type="text" id="si-thesis" name="thesis" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-gpa">GPA</label>
-      <input type="text" id="si-gpa" name="gpa" />
-    </div>
-
-    <div class="form-row">
-      <label for="si-extra">其他履历</label>
-      <input type="text" id="si-extra" name="extra" />
-    </div>
-
-    <!-- 可选：若你已有用户ID，可留一个隐藏或文本位，后续我用它做主键 -->
-    <!-- <input type="text" id="si-userid" name="userid" placeholder="可选：学生ID"> -->
-
-    <div class="form-actions">
-      <button type="button" id="si-save">登记</button>
-      <button type="reset" id="si-reset">重置</button>
-      <span id="si-msg" aria-live="polite"></span>
-    </div>
-  </form>
-  </div>
-</details>
-
-                <!-- 3) 面谈记录 -->
                 <details id="in-consult" class="accordion-item">
                   <summary class="accordion-title"><span>面谈记录</span></summary>
                   <div class="module-body" data-module="input-consult">
@@ -487,34 +582,25 @@
                         <legend>面谈信息</legend>
                         <label>学生姓名<input type="text"/></label>
                         <label>面谈时间<input type="datetime-local"/></label>
-                        <label>形式
-                          <select><option>线下</option><option>线上</option></select>
-                        </label>
+                        <label>形式<select><option>线下</option><option>线上</option></select></label>
                       </fieldset>
                       <fieldset>
                         <legend>要点与跟进</legend>
                         <label>要点纪要<textarea rows="3"></textarea></label>
                         <label>行动项与期限<textarea rows="3" placeholder="待办与截止时间…"></textarea></label>
                       </fieldset>
-                      <div class="form-actions">
-                        <button type="button" class="btn">保存</button>
-                      </div>
+                      <div class="form-actions"><button type="button" class="btn">保存</button></div>
                     </form>
                   </div>
                 </details>
 
-                <!-- 4) 反馈记录 -->
                 <details id="in-feedback" class="accordion-item">
                   <summary class="accordion-title"><span>反馈记录</span></summary>
                   <div class="module-body" data-module="input-feedback">
                     <form class="form-grid">
                       <fieldset>
                         <legend>反馈类型</legend>
-                        <label>
-                          <select>
-                            <option>课堂反馈</option><option>作业反馈</option><option>家校反馈</option>
-                          </select>
-                        </label>
+                        <label><select><option>课堂反馈</option><option>作业反馈</option><option>家校反馈</option></select></label>
                         <label>评分（可选）<input type="number" min="0" max="100" placeholder="0~100"/></label>
                       </fieldset>
                       <fieldset>
@@ -522,9 +608,7 @@
                         <label>文字反馈<textarea rows="3" placeholder="简要描述…"></textarea></label>
                         <label>附件/链接<input type="url" placeholder="https://...（可选）"/></label>
                       </fieldset>
-                      <div class="form-actions">
-                        <button type="button" class="btn">保存</button>
-                      </div>
+                      <div class="form-actions"><button type="button" class="btn">保存</button></div>
                     </form>
                   </div>
                 </details>
@@ -532,478 +616,85 @@
             </section>
           </div>
 
-         <!-- 数据管理（保留 H2，整個數據分析在一個手風琴裡） -->
+          <!-- 数据管理 -->
           <div id="datamanagementPage" class="page-content" style="display:none;">
             <section class="card">
               <h2 style="margin:0 0 12px 0;">数据管理</h2>
-
               <section class="accordion-list" aria-label="数据管理">
-  <!-- 课程管理 -->
-  <details class="accordion-item" open>
-    <summary class="accordion-title"><span>课程管理</span></summary>
-    <div class="module-body">
-      <div class="form-grid" style="margin:8px 0;">
-        <fieldset>
-          <legend>时间范围</legend>
-          <label>开始日期 <input type="date" id="dmCourseStart"></label>
-          <label>结束日期 <input type="date" id="dmCourseEnd"></label>
-          <button type="button" id="dmCourseReload" class="btn" style="margin-left:8px;">加载</button>
-        </fieldset>
-      </div>
-      <div id="dmCourseTableWrap" class="muted">（确认记录将显示在这里）</div>
-    </div>
-  </details>
+                <details class="accordion-item" open>
+                  <summary class="accordion-title"><span>课程管理</span></summary>
+                  <div class="module-body">
+                    <div class="form-grid" style="margin:8px 0;">
+                      <fieldset>
+                        <legend>时间范围</legend>
+                        <label>开始日期 <input type="date" id="dmCourseStart"></label>
+                        <label>结束日期 <input type="date" id="dmCourseEnd"></label>
+                        <button type="button" id="dmCourseReload" class="btn" style="margin-left:8px;">加载</button>
+                      </fieldset>
+                    </div>
+                    <div id="dmCourseTableWrap" class="muted">（确认记录将显示在这里）</div>
+                  </div>
+                </details>
 
-  <!-- 学生管理（占位） -->
-  <details class="accordion-item">
-    <summary class="accordion-title"><span>学生管理</span></summary>
-    <div class="module-body">
-     <!-- 学生信息｜老师查看列表 -->
-<section id="tab-student-list-teacher" data-hook="si-teacher-list">
-  <h3>学生信息</h3>
+                <details class="accordion-item">
+                  <summary class="accordion-title"><span>学生管理</span></summary>
+                  <div class="module-body">
+                    <section id="tab-student-list-teacher" data-hook="si-teacher-list">
+                      <h3>学生信息</h3>
+                      <div class="toolbar">
+                        <label>姓名前缀<input type="text" id="si-filter-name" placeholder="例如：张 / Li"/></label>
+                        <label>负责老师<input type="text" id="si-filter-teacher" placeholder="老师姓名"/></label>
+                        <button type="button" id="si-filter-go">筛选</button>
+                        <button type="button" id="si-refresh">刷新</button>
+                      </div>
+                      <table id="si-list" class="table">
+                        <thead><tr><th>姓名</th><th>状态</th><th>希望入学时间</th><th>截至日期</th><th>负责老师</th><th>语言课</th><th>日语成绩</th><th>英語成绩</th><th>毕业学校</th><th>毕业专业</th><th>毕业论文</th><th>GPA</th><th>其他履历</th></tr></thead>
+                        <tbody></tbody>
+                      </table>
+                    </section>
+                  </div>
+                </details>
 
-  <div class="toolbar">
-    <label>姓名前缀
-      <input type="text" id="si-filter-name" placeholder="例如：张 / Li" />
-    </label>
-    <label>负责老师
-      <input type="text" id="si-filter-teacher" placeholder="老师姓名" />
-    </label>
-    <button type="button" id="si-filter-go">筛选</button>
-    <button type="button" id="si-refresh">刷新</button>
-  </div>
-
-  <table id="si-list" class="table">
-    <thead>
-      <tr>
-        <th>姓名</th>
-        <th>状态</th>
-        <th>希望入学时间</th>
-        <th>截至日期</th>
-        <th>负责老师</th>
-        <th>语言课</th>
-        <th>日语成绩</th>
-        <th>英語成绩</th>
-        <th>毕业学校</th>
-        <th>毕业专业</th>
-        <th>毕业论文</th>
-        <th>GPA</th>
-        <th>其他履历</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- 后续由 JS 渲染 -->
-    </tbody>
-  </table>
-</section>
-    </div>
-  </details>
-
-
-  <!-- 数据分析（保留原有内容） -->
-  <details class="accordion-item">
-    <summary class="accordion-title"><span>数据分析</span></summary>
-    <div class="module-body">
-      
-      <!-- 筛选区（补 form-grid） -->
-      <div class="dm-filters form-grid">
-        <fieldset style="margin:8px 0;">
-          <legend>学生选择</legend>
-          <label style="display:block;margin:6px 0;">
-            选择所属：
-            <select name="dmDept" id="dmDept">
-              <option value="">（选择所属部门）</option>
-              <option>文科大学院</option><option>理科大学院</option>
-            </select>
-          </label>
-          <label style="display:block;margin:6px 0;">
-            选择专业：
-            <select name="dmMajor" id="dmMajor">
-              <option value="">（选择专业）</option>
-              <option>机械</option><option>电子电器</option><option>生物化学</option><option>情报学</option>
-              <option>文学</option><option>历史学</option><option>社会学</option>
-            </select>
-          </label>
-        </fieldset>
-
-        <fieldset style="margin:8px 0;">
-          <legend>时间范围</legend>
-          <label style="display:inline-block;margin:6px 12px 6px 0;">开始月份：<input type="month" id="dmStart"></label>
-          <label style="display:inline-block;margin:6px 0;">结束月份：<input type="month" id="dmEnd"></label>
-        </fieldset>
-
-        <fieldset style="margin:8px 0;">
-          <legend>数据类型</legend>
-          <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 出勤情况</label>
-          <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 作业情况</label>
-          <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 面谈记录</label>
-          <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 学习进度</label>
-        </fieldset>
-      </div>
-
-      <!-- 三个动作按钮（仍在同一手风琴框里） -->
-      <div class="dm-actions" style="margin:12px 0;">
-        <button type="button" id="dmViewBtn">数据查看</button>
-        <button type="button" id="dmPreviewBtn" style="margin-left:8px;">报告预览</button>
-        <button type="button" id="dmExportBtn" style="margin-left:8px;">生成报告</button>
-        <button type="reset" style="margin-left:8px;">重置</button>
-      </div>      
-    </div>
-  </details>
-</section>
+                <details class="accordion-item">
+                  <summary class="accordion-title"><span>数据分析</span></summary>
+                  <div class="module-body">
+                    <div class="dm-filters form-grid">
+                      <fieldset style="margin:8px 0;">
+                        <legend>学生选择</legend>
+                        <label style="display:block;margin:6px 0;">选择所属：<select name="dmDept" id="dmDept"><option value="">（选择所属部门）</option><option>文科大学院</option><option>理科大学院</option></select></label>
+                        <label style="display:block;margin:6px 0;">选择专业：<select name="dmMajor" id="dmMajor"><option value="">（选择专业）</option><option>机械</option><option>电子电器</option><option>生物化学</option><option>情报学</option><option>文学</option><option>历史学</option><option>社会学</option></select></label>
+                      </fieldset>
+                      <fieldset style="margin:8px 0;">
+                        <legend>时间范围</legend>
+                        <label style="display:inline-block;margin:6px 12px 6px 0;">开始月份：<input type="month" id="dmStart"></label>
+                        <label style="display:inline-block;margin:6px 0;">结束月份：<input type="month" id="dmEnd"></label>
+                      </fieldset>
+                      <fieldset style="margin:8px 0;">
+                        <legend>数据类型</legend>
+                        <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 出勤情况</label>
+                        <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 作业情况</label>
+                        <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 面谈记录</label>
+                        <label style="display:inline-block;margin:6px 12px 6px 0;"><input type="checkbox" checked> 学习进度</label>
+                      </fieldset>
+                    </div>
+                    <div class="dm-actions" style="margin:12px 0;">
+                      <button type="button" id="dmViewBtn">数据查看</button>
+                      <button type="button" id="dmPreviewBtn" style="margin-left:8px;">报告预览</button>
+                      <button type="button" id="dmExportBtn" style="margin-left:8px;">生成报告</button>
+                      <button type="reset" style="margin-left:8px;">重置</button>
+                    </div>
+                  </div>
+                </details>
+              </section>
+            </section>
           </div>
-                        <!-- ============================================================
-     首要确认页面（三个角色各一个，JS 按角色显示对应的）
-     插入位置：datamanagementPage 的 </div> 后，</main> 之前
-     ============================================================ -->
 
-<!-- ★ 学生：首要确认 -->
-<div id="dashboardStudentPage" class="page-content" style="display:none;">
-  <section class="card">
-    <h2 class="dashboard-title">首要确认</h2>
-
-    <div class="dashboard-grid">
-
-      <!-- A. 自分のこと -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-self"></span>
-          <span class="dash-panel-label">自分のこと</span>
-          <span class="dash-badge" id="stu-self-badge">3</span>
-        </div>
-        <ul class="task-list" id="stu-self-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">提交语言成绩证明</span>
-              <span class="task-meta">截止 05/20 · 学习进度</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">联系目标教授（邮件）</span>
-              <span class="task-meta">截止 05/25 · 出愿准备</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">确认出愿计划表</span>
-              <span class="task-meta">截止 05/30 · 出愿报名</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- B. 对老师 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-teacher"></span>
-          <span class="dash-panel-label">对老师</span>
-          <span class="dash-badge" id="stu-teacher-badge">2</span>
-        </div>
-        <ul class="task-list" id="stu-teacher-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">提交第4回作业</span>
-              <span class="task-meta">截止 05/16 · 社会学专业课</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">预约本月面谈时间</span>
-              <span class="task-meta">本月内 · 负责老师：田中先生</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- C. 对管理员 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-admin"></span>
-          <span class="dash-panel-label">对管理员</span>
-          <span class="dash-badge" id="stu-admin-badge">1</span>
-        </div>
-        <ul class="task-list" id="stu-admin-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">确认6月课程安排</span>
-              <span class="task-meta">截止 05/31 · 课程确认</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- D. 收到的通知 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-notice"></span>
-          <span class="dash-panel-label">收到的通知</span>
-          <span class="dash-badge" id="stu-notice-badge">2</span>
-        </div>
-        <ul class="task-list" id="stu-notice-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">【老师】5/18课程调整至线上</span>
-              <span class="task-meta">05/14 · 田中先生</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">【管理员】6月续费提醒</span>
-              <span class="task-meta">05/13 · 管理员</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-    </div>
-  </section>
-</div>
-
-
-<!-- ★ 老师：首要确认 -->
-<div id="dashboardTeacherPage" class="page-content" style="display:none;">
-  <section class="card">
-    <h2 class="dashboard-title">首要确认</h2>
-
-    <div class="dashboard-grid">
-
-      <!-- A. 对自己 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-self"></span>
-          <span class="dash-panel-label">对自己</span>
-          <span class="dash-badge" id="tch-self-badge">2</span>
-        </div>
-        <ul class="task-list" id="tch-self-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">今日课程：社会学专业课 14:00</span>
-              <span class="task-meta">今天 · A-301教室</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">确认本周课程出席记录</span>
-              <span class="task-meta">截止 05/16 · 课程确认表</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- B. 来自学生 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-student"></span>
-          <span class="dash-panel-label">来自学生</span>
-          <span class="dash-badge" id="tch-student-badge">3</span>
-        </div>
-        <ul class="task-list" id="tch-student-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">张三 提交了第4回作业</span>
-              <span class="task-meta">05/14 · 社会学专业课</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">李四 申请面谈预约（5/18 15:00）</span>
-              <span class="task-meta">05/13 · 待确认</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">王五 提交请假申请</span>
-              <span class="task-meta">05/14 · 5/16课程</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- C. 对管理员 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-admin"></span>
-          <span class="dash-panel-label">对管理员</span>
-          <span class="dash-badge" id="tch-admin-badge">2</span>
-        </div>
-        <ul class="task-list" id="tch-admin-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">提交张三5月学习情况反馈</span>
-              <span class="task-meta">截止 05/20 · 讲师反馈表</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">确认6月课程排期</span>
-              <span class="task-meta">截止 05/25 · 课程安排</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- D. 来自其他老师/TA -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-notice"></span>
-          <span class="dash-panel-label">来自其他老师 / TA</span>
-          <span class="dash-badge" id="tch-other-badge">1</span>
-        </div>
-        <ul class="task-list" id="tch-other-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">【TA·小林】5/16 补课协调确认</span>
-              <span class="task-meta">05/13 · 需回应</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-    </div>
-  </section>
-</div>
-
-
-<!-- ★ 管理员：首要确认 -->
-<div id="dashboardAdminPage" class="page-content" style="display:none;">
-  <section class="card">
-    <h2 class="dashboard-title">首要确认</h2>
-
-    <div class="dashboard-grid">
-
-      <!-- A. 教务 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-self"></span>
-          <span class="dash-panel-label">教务</span>
-          <span class="dash-badge" id="adm-kyoumu-badge">3</span>
-        </div>
-        <ul class="task-list" id="adm-kyoumu-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">确认6月课程安排表</span>
-              <span class="task-meta">截止 05/20 · 课程安排</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">处理田中老师排课变更申请</span>
-              <span class="task-meta">05/14 · 待审批</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">更新5月出席明细表</span>
-              <span class="task-meta">截止 05/18 · 出席明细</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- B. 教研 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-teacher"></span>
-          <span class="dash-panel-label">教研</span>
-          <span class="dash-badge" id="adm-kyoken-badge">2</span>
-        </div>
-        <ul class="task-list" id="adm-kyoken-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">汇总5月讲师反馈报告</span>
-              <span class="task-meta">截止 05/25 · 讲师反馈表</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">跟进社会学课程质量评估</span>
-              <span class="task-meta">截止 05/28 · 教研</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- C. 教学 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-admin"></span>
-          <span class="dash-panel-label">教学</span>
-          <span class="dash-badge" id="adm-kyogaku-badge">2</span>
-        </div>
-        <ul class="task-list" id="adm-kyogaku-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">跟进张三学习进度节点</span>
-              <span class="task-meta">截止 05/22 · 学习进度表</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">确认本月面谈记录录入完毕</span>
-              <span class="task-meta">截止 05/31 · 面谈记录表</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-      <!-- D. 学生动态 -->
-      <div class="dash-panel">
-        <div class="dash-panel-header">
-          <span class="dash-panel-dot dot-notice"></span>
-          <span class="dash-panel-label">学生动态</span>
-          <span class="dash-badge" id="adm-student-badge">2</span>
-        </div>
-        <ul class="task-list" id="adm-student-list">
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">李四 6月续费待确认</span>
-              <span class="task-meta">截止 05/31 · 缴费</span>
-            </div>
-          </li>
-          <li class="task-item" data-done="false">
-            <button class="task-check" aria-label="完成"></button>
-            <div class="task-body">
-              <span class="task-title">王五 提交状态变更申请</span>
-              <span class="task-meta">05/13 · 待处理</span>
-            </div>
-          </li>
-        </ul>
-      </div>
-
-    </div>
-  </section>
-</div>
         </main>
       </div>
     </div>
   </div>
 
   <script src="app.js" defer></script>
-                        <script src="pub-course.js" defer></script>
+  <script src="pub-course.js" defer></script>
 </body>
 </html>

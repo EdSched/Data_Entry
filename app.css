@@ -420,13 +420,21 @@ nav a.active {
   margin: 0;
   padding: 0;
 }
-.task-item {
+.task-check {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  border: 1.5px solid #ccc;
+  border-radius: 4px;
+  background: #fff;
+  cursor: pointer;
+  transition: all 0.15s;
   display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 10px 16px;
-  border-bottom: 1px solid #f0f0f0;
-  transition: background 0.15s;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  position: relative;
 }
 .task-item:last-child { border-bottom: none; }
 .task-item:hover { background: #fafafa; }

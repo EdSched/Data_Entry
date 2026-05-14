@@ -268,7 +268,11 @@ function resolvePageIdForRole(pageId) {
   return pageId;
 }
 function showPage(pageIdRaw) {
-  const pageId = resolvePageIdForRole(pageIdRaw);
+  if (pageId === 'dashboardStudent') return 'dashboardStudent';
+  if (pageId === 'dashboardTeacher') return 'dashboardTeacher';
+  if (pageId === 'dashboardAdmin')   return 'dashboardAdmin';
+  return pageId;
+const pageId = resolvePageIdForRole(pageIdRaw);
   document.querySelectorAll('.page-content').forEach(p => { p.classList.remove('active'); p.style.display='none'; });
   const panel = document.getElementById(pageId + 'Page');
   if (panel) { panel.style.display='block'; panel.classList.add('active'); }
@@ -409,6 +413,48 @@ function setSegActive(btn){
 }
 
 /* =============== 初始化 =============== */
+// ---- 首要确认：勾选交互 ----
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('.task-check');
+    if (!btn) return;
+    const item = btn.closest('.task-item');
+    if (!item) return;
+
+    const done = item.dataset.done === 'true';
+    item.dataset.done = done ? 'false' : 'true';
+
+    // 完成的条目移到列表末尾，未完成的移回顶部
+    const list = item.closest('.task-list');
+    if (list) {
+      if (!done) {
+        list.appendChild(item); // 勾选 → 沉底
+      } else {
+        list.prepend(item);     // 取消勾选 → 回顶
+      }
+    }
+
+    // 更新徽章数量（未完成数）
+    updateDashBadge_(list);
+  });
+
+  // 手机端：面板点击折叠/展开
+  document.addEventListener('click', (e) => {
+    const header = e.target.closest('.dash-panel-header');
+    if (!header) return;
+    if (window.matchMedia('(min-width:601px)').matches) return; // 桌面不触发
+    const panel = header.closest('.dash-panel');
+    if (panel) panel.classList.toggle('collapsed');
+  });
+
+  function updateDashBadge_(list) {
+    if (!list) return;
+    const panel = list.closest('.dash-panel');
+    if (!panel) return;
+    const badge = panel.querySelector('.dash-badge');
+    if (!badge) return;
+    const undone = list.querySelectorAll('.task-item[data-done="false"]').length;
+    badge.textContent = undone > 0 ? undone : '';
+  }
 document.addEventListener('DOMContentLoaded', async () => {
   // 导航点击：统一用 data-page
   document.querySelectorAll('.nav-link').forEach(link => {
